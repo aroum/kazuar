@@ -31,6 +31,9 @@ import android.graphics.drawable.NinePatchDrawable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
+import android.content.SharedPreferences;
+import android.graphics.RectF;
+import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper;
 
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyDrawParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyVisualAttributes;
@@ -81,6 +84,8 @@ import javax.annotation.Nullable;
 public class KeyboardView extends View {
     // XML attributes
     private final KeyVisualAttributes mKeyVisualAttributes;
+    private boolean mIsCustomTheme = false;
+    private CustomThemeHelper.ThemeColors mCustomColors = null;
     // Default keyLabelFlags from {@link KeyboardTheme}.
     // Currently only "alignHintLabelToBottom" is supported.
     private final int mDefaultKeyLabelFlags;
@@ -239,6 +244,14 @@ public class KeyboardView extends View {
 
     @Override
     protected void onDraw(final Canvas canvas) {
+        mCustomColors = null;
+        mIsCustomTheme = false;
+        final KeyboardTheme theme = KeyboardTheme.getKeyboardTheme(getContext());
+        if (theme != null && theme.mThemeId == KeyboardTheme.THEME_ID_CUSTOM) {
+            mCustomColors = CustomThemeHelper.getCustomThemeColors(getContext());
+            mIsCustomTheme = (mCustomColors != null);
+        }
+
         super.onDraw(canvas);
         if (canvas.isHardwareAccelerated()) {
             onDrawKeyboard(canvas);
@@ -295,7 +308,10 @@ public class KeyboardView extends View {
         final boolean isHardwareAccelerated = canvas.isHardwareAccelerated();
         // TODO: Confirm if it's really required to draw all keys when hardware acceleration is on.
         if (drawAllKeys || isHardwareAccelerated) {
-            if (!isHardwareAccelerated && background != null) {
+            if (mIsCustomTheme) {
+                canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR);
+                canvas.drawColor(mCustomColors.keyboardBackground);
+            } else if (!isHardwareAccelerated && background != null) {
                 // Need to draw keyboard background on {@link #mOffscreenBuffer}.
                 canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR);
                 background.draw(canvas);
@@ -309,7 +325,16 @@ public class KeyboardView extends View {
                 if (!keyboard.hasKey(key)) {
                     continue;
                 }
-                if (background != null) {
+                if (mIsCustomTheme) {
+                    final int x = key.getX() + getPaddingLeft();
+                    final int y = key.getY() + getPaddingTop();
+                    mClipRect.set(x, y, x + key.getWidth(), y + key.getHeight());
+                    canvas.save();
+                    canvas.clipRect(mClipRect);
+                    canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR);
+                    canvas.drawColor(mCustomColors.keyboardBackground);
+                    canvas.restore();
+                } else if (background != null) {
                     // Need to redraw key's background on {@link #mOffscreenBuffer}.
                     final int x = key.getX() + getPaddingLeft();
                     final int y = key.getY() + getPaddingTop();
@@ -353,6 +378,36 @@ public class KeyboardView extends View {
     // Draw key background.
     protected void onDrawKeyBackground(@Nonnull final Key key, @Nonnull final Canvas canvas,
             @Nonnull final Drawable background) {
+        if (mIsCustomTheme) {
+            final int keyWidth = key.getDrawWidth();
+            final int keyHeight = key.getHeight();
+            final Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.FILL);
+            boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL);
+            int bgColor;
+            if (isFunctional) {
+                bgColor = key.isPressed() ? mCustomColors.functionalKeyBackgroundPressed : mCustomColors.functionalKeyBackground;
+            } else {
+                bgColor = key.isPressed() ? mCustomColors.keyBackgroundPressed : mCustomColors.keyBackground;
+            }
+            paint.setColor(bgColor);
+            float radius = 8f; // rounded corner radius in pixels
+            RectF rect = new RectF(0, 0, keyWidth, keyHeight);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+
+            final SharedPreferences prefs = getContext().getSharedPreferences(
+                    getContext().getPackageName() + "_preferences", Context.MODE_PRIVATE);
+            boolean hasBorders = prefs.getBoolean("theme_key_borders", true);
+            if (hasBorders) {
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(2.0f);
+                paint.setColor(mCustomColors.keyBorderColor);
+                canvas.drawRoundRect(rect, radius, radius, paint);
+            }
+            return;
+        }
+
         final int keyWidth = key.getDrawWidth();
         final int keyHeight = key.getHeight();
         final int bgWidth, bgHeight, bgX, bgY;
@@ -421,7 +476,12 @@ public class KeyboardView extends View {
             }
 
             if (key.isEnabled()) {
-                paint.setColor(key.selectTextColor(params));
+                if (mIsCustomTheme) {
+                    boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL);
+                    paint.setColor(isFunctional ? mCustomColors.functionalKeyTextColor : mCustomColors.keyTextColor);
+                } else {
+                    paint.setColor(key.selectTextColor(params));
+                }
                 // Set a drop shadow for the text if the shadow radius is positive value.
                 if (mKeyTextShadowRadius > 0.0f) {
                     paint.setShadowLayer(mKeyTextShadowRadius, 0.0f, 0.0f, params.mTextShadowColor);
@@ -444,7 +504,11 @@ public class KeyboardView extends View {
         final String hintLabel = key.getHintLabel();
         if (hintLabel != null && mShowsHints) {
             paint.setTextSize(key.selectHintTextSize(params));
-            paint.setColor(key.selectHintTextColor(params));
+            if (mIsCustomTheme) {
+                paint.setColor(mCustomColors.keyHintColor);
+            } else {
+                paint.setColor(key.selectHintTextColor(params));
+            }
             // TODO: Should add a way to specify type face for hint letters
             paint.setTypeface(Typeface.DEFAULT_BOLD);
             blendAlpha(paint, params.mAnimAlpha);

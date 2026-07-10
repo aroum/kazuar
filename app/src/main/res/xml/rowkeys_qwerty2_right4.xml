@@ -23,9 +23,9 @@
 >
     <Key
         latin:keySpec="h"
-        latin:keyHintLabel="-"
-        latin:additionalMoreKeys="-"
-        latin:moreKeys="!text/morekeys_h" />
+        latin:keyHintLabel="\\\\"
+        latin:additionalMoreKeys="\\\\"
+        latin:moreKeys="\\\\" />
     <Key
         latin:keySpec="j"
         latin:keyHintLabel="+"

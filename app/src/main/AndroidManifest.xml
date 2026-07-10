@@ -14,13 +14,13 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    coreApp="true"
-    package="io.github.sds100.keymapper.inputmethod.latin">
+    coreApp="true">
 
     <uses-permission android:name="android.permission.READ_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <!-- A signature-protected permission to ask AOSP Keyboard to close the software keyboard.
          To use this, add the following line into calling application's AndroidManifest.xml
@@ -87,11 +87,49 @@
             android:launchMode="singleTask"
             android:noHistory="true"
             android:theme="@style/platformActivityTheme">
+        </activity>
+
+        <activity-alias
+            android:name=".LauncherAliasDefault"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/english_ime_name"
+            android:targetActivity=".setup.SetupActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAliasOld"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_old"
+            android:roundIcon="@mipmap/ic_launcher_old_round"
+            android:label="@string/english_ime_name"
+            android:targetActivity=".setup.SetupActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAliasPavel"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_pavel"
+            android:roundIcon="@mipmap/ic_launcher_pavel_round"
+            android:label="@string/english_ime_name"
+            android:targetActivity=".setup.SetupActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".permissions.PermissionsActivity"

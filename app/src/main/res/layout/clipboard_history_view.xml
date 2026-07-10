@@ -47,16 +47,15 @@
                 android:hapticFeedbackEnabled="false"
                 android:soundEffectsEnabled="false" />
 
-        <ImageButton
+        <TextView
                 android:id="@+id/clipboard_clear"
                 android:layout_width="@dimen/config_suggestions_strip_edge_key_width"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_gravity="end|center_vertical"
                 android:layout_marginEnd="2dp"
-                android:padding="8dp"
+                android:gravity="center"
                 android:hapticFeedbackEnabled="false"
                 android:soundEffectsEnabled="false"
-                android:scaleType="fitCenter"
                 style="?attr/suggestionWordStyle" />
 
     </FrameLayout>

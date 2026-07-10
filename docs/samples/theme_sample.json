@@ -1,0 +1,25 @@
+{
+  "theme_name": "Gruvbox Custom Sample",
+  "light": {
+    "keyboard_background": "#fbf1c7",
+    "key_background": "#ebdbb2",
+    "key_background_pressed": "#d5c4a1",
+    "key_text_color": "#3c3836",
+    "functional_key_background": "#d5c4a1",
+    "functional_key_background_pressed": "#bdae93",
+    "functional_key_text_color": "#3c3836",
+    "key_hint_color": "#928374",
+    "key_border_color": "#a89984"
+  },
+  "dark": {
+    "keyboard_background": "#282828",
+    "key_background": "#3c3836",
+    "key_background_pressed": "#504945",
+    "key_text_color": "#ebdbb2",
+    "functional_key_background": "#504945",
+    "functional_key_background_pressed": "#665c54",
+    "functional_key_text_color": "#ebdbb2",
+    "key_hint_color": "#928374",
+    "key_border_color": "#7c6f64"
+  }
+}

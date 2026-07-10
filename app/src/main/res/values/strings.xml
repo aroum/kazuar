@@ -19,16 +19,16 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-    <string name="english_ime_name" translatable="false">Key Mapper GUI Keyboard</string>
+    <string name="english_ime_name" translatable="false">Kazuar</string>
     <!-- Name of Android spell checker service. AOSP(Android Open Source Project) should not be translated.
          This resource should be copied from msgid="511950477199948048" -->
-    <string name="spell_checker_service_name">Key Mapper GUI Keyboard Spell Checker</string>
+    <string name="spell_checker_service_name">Kazuar Spell Checker</string>
     <!-- Title for Android Keyboard settings screen. AOSP(Android Open Source Project) should not be translated.
          This resource should be copied from msgid="423615877174850267" -->
-    <string name="ime_settings">Key Mapper GUI Keyboard Settings</string>
+    <string name="ime_settings">Kazuar Settings</string>
     <!-- Title for the spell checking service settings screen. AOSP(Android Open Source Project) should not be translated.
          This resource should be copied from msgid="2970535894327288421" -->
-    <string name="android_spell_checker_settings">Key Mapper GUI Keyboard Spell Checker Settings</string>
+    <string name="android_spell_checker_settings">Kazuar Spell Checker Settings</string>
 
 
     <!-- Title for Latin keyboard input options dialog [CHAR LIMIT=25] -->
@@ -200,6 +200,9 @@
     <string name="prefs_force_incognito_mode">Force incognito mode</string>
     <!-- Description for "prefs_force_incognito_mode" option. -->
     <string name="prefs_force_incognito_mode_summary">Disable learning of new words</string>
+    <!-- Title for Incognito Mode Rules settings screen -->
+    <string name="prefs_incognito_mode_rules_title">Incognito Mode Rules</string>
+    <string name="prefs_incognito_apps_category_title">Disable incognito mode</string>
     <!-- Content description for "more keys" suggestions view -->
     <string name="more_keys_strip_description">More keys</string>
     <!-- Title for configuring input method settings [CHAR LIMIT=35] -->
@@ -585,4 +588,23 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="amoled_mode">Deep black backgrounds</string>
     <!-- Description indicating amoled mode can lower power usage depending on the screen of the device. -->
     <string name="amoled_mode_summary">Can reduce power usage depending on the device’s screen technology</string>
+
+    <string name="settings_screen_backup">Backup &amp; Restore</string>
+    <string name="settings_backup_category">Backup &amp; Restore</string>
+    <string name="pref_backup_settings_export">Export Settings</string>
+    <string name="pref_backup_settings_export_summary">Save keyboard settings to a file</string>
+    <string name="pref_backup_settings_import">Import Settings</string>
+    <string name="pref_backup_settings_import_summary">Restore keyboard settings from a file</string>
+    <string name="pref_backup_dict_export">Export Personal Dictionary</string>
+    <string name="pref_backup_dict_export_summary">Save user dictionary words to a file</string>
+    <string name="pref_backup_dict_import">Import Personal Dictionary</string>
+    <string name="pref_backup_dict_import_summary">Restore user dictionary words from a file</string>
+    <string name="backup_success">Backup saved successfully</string>
+    <string name="backup_fail">Failed to save backup</string>
+    <string name="restore_success">Backup restored successfully</string>
+    <string name="restore_fail">Failed to restore backup</string>
+    <string name="restore_invalid_file">Invalid backup file</string>
+
+    <string name="use_multi_space_punctuation">Multi-space punctuation</string>
+    <string name="use_multi_space_punctuation_summary">2 space -> ., 3 space -> ,, 4 space -> ?, 5 space -> !</string>
 </resources>

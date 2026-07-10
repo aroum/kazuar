@@ -52,13 +52,91 @@ public final class AdvancedSettingsFragment extends SubScreenFragment {
 
         final SharedPreferences prefs = getSharedPreferences();
 
-        if (!Settings.isInternal(prefs)) {
-            removePreference(Settings.SCREEN_DEBUG);
-        }
+        // Debug settings are now always visible as per user's menu structure.
 
         setupKeyLongpressTimeoutSettings();
+        setupDoubleTapTimeoutSettings();
+        setupDoubleSwipeTimeoutSettings();
+        setupKeyRepeatIntervalSettings();
     }
 
+    private void setupDoubleTapTimeoutSettings() {
+        final SharedPreferences prefs = getSharedPreferences();
+        final Resources res = getResources();
+        final SeekBarDialogPreference pref = (SeekBarDialogPreference)findPreference(
+                "pref_double_tap_timeout");
+        if (pref == null) {
+            return;
+        }
+        pref.setInterface(new SeekBarDialogPreference.ValueProxy() {
+            @Override
+            public void writeValue(final int value, final String key) {
+                prefs.edit().putInt(key, value).apply();
+            }
+
+            @Override
+            public void writeDefaultValue(final String key) {
+                prefs.edit().remove(key).apply();
+            }
+
+            @Override
+            public int readValue(final String key) {
+                return prefs.getInt(key, 400);
+            }
+
+            @Override
+            public int readDefaultValue(final String key) {
+                return 400;
+            }
+
+            @Override
+            public String getValueText(final int value) {
+                return res.getString(R.string.abbreviation_unit_milliseconds, value);
+            }
+
+            @Override
+            public void feedbackValue(final int value) {}
+        });
+    }
+
+    private void setupDoubleSwipeTimeoutSettings() {
+        final SharedPreferences prefs = getSharedPreferences();
+        final Resources res = getResources();
+        final SeekBarDialogPreference pref = (SeekBarDialogPreference)findPreference(
+                "pref_double_swipe_timeout");
+        if (pref == null) {
+            return;
+        }
+        pref.setInterface(new SeekBarDialogPreference.ValueProxy() {
+            @Override
+            public void writeValue(final int value, final String key) {
+                prefs.edit().putInt(key, value).apply();
+            }
+
+            @Override
+            public void writeDefaultValue(final String key) {
+                prefs.edit().remove(key).apply();
+            }
+
+            @Override
+            public int readValue(final String key) {
+                return prefs.getInt(key, 700);
+            }
+
+            @Override
+            public int readDefaultValue(final String key) {
+                return 700;
+            }
+
+            @Override
+            public String getValueText(final int value) {
+                return res.getString(R.string.abbreviation_unit_milliseconds, value);
+            }
+
+            @Override
+            public void feedbackValue(final int value) {}
+        });
+    }
 
     private void setupKeyLongpressTimeoutSettings() {
         final SharedPreferences prefs = getSharedPreferences();
@@ -99,10 +177,45 @@ public final class AdvancedSettingsFragment extends SubScreenFragment {
         });
     }
 
-    @Override
-    public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
-        if (key.equals(Settings.PREF_SHOW_SETUP_WIZARD_ICON)) {
-            SystemBroadcastReceiver.toggleAppIcon(getActivity());
+    private void setupKeyRepeatIntervalSettings() {
+        final SharedPreferences prefs = getSharedPreferences();
+        final Resources res = getResources();
+        final SeekBarDialogPreference pref = (SeekBarDialogPreference)findPreference(
+                Settings.PREF_KEY_REPEAT_INTERVAL);
+        if (pref == null) {
+            return;
         }
+        pref.setInterface(new SeekBarDialogPreference.ValueProxy() {
+            @Override
+            public void writeValue(final int value, final String key) {
+                prefs.edit().putInt(key, value).apply();
+            }
+
+            @Override
+            public void writeDefaultValue(final String key) {
+                prefs.edit().remove(key).apply();
+            }
+
+            @Override
+            public int readValue(final String key) {
+                return Settings.readKeyRepeatInterval(prefs, res);
+            }
+
+            @Override
+            public int readDefaultValue(final String key) {
+                return Settings.readDefaultKeyRepeatInterval(res);
+            }
+
+            @Override
+            public String getValueText(final int value) {
+                return res.getString(R.string.abbreviation_unit_milliseconds, value);
+            }
+
+            @Override
+            public void feedbackValue(final int value) {}
+        });
     }
+
+    @Override
+    public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {}
 }

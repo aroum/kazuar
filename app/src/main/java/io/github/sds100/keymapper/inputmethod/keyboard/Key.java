@@ -207,6 +207,8 @@ public class Key implements Comparable<Key> {
     private boolean mPressed;
     /** Key is enabled and responds on press */
     private boolean mEnabled = true;
+    /** The checkable/checked state for sticky keys */
+    private boolean mIsChecked;
 
     /**
      * Constructor for a key on <code>MoreKeyKeyboard</code> and on <code>MoreSuggestions</code>.
@@ -515,6 +517,7 @@ public class Key implements Comparable<Key> {
         // Key state.
         mPressed = key.mPressed;
         mEnabled = key.mEnabled;
+        mIsChecked = key.mIsChecked;
     }
 
     private Key(@Nonnull final Key key, @Nullable final MoreKeySpec[] moreKeys) {
@@ -541,6 +544,7 @@ public class Key implements Comparable<Key> {
         // Key state.
         mPressed = key.mPressed;
         mEnabled = key.mEnabled;
+        mIsChecked = key.mIsChecked;
     }
 
     @Nonnull
@@ -943,6 +947,14 @@ public class Key implements Comparable<Key> {
         return mBackgroundType;
     }
 
+    public void setChecked(boolean checked) {
+        mIsChecked = checked;
+    }
+
+    public boolean isChecked() {
+        return mIsChecked;
+    }
+
     /**
      * Gets the width of the key in pixels, excluding the gap.
      * @return The width of the key in pixels, excluding the gap.
@@ -1025,6 +1037,10 @@ public class Key implements Comparable<Key> {
 
     public final boolean isEnabled() {
         return mEnabled;
+    }
+
+    public final boolean isPressed() {
+        return mPressed;
     }
 
     public void setEnabled(final boolean enabled) {
@@ -1115,7 +1131,17 @@ public class Key implements Comparable<Key> {
         } else {
             background = keyBackground;
         }
-        final int[] state = KeyBackgroundState.STATES[mBackgroundType].getState(mPressed);
+        int backgroundType = mBackgroundType;
+        if (backgroundType == BACKGROUND_TYPE_STICKY_OFF || backgroundType == BACKGROUND_TYPE_STICKY_ON) {
+            backgroundType = mIsChecked ? BACKGROUND_TYPE_STICKY_ON : BACKGROUND_TYPE_STICKY_OFF;
+        }
+        final int[] state;
+        if (mCode == Constants.CODE_SELECT_TOGGLE) {
+            final boolean showAsPressed = mIsChecked ^ mPressed;
+            state = KeyBackgroundState.STATES[BACKGROUND_TYPE_NORMAL].getState(showAsPressed);
+        } else {
+            state = KeyBackgroundState.STATES[backgroundType].getState(mPressed);
+        }
         background.setState(state);
         return background;
     }

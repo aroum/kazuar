@@ -196,6 +196,9 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     // when a keyboard layout set doesn't get reloaded in LatinIME.onStartInputViewInternal().
     public void resetKeyboardStateToAlphabet(final int currentAutoCapsState,
             final int currentRecapitalizeState) {
+        if (isShowingKeyboardId(KeyboardId.ELEMENT_EDITING)) {
+            return;
+        }
         mState.onResetKeyboardStateToAlphabet(currentAutoCapsState, currentRecapitalizeState);
     }
 
@@ -277,6 +280,13 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         setKeyboard(KeyboardId.ELEMENT_SYMBOLS_SHIFTED, KeyboardSwitchState.SYMBOLS_SHIFTED);
     }
 
+    public void setEditingKeyboard() {
+        if (DEBUG_ACTION) {
+            Log.d(TAG, "setEditingKeyboard");
+        }
+        setKeyboard(KeyboardId.ELEMENT_EDITING, KeyboardSwitchState.OTHER);
+    }
+
     public boolean isImeSuppressedByHardwareKeyboard(
             @Nonnull final SettingsValues settingsValues,
             @Nonnull final KeyboardSwitchState toggleState) {
@@ -341,6 +351,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         SYMBOLS_SHIFTED(KeyboardId.ELEMENT_SYMBOLS_SHIFTED),
         EMOJI(KeyboardId.ELEMENT_EMOJI_RECENTS),
         CLIPBOARD(KeyboardId.ELEMENT_CLIPBOARD),
+        EDITING(KeyboardId.ELEMENT_EDITING),
         OTHER(-1);
 
         final int mKeyboardId;
@@ -361,6 +372,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
             return KeyboardSwitchState.EMOJI;
         } else if (isShowingClipboardHistory()) {
             return KeyboardSwitchState.CLIPBOARD;
+        } else if (isShowingKeyboardId(KeyboardId.ELEMENT_EDITING)) {
+            return KeyboardSwitchState.EDITING;
         } else if (isShowingKeyboardId(KeyboardId.ELEMENT_SYMBOLS_SHIFTED)) {
             return KeyboardSwitchState.SYMBOLS_SHIFTED;
         }
@@ -397,6 +410,9 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     // Future method for requesting an updating to the shift state.
     @Override
     public void requestUpdatingShiftState(final int autoCapsFlags, final int recapitalizeMode) {
+        if (isShowingKeyboardId(KeyboardId.ELEMENT_EDITING)) {
+            return;
+        }
         if (DEBUG_ACTION) {
             Log.d(TAG, "requestUpdatingShiftState: "
                     + " autoCapsFlags=" + CapsModeUtils.flagsToString(autoCapsFlags)
@@ -472,7 +488,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     }
 
     public boolean isShowingKeyboardId(@Nonnull int... keyboardIds) {
-        if (mKeyboardView == null || !mKeyboardView.isShown()) {
+        if (mKeyboardView == null || mKeyboardView.getKeyboard() == null) {
             return false;
         }
         int activeKeyboardId = mKeyboardView.getKeyboard().mId.mElementId;

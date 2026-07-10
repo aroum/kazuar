@@ -487,8 +487,8 @@ public final class KeyboardTextsTable {
         /* morekeys_tablet_double_quote */ "!fixedColumnOrder!6,!text/double_quotes,!text/single_quotes,!text/double_angle_quotes,!text/single_angle_quotes",
         /* keyspec_emoji_action_key */ "!icon/emoji_action_key|!code/key_emoji",
         /* keyspec_emoji_normal_key */ "!icon/emoji_normal_key|!code/key_emoji",
-        /* keyspec_clipboard_action_key */ "!icon/clipboard_action_key|!code/key_clipboard",
-        /* keyspec_clipboard_normal_key */ "!icon/clipboard_normal_key|!code/key_clipboard",
+        /* keyspec_clipboard_action_key */ "⧉|!code/key_clipboard",
+        /* keyspec_clipboard_normal_key */ "⧉|!code/key_clipboard",
         /* keyspec_start_onehanded_mode */ "!icon/start_onehanded_mode_key|!code/key_start_onehanded",
         /* keyspec_language_switch */ "!icon/language_switch_key|!code/key_language_switch",
     };

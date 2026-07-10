@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/prefs_incognito_mode_rules_title">
+
+    <SwitchPreference
+        android:key="pref_always_incognito_mode"
+        android:title="@string/prefs_force_incognito_mode"
+        android:summary="@string/prefs_force_incognito_mode_summary"
+        android:defaultValue="false" />
+
+    <PreferenceCategory
+        android:key="incognito_apps_category"
+        android:title="@string/prefs_incognito_apps_category_title" />
+
+</PreferenceScreen>

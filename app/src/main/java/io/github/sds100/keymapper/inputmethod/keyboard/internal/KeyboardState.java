@@ -704,6 +704,27 @@ public final class KeyboardState {
         // If the code is a letter, update keyboard shift state.
         if (Constants.isLetterCode(code)) {
             updateAlphabetShiftState(autoCapsFlags, recapitalizeMode);
+        } else if (code == Constants.CODE_SHIFT || code == Constants.CODE_SWIPE_SHIFT) {
+            // Gesture swipe-up: toggle shift state in alphabet mode.
+            if (mMode == MODE_ALPHABET) {
+                if (mAlphabetShiftState.isShiftLocked()) {
+                    // Caps lock is on, unlock and unshift it.
+                    setShiftLocked(false);
+                    setShifted(UNSHIFT);
+                } else if (mAlphabetShiftState.isShiftedOrShiftLocked()) {
+                    // Already shifted, unshift.
+                    setShifted(UNSHIFT);
+                    mAlphabetShiftState.setShiftLocked(false);
+                } else {
+                    // Unshifted, activate manual shift.
+                    setShifted(MANUAL_SHIFT);
+                }
+            }
+        } else if (code == Constants.CODE_CAPSLOCK) {
+            // Double swipe-up gesture: toggle caps lock.
+            if (mMode == MODE_ALPHABET) {
+                setShiftLocked(!mAlphabetShiftState.isShiftLocked());
+            }
         } else if (code == Constants.CODE_EMOJI) {
             setEmojiKeyboard();
         } else if (code == Constants.CODE_ALPHA_FROM_EMOJI) {

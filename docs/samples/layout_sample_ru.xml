@@ -1,0 +1,46 @@
+<Keyboard language="ru" keyWidth="10%">
+    <Row>
+        <Key keyLabel="й" />
+        <Key keyLabel="ц" />
+        <Key keyLabel="у" />
+        <Key keyLabel="к" />
+        <Key keyLabel="е" />
+        <Key keyLabel="н" />
+        <Key keyLabel="г" />
+        <Key keyLabel="ш" />
+        <Key keyLabel="з" />
+        <Key keyLabel="х" />
+    </Row>
+    <Row>
+        <Key keyLabel="ф" />
+        <Key keyLabel="ы" />
+        <Key keyLabel="в" />
+        <Key keyLabel="а" />
+        <Key keyLabel="п" />
+        <Key keyLabel="р" />
+        <Key keyLabel="о" />
+        <Key keyLabel="л" />
+        <Key keyLabel="д" />
+        <Key keyLabel="ж" />
+    </Row>
+    <Row>
+        <Key keyLabel="Shift" keyIcon="shift" keyWidth="12%" />
+        <Key keyLabel="я" />
+        <Key keyLabel="ч" />
+        <Key keyLabel="с" />
+        <Key keyLabel="м" />
+        <Key keyLabel="и" />
+        <Key keyLabel="т" />
+        <Key keyLabel="ь" />
+        <Key keyLabel="б" />
+        <Key keyLabel="⌫" keyIcon="delete" keyWidth="13%" />
+    </Row>
+    <Row>
+        <Key keyLabel="?123" codes="-3" keyWidth="15%" />
+        <Key keyLabel="globe" keyIcon="language" keyWidth="10%" />
+        <Key keyLabel="spc" keyIcon="space" keyWidth="50%" />
+        <Key keyLabel="," />
+        <Key keyLabel="." />
+        <Key keyLabel="Enter" keyIcon="enter" keyWidth="15%" />
+    </Row>
+</Keyboard>

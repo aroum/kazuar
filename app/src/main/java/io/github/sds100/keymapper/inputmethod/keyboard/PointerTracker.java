@@ -41,6 +41,7 @@ import io.github.sds100.keymapper.inputmethod.latin.common.CoordinateUtils;
 import io.github.sds100.keymapper.inputmethod.latin.common.InputPointers;
 import io.github.sds100.keymapper.inputmethod.latin.define.DebugFlags;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
+import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 
 import java.util.ArrayList;
@@ -115,6 +116,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private static boolean sInGesture = false;
     private static TypingTimeRecorder sTypingTimeRecorder;
 
+    // Timestamp of the last swipe-up gesture for double-swipe-up (Caps Lock) detection.
+    private static long sLastSwipeUpTime = 0;
+    private static final long DOUBLE_SWIPE_UP_TIMEOUT_MS = 700;
+
     // The position and time at which first down event occurred.
     private long mDownTime;
     @Nonnull
@@ -123,6 +128,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     // The current key where this pointer is.
     private Key mCurrentKey = null;
+    // The key that was initially pressed down.
+    private Key mDownKey = null;
     // The position where the current key was recognized for the first time.
     private int mKeyX;
     private int mKeyY;
@@ -682,6 +689,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private void onDownEventInternal(final int x, final int y, final long eventTime) {
         Key key = onDownKey(x, y, eventTime);
+        mDownKey = key;
+        mStartX = x;
+        mStartY = y;
+        mStartTime = System.currentTimeMillis();
         // Key selection by dragging finger is allowed when 1) key selection by dragging finger is
         // enabled by configuration, 2) this pointer starts dragging from modifier key, or 3) this
         // pointer's KeyDetector always allows key selection by dragging finger, such as
@@ -698,14 +709,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             // keyboard layout.
             if (callListenerOnPressAndCheckKeyboardLayoutChange(key, 0 /* repeatCount */)) {
                 key = onDownKey(x, y, eventTime);
+                mDownKey = key;
             }
 
             startRepeatKey(key);
             startLongPressTimer(key);
             setPressedKeyGraphics(key, eventTime);
-            mStartX = x;
-            mStartY = y;
-            mStartTime = System.currentTimeMillis();
         }
     }
 
@@ -995,6 +1004,73 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private void onUpEventInternal(final int x, final int y, final long eventTime) {
         sTimerProxy.cancelKeyTimersOf(this);
+        final Keyboard keyboard = mKeyDetector.getKeyboard();
+        if (keyboard != null) {
+            final SettingsValues settingsValues = Settings.getInstance().getCurrent();
+            final int keyboardWidth = keyboard.mOccupiedWidth;
+            final int keyboardHeight = keyboard.mOccupiedHeight;
+            final float deltaX = x - mStartX;
+            final float deltaY = y - mStartY;
+            final float absX = Math.abs(deltaX);
+            final float absY = Math.abs(deltaY);
+
+            boolean isGesture = false;
+            int gestureCode = Constants.NOT_A_CODE;
+
+            final float swipeThreshold = settingsValues.mSwipeThreshold;
+
+            if (mDownKey != null && mDownKey.getCode() == Constants.CODE_DELETE
+                    && deltaX < -keyboardWidth * 0.25f && absX > absY * 2.0f) {
+                isGesture = true;
+                gestureCode = Constants.CODE_DELETE_WORD;
+            } else if (absX > keyboardWidth * swipeThreshold && absX > absY * 1.5f) {
+                final int leftAction = settingsValues.mSwipeLeftAction;
+                final int rightAction = settingsValues.mSwipeRightAction;
+                if (deltaX > 0) {
+                    gestureCode = rightAction;
+                } else {
+                    gestureCode = leftAction;
+                }
+                if (gestureCode != 0) {
+                    isGesture = true;
+                }
+            } else if (absY > keyboardHeight * swipeThreshold && absY > absX * 1.5f) {
+                final int upAction = settingsValues.mSwipeUpAction;
+                final int downAction = settingsValues.mSwipeDownAction;
+                if (deltaY < 0) {
+                    if (upAction == Constants.CODE_SWIPE_SHIFT) {
+                        // Swipe up: double swipe = Caps Lock, single swipe = Shift.
+                        final long now = SystemClock.uptimeMillis();
+                        final int doubleSwipeTimeout = settingsValues.mDoubleSwipeTimeout;
+                        if (now - sLastSwipeUpTime <= doubleSwipeTimeout) {
+                            gestureCode = Constants.CODE_CAPSLOCK;
+                            sLastSwipeUpTime = 0;
+                        } else {
+                            gestureCode = Constants.CODE_SWIPE_SHIFT;
+                            sLastSwipeUpTime = now;
+                        }
+                    } else {
+                        gestureCode = upAction;
+                    }
+                } else {
+                    gestureCode = downAction;
+                }
+                if (gestureCode != 0) {
+                    isGesture = true;
+                }
+            }
+
+            if (isGesture) {
+                setReleasedKeyGraphics(mCurrentKey, true /* withAnimation */);
+                mCurrentKey = null;
+                mDownKey = null;
+                sListener.onCodeInput(gestureCode, Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false /* isKeyRepeat */);
+                resetKeySelectionByDraggingFinger();
+                mIsDetectingGesture = false;
+                mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
+                return;
+            }
+        }
         final boolean isInDraggingFinger = mIsInDraggingFinger;
         final boolean isInSlidingKeyInput = mIsInSlidingKeyInput;
         resetKeySelectionByDraggingFinger();
@@ -1213,6 +1289,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         if (sInGesture) return;
         if (key == null) return;
         if (!key.isRepeatable()) return;
+        if (key.getMoreKeys() != null) return;
         // Don't start key repeat when we are in the dragging finger mode.
         if (mIsInDraggingFinger) return;
         final int startRepeatCount = 1;
@@ -1236,7 +1313,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private void startKeyRepeatTimer(final int repeatCount) {
         final int delay =
-                (repeatCount == 1) ? sParams.mKeyRepeatStartTimeout : sParams.mKeyRepeatInterval;
+                (repeatCount == 1) ? sParams.mKeyRepeatStartTimeout : Settings.getInstance().getCurrent().mKeyRepeatInterval;
         sTimerProxy.startKeyRepeatTimerOf(this, repeatCount, delay);
     }
 

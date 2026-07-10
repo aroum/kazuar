@@ -231,4 +231,31 @@
     <string name="settings_category_suggestions">Предложения</string>
     <string name="prefs_long_press_keyboard_to_change_lang_summary">Долгое нажатие клавиши пробела вызовет меню выбора метода ввода</string>
     <string name="amoled_mode_summary">Экономия заряда батареи для AMOLED-экранов</string>
+
+    <string name="settings_screen_backup">Резервное копирование</string>
+    <string name="settings_backup_category">Резервное копирование и восстановление</string>
+    <string name="pref_backup_settings_export">Экспорт настроек</string>
+    <string name="pref_backup_settings_export_summary">Сохранить настройки клавиатуры в файл</string>
+    <string name="pref_backup_settings_import">Импорт настроек</string>
+    <string name="pref_backup_settings_import_summary">Восстановить настройки клавиатуры из файла</string>
+    <string name="pref_backup_dict_export">Экспорт личного словаря</string>
+    <string name="pref_backup_dict_export_summary">Сохранить слова из личного словаря в файл</string>
+    <string name="pref_backup_dict_import">Импорт личного словаря</string>
+    <string name="pref_backup_dict_import_summary">Восстановить слова в личный словарь из файла</string>
+    <string name="backup_success">Резервная копия успешно сохранена</string>
+    <string name="backup_fail">Не удалось сохранить резервную копию</string>
+    <string name="restore_success">Резервная копия успешно восстановлена</string>
+    <string name="restore_fail">Не удалось восстановить резервную копию</string>
+    <string name="restore_invalid_file">Неверный файл резервной копии</string>
+
+    <string name="use_multi_space_punctuation">Знаки препинания при многократном пробеле</string>
+    <string name="use_multi_space_punctuation_summary">2 пробела -> ., 3 -> ,, 4 -> ?, 5 -> !</string>
+    <string name="english_ime_name">Kazuar</string>
+    <string name="auto_correction_confidence">Точность автоисправления</string>
+    <string name="prefs_incognito_mode_rules_title">Правила режима инкогнито</string>
+    <string name="prefs_incognito_apps_category_title">Отключить режим инкогнито</string>
+    <string name="setup_step1_bullet">1</string>
+    <string name="setup_step2_bullet">2</string>
+    <string name="setup_step3_bullet">3</string>
+    <string name="user_dict_settings_summary">""</string>
 </resources>

@@ -43,6 +43,8 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.SubtypeLocaleUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import java.io.File;
+import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomLayoutLoader;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -230,8 +232,38 @@ public final class KeyboardLayoutSet {
                 new KeyboardBuilder<>(mContext, new KeyboardParams(sUniqueKeysCache));
         sUniqueKeysCache.setEnabled(id.isAlphabetKeyboard());
         builder.setAllowRedundantMoreKes(elementParams.mAllowRedundantMoreKeys);
-        final int keyboardXmlId = elementParams.mKeyboardXmlId;
-        builder.load(keyboardXmlId, id);
+        
+        final android.content.SharedPreferences prefs = mContext.getSharedPreferences(
+                mContext.getPackageName() + "_preferences", Context.MODE_PRIVATE);
+        final String language = id.getLocale().getLanguage();
+        final String layoutVersion = "ru".equals(language) ?
+                prefs.getString("pref_keyboard_layout_ru", "v3") :
+                prefs.getString("pref_keyboard_layout_en", "v3");
+
+        boolean loadedCustom = false;
+        if (id.mElementId == KeyboardId.ELEMENT_EDITING) {
+            builder.load(R.xml.kbd_editing, id);
+            loadedCustom = true;
+        } else if ("custom".equals(layoutVersion)) {
+            final String customXml = prefs.getString("pref_custom_layout_" + language, null);
+            if (customXml != null && !customXml.trim().isEmpty()) {
+                final KeyboardParams kbParams = builder.getParams();
+                kbParams.mId = id;
+                kbParams.mOccupiedHeight = mParams.mKeyboardHeight;
+                kbParams.mOccupiedWidth = mParams.mKeyboardWidth;
+                kbParams.mBaseWidth = mParams.mKeyboardWidth - kbParams.mLeftPadding - kbParams.mRightPadding;
+                kbParams.mBaseHeight = mParams.mKeyboardHeight - kbParams.mTopPadding - kbParams.mBottomPadding;
+
+                if (io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomLayoutLoader.tryLoadCustomLayoutFromString(mContext, kbParams, customXml)) {
+                    loadedCustom = true;
+                }
+            }
+        }
+        
+        if (!loadedCustom) {
+            final int keyboardXmlId = elementParams.mKeyboardXmlId;
+            builder.load(keyboardXmlId, id);
+        }
         if (mParams.mDisableTouchPositionCorrectionDataForTest) {
             builder.disableTouchPositionCorrectionDataForTest();
         }

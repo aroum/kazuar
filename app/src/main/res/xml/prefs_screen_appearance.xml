@@ -40,20 +40,10 @@
             android:title="@string/day_night_mode"
             android:summary="@string/day_night_mode_summary"/>
 
-        <CheckBoxPreference
-            android:key="theme_amoled_mode"
-            android:title="@string/amoled_mode"
-            android:summary="@string/amoled_mode_summary"/>
-
     </PreferenceCategory>
 
     <PreferenceCategory
         android:title="@string/settings_category_miscellaneous">
-
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.CustomInputStyleSettingsFragment"
-            android:key="custom_input_styles"
-            android:title="@string/custom_input_styles_title" />
 
         <CheckBoxPreference
             android:key="pref_split_keyboard"
@@ -73,6 +63,42 @@
             android:title="@string/prefs_keyboard_height_scale"
             latin:minValue="50"
             latin:maxValue="150" /> <!-- percentage -->
+
+        <ListPreference
+            android:key="pref_icon_style"
+            android:title="Select icon style"
+            android:entries="@array/icon_style_names"
+            android:entryValues="@array/icon_style_values"
+            android:defaultValue="aroum" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Customization">
+
+        <Preference
+            android:key="pref_load_custom_file"
+            android:title="Load theme or layout from file"
+            android:summary="Choose an XML layout file or JSON theme file" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Layouts">
+
+        <ListPreference
+            android:key="pref_keyboard_layout_ru"
+            android:title="Keyboard Layout for ru"
+            android:entries="@array/layout_choices_names"
+            android:entryValues="@array/layout_choices_values"
+            android:defaultValue="v3" />
+
+        <ListPreference
+            android:key="pref_keyboard_layout_en"
+            android:title="Keyboard Layout for en"
+            android:entries="@array/layout_choices_names"
+            android:entryValues="@array/layout_choices_values"
+            android:defaultValue="v3" />
 
     </PreferenceCategory>
 

@@ -18,6 +18,8 @@ package io.github.sds100.keymapper.inputmethod.latin.inputlogic;
 
 import android.graphics.Color;
 import android.os.SystemClock;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -34,6 +36,9 @@ import io.github.sds100.keymapper.inputmethod.event.Event;
 import io.github.sds100.keymapper.inputmethod.event.InputTransaction;
 import io.github.sds100.keymapper.inputmethod.keyboard.Keyboard;
 import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardSwitcher;
+import io.github.sds100.keymapper.inputmethod.keyboard.Key;
+import io.github.sds100.keymapper.inputmethod.keyboard.MainKeyboardView;
+import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardId;
 import io.github.sds100.keymapper.inputmethod.latin.Dictionary;
 import io.github.sds100.keymapper.inputmethod.latin.DictionaryFacilitator;
 import io.github.sds100.keymapper.inputmethod.latin.LastComposedWord;
@@ -108,6 +113,109 @@ public final class InputLogic {
     // The word being corrected while the cursor is in the middle of the word.
     // Note: This does not have a composing span, so it must be handled separately.
     private String mWordBeingCorrectedByCursor = null;
+
+    private int mBufferedDoubleTapCodePoint = Event.NOT_A_CODE_POINT;
+    private boolean mSelectToggled = false;
+    private Event mBufferedDoubleTapEvent = null;
+    private final Handler mDoubleTapHandler = new Handler(Looper.getMainLooper());
+    private final Runnable mDoubleTapTimeoutRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mBufferedDoubleTapCodePoint != Event.NOT_A_CODE_POINT) {
+                final int cp = mBufferedDoubleTapCodePoint;
+                final Event event = mBufferedDoubleTapEvent;
+                mBufferedDoubleTapCodePoint = Event.NOT_A_CODE_POINT;
+                mBufferedDoubleTapEvent = null;
+
+                final SettingsValues settingsValues = mLatinIME.mSettings.getCurrent();
+                final int keyboardShiftMode = mLatinIME.mKeyboardSwitcher.getKeyboardShiftMode();
+                final int currentKeyboardScriptId = mLatinIME.mKeyboardSwitcher.getCurrentKeyboardScriptId();
+                final LatinIME.UIHandler handler = mLatinIME.mHandler;
+
+                final InputTransaction tx = onCodeInputInternal(settingsValues, event, keyboardShiftMode, currentKeyboardScriptId, handler);
+                mLatinIME.updateStateAfterInputTransaction(tx);
+                int autoCapsState = mLatinIME.getCurrentAutoCapsState();
+                final Event txEvent = tx.getMEvent();
+                final int code = txEvent.isFunctionalKeyEvent() ? txEvent.getMKeyCode() : txEvent.getMCodePoint();
+                if (Character.isLetter(code)) {
+                    autoCapsState = Constants.TextUtils.CAP_MODE_OFF;
+                }
+                mLatinIME.mKeyboardSwitcher.onEvent(txEvent, autoCapsState, mLatinIME.getCurrentRecapitalizeState());
+            }
+        }
+    };
+
+    private static boolean isDoubleTapTriggerCandidate(final int codePoint, final SettingsValues settingsValues) {
+        if (codePoint < 0) return false;
+        if (settingsValues.mCustomDoubleTapRules != null) {
+            for (SettingsValues.DoubleTapRule rule : settingsValues.mCustomDoubleTapRules) {
+                if (rule.enabled && rule.key != null && !rule.key.isEmpty()) {
+                    int ruleKeyCp = rule.key.codePointAt(0);
+                    if (codePoint == ruleKeyCp || 
+                        (Character.isLetter(ruleKeyCp) && (
+                            codePoint == Character.toUpperCase(ruleKeyCp) || 
+                            codePoint == Character.toLowerCase(ruleKeyCp)
+                        ))
+                    ) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static String getDoubleTapReplacement(final int prevCodePoint, final int currentCodePoint, final SettingsValues settingsValues) {
+        if (prevCodePoint < 0 || currentCodePoint < 0) return null;
+        if (settingsValues.mCustomDoubleTapRules != null) {
+            for (SettingsValues.DoubleTapRule rule : settingsValues.mCustomDoubleTapRules) {
+                if (rule.enabled && rule.key != null && !rule.key.isEmpty() && rule.replacement != null) {
+                    int ruleKeyCp = rule.key.codePointAt(0);
+                    boolean match = false;
+                    if (Character.isLetter(ruleKeyCp)) {
+                        int upperKey = Character.toUpperCase(ruleKeyCp);
+                        int lowerKey = Character.toLowerCase(ruleKeyCp);
+                        if ((prevCodePoint == upperKey || prevCodePoint == lowerKey) &&
+                            (currentCodePoint == upperKey || currentCodePoint == lowerKey)) {
+                            match = true;
+                        }
+                    } else {
+                        if (prevCodePoint == ruleKeyCp && currentCodePoint == ruleKeyCp) {
+                            match = true;
+                        }
+                    }
+
+                    if (match) {
+                        if (Character.isLetter(ruleKeyCp) && (Character.isUpperCase(prevCodePoint) || Character.isUpperCase(currentCodePoint))) {
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < rule.replacement.length(); i = rule.replacement.offsetByCodePoints(i, 1)) {
+                                int cp = rule.replacement.codePointAt(i);
+                                sb.appendCodePoint(Character.toUpperCase(cp));
+                            }
+                            return sb.toString();
+                        } else {
+                            return rule.replacement;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static final java.util.HashMap<String, String> sMacroReplacements = new java.util.HashMap<>();
+    static {
+        sMacroReplacements.put("AOSP", "Android Open Source Project");
+        sMacroReplacements.put("aosp", "android open source project");
+        sMacroReplacements.put("км", "километр");
+        sMacroReplacements.put("спс", "спасибо");
+    }
+
+    private static String getMacroReplacement(final String word) {
+        return sMacroReplacements.get(word);
+    }
+
 
     /**
      * Create a new instance of the input logic.
@@ -437,6 +545,70 @@ public final class InputLogic {
     public InputTransaction onCodeInput(final SettingsValues settingsValues,
             @Nonnull final Event event, final int keyboardShiftMode,
             final int currentKeyboardScriptId, final LatinIME.UIHandler handler) {
+        final int codePoint = event.getMCodePoint();
+        final boolean doubleTapEnabled = settingsValues.mEnableDoubleTapReplacements;
+        final int doubleTapTimeout = settingsValues.mDoubleTapTimeout;
+
+        if (!doubleTapEnabled || event.isFunctionalKeyEvent() || codePoint == Event.NOT_A_CODE_POINT) {
+            if (mBufferedDoubleTapCodePoint != Event.NOT_A_CODE_POINT) {
+                mDoubleTapHandler.removeCallbacks(mDoubleTapTimeoutRunnable);
+                final Event prevEvent = mBufferedDoubleTapEvent;
+                mBufferedDoubleTapCodePoint = Event.NOT_A_CODE_POINT;
+                mBufferedDoubleTapEvent = null;
+                final InputTransaction tx = onCodeInputInternal(settingsValues, prevEvent, keyboardShiftMode, currentKeyboardScriptId, handler);
+                mLatinIME.updateStateAfterInputTransaction(tx);
+                final int newKeyboardShiftMode = mLatinIME.mKeyboardSwitcher.getKeyboardShiftMode();
+                return onCodeInputInternal(settingsValues, event, newKeyboardShiftMode, currentKeyboardScriptId, handler);
+            }
+            return onCodeInputInternal(settingsValues, event, keyboardShiftMode, currentKeyboardScriptId, handler);
+        }
+
+        if (mBufferedDoubleTapCodePoint != Event.NOT_A_CODE_POINT) {
+            mDoubleTapHandler.removeCallbacks(mDoubleTapTimeoutRunnable);
+            final int prevCp = mBufferedDoubleTapCodePoint;
+            final Event prevEvent = mBufferedDoubleTapEvent;
+            mBufferedDoubleTapCodePoint = Event.NOT_A_CODE_POINT;
+            mBufferedDoubleTapEvent = null;
+
+            if (codePoint == prevCp || (Character.isLetter(codePoint) && Character.toLowerCase(codePoint) == Character.toLowerCase(prevCp))) {
+                final String replacement = getDoubleTapReplacement(prevCp, codePoint, settingsValues);
+                if (replacement != null) {
+                    InputTransaction tx = null;
+                    for (int i = 0; i < replacement.length(); i = replacement.offsetByCodePoints(i, 1)) {
+                        final int cp = replacement.codePointAt(i);
+                        final Event replacementEvent = Event.createSoftwareKeypressEvent(
+                                cp, cp, event.getMX(), event.getMY(), false);
+                        tx = onCodeInputInternal(settingsValues, replacementEvent, keyboardShiftMode, currentKeyboardScriptId, handler);
+                    }
+                    return tx;
+                }
+            }
+
+            // Commit the buffered key first
+            final InputTransaction tx = onCodeInputInternal(settingsValues, prevEvent, keyboardShiftMode, currentKeyboardScriptId, handler);
+            mLatinIME.updateStateAfterInputTransaction(tx);
+            final int newKeyboardShiftMode = mLatinIME.mKeyboardSwitcher.getKeyboardShiftMode();
+            Event nextEvent = event;
+            if ((keyboardShiftMode == WordComposer.CAPS_MODE_AUTO_SHIFTED || keyboardShiftMode == WordComposer.CAPS_MODE_MANUAL_SHIFTED) && Character.isLetter(codePoint)) {
+                final int lowerCp = Character.toLowerCase(codePoint);
+                nextEvent = Event.createSoftwareKeypressEvent(lowerCp, lowerCp, event.getMX(), event.getMY(), event.isKeyRepeat());
+            }
+            return onCodeInputInternal(settingsValues, nextEvent, newKeyboardShiftMode, currentKeyboardScriptId, handler);
+        }
+
+        if (isDoubleTapTriggerCandidate(codePoint, settingsValues)) {
+            mBufferedDoubleTapCodePoint = codePoint;
+            mBufferedDoubleTapEvent = event;
+            mDoubleTapHandler.postDelayed(mDoubleTapTimeoutRunnable, doubleTapTimeout);
+            return new InputTransaction(settingsValues, event, SystemClock.uptimeMillis(), mSpaceState, keyboardShiftMode);
+        }
+
+        return onCodeInputInternal(settingsValues, event, keyboardShiftMode, currentKeyboardScriptId, handler);
+    }
+
+    private InputTransaction onCodeInputInternal(final SettingsValues settingsValues,
+            @Nonnull final Event event, final int keyboardShiftMode,
+            final int currentKeyboardScriptId, final LatinIME.UIHandler handler) {
         mWordBeingCorrectedByCursor = null;
         final Event processedEvent = mWordComposer.processEvent(event);
         final InputTransaction inputTransaction = new InputTransaction(settingsValues,
@@ -665,8 +837,83 @@ public final class InputLogic {
                 // {@link #onPressKey(int,int,boolean)} and {@link #onReleaseKey(int,boolean)}.
                 break;
             case Constants.CODE_SWITCH_ALPHA_SYMBOL:
-                // Note: Calling back to the keyboard on symbol key is handled in
-                // {@link #onPressKey(int,int,boolean)} and {@link #onReleaseKey(int,boolean)}.
+                final KeyboardSwitcher switcher = KeyboardSwitcher.getInstance();
+                if (switcher.isShowingKeyboardId(KeyboardId.ELEMENT_EDITING)) {
+                    switcher.setAlphabetKeyboard();
+                    switcher.resetKeyboardStateToAlphabet(
+                            getCurrentAutoCapsState(inputTransaction.getMSettingsValues()),
+                            getCurrentRecapitalizeState());
+                }
+                break;
+            case Constants.CODE_SWITCH_TO_EDITING:
+                final KeyboardSwitcher switcherToEdit = KeyboardSwitcher.getInstance();
+                if (switcherToEdit.isShowingKeyboardId(KeyboardId.ELEMENT_EDITING)) {
+                    switcherToEdit.setAlphabetKeyboard();
+                    switcherToEdit.resetKeyboardStateToAlphabet(
+                            getCurrentAutoCapsState(inputTransaction.getMSettingsValues()),
+                            getCurrentRecapitalizeState());
+                } else {
+                    switcherToEdit.setEditingKeyboard();
+                }
+                break;
+            case Constants.CODE_SELECT_TOGGLE:
+                mSelectToggled = !mSelectToggled;
+                final KeyboardSwitcher switcherToggle = KeyboardSwitcher.getInstance();
+                final Keyboard keyboardToggle = switcherToggle.getKeyboard();
+                if (keyboardToggle != null) {
+                    for (final Key key : keyboardToggle.getSortedKeys()) {
+                        if (key.getCode() == Constants.CODE_SELECT_TOGGLE) {
+                            key.setChecked(mSelectToggled);
+                            final MainKeyboardView keyboardView = switcherToggle.getMainKeyboardView();
+                            if (keyboardView != null) {
+                                keyboardView.invalidateKey(key);
+                            }
+                        }
+                    }
+                }
+                break;
+            case Constants.CODE_SELECT_ALL:
+                mConnection.performContextMenuAction(android.R.id.selectAll);
+                break;
+            case Constants.CODE_CLEAR:
+                mConnection.performContextMenuAction(android.R.id.selectAll);
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DEL);
+                inputTransaction.setDidAffectContents();
+                break;
+            case Constants.CODE_FORWARD_DELETE:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_FORWARD_DEL);
+                inputTransaction.setDidAffectContents();
+                break;
+            case Constants.CODE_REDO:
+                mConnection.performContextMenuAction(android.R.id.redo);
+                break;
+            case Constants.CODE_DELETE_WORD:
+                deleteWord();
+                inputTransaction.setDidAffectContents();
+                break;
+            case Constants.CODE_ARROW_UP:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_UP, mSelectToggled);
+                break;
+            case Constants.CODE_ARROW_DOWN:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN, mSelectToggled);
+                break;
+            case Constants.CODE_ARROW_LEFT:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT, mSelectToggled);
+                break;
+            case Constants.CODE_ARROW_RIGHT:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT, mSelectToggled);
+                break;
+            case Constants.CODE_PAGE_UP:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_PAGE_UP, mSelectToggled);
+                break;
+            case Constants.CODE_PAGE_DOWN:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_PAGE_DOWN, mSelectToggled);
+                break;
+            case Constants.CODE_MOVE_HOME:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_MOVE_HOME, mSelectToggled);
+                break;
+            case Constants.CODE_MOVE_END:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_MOVE_END, mSelectToggled);
                 break;
             case Constants.CODE_SETTINGS:
                 onSettingsKeyPressed();
@@ -709,6 +956,18 @@ public final class InputLogic {
                 // Note: Switching back from clipboard keyboard to the main keyboard is being
                 // handled in {@link KeyboardState#onEvent(Event,int)}.
                 break;
+            case Constants.CODE_COPY:
+                mConnection.performContextMenuAction(android.R.id.copy);
+                break;
+            case Constants.CODE_PASTE:
+                mConnection.performContextMenuAction(android.R.id.paste);
+                break;
+            case Constants.CODE_CUT:
+                mConnection.performContextMenuAction(android.R.id.cut);
+                break;
+            case Constants.CODE_UNDO:
+                mConnection.performContextMenuAction(android.R.id.undo);
+                break;
             case Constants.CODE_SHIFT_ENTER:
                 final Event tmpEvent = Event.createSoftwareKeypressEvent(Constants.CODE_ENTER,
                         event.getMKeyCode(), event.getMX(), event.getMY(), event.isKeyRepeat());
@@ -725,6 +984,9 @@ public final class InputLogic {
             case Constants.CODE_SWITCH_ONE_HANDED_MODE:
                 // Note: Switching one-handed side is being
                 // handled in {@link KeyboardState#onEvent(Event,int)}.
+                break;
+            case Constants.CODE_SWIPE_SHIFT:
+                // Gesture swipe-up: handled in KeyboardState / KeyboardSwitcher.
                 break;
             default:
                 throw new RuntimeException("Unknown key code : " + event.getMKeyCode());
@@ -767,6 +1029,9 @@ public final class InputLogic {
                     // enter key that should input a carriage return.
                     handleNonSpecialCharacterEvent(event, inputTransaction, handler);
                 }
+                break;
+            case Constants.CODE_TAB:
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_TAB);
                 break;
             default:
                 handleNonSpecialCharacterEvent(event, inputTransaction, handler);
@@ -1023,6 +1288,43 @@ public final class InputLogic {
      * @param event The event to handle.
      * @param inputTransaction The transaction in progress.
      */
+    private void deleteWord() {
+        final CharSequence range = mConnection.getSelectedText(0);
+        if (range != null && range.length() > 0) {
+            mConnection.commitText("", 1);
+            return;
+        }
+        mConnection.finishComposingText();
+        mWordComposer.reset();
+        final CharSequence textBefore = mConnection.getTextBeforeCursor(100, 0);
+        if (TextUtils.isEmpty(textBefore)) {
+            sendDownUpKeyEvent(KeyEvent.KEYCODE_DEL);
+            return;
+        }
+        int len = textBefore.length();
+        int i = len - 1;
+        while (i >= 0 && Character.isWhitespace(textBefore.charAt(i))) {
+            i--;
+        }
+        if (i < 0) {
+            mConnection.deleteTextBeforeCursor(len);
+            return;
+        }
+        final char firstChar = textBefore.charAt(i);
+        final boolean isWord = Character.isLetterOrDigit(firstChar);
+        if (isWord) {
+            while (i >= 0 && Character.isLetterOrDigit(textBefore.charAt(i))) {
+                i--;
+            }
+        } else {
+            while (i >= 0 && !Character.isLetterOrDigit(textBefore.charAt(i)) && !Character.isWhitespace(textBefore.charAt(i))) {
+                i--;
+            }
+        }
+        int charsToDelete = len - 1 - i;
+        mConnection.deleteTextBeforeCursor(charsToDelete);
+    }
+
     private void handleBackspaceEvent(final Event event, final InputTransaction inputTransaction,
             final int currentKeyboardScriptId) {
         mSpaceState = SpaceState.NONE;
@@ -1359,13 +1661,49 @@ public final class InputLogic {
      */
     private boolean tryPerformDoubleSpacePeriod(final Event event,
             final InputTransaction inputTransaction) {
-        // Check the setting, the typed character and the countdown. If any of the conditions is
-        // not fulfilled, return false.
-        if (!inputTransaction.getMSettingsValues().mUseDoubleSpacePeriod
-                || Constants.CODE_SPACE != event.getMCodePoint()
+        if (Constants.CODE_SPACE != event.getMCodePoint()
                 || !isDoubleSpacePeriodCountdownActive(inputTransaction)) {
             return false;
         }
+
+        if (inputTransaction.getMSettingsValues().mUseMultiSpacePunctuation) {
+            final CharSequence lastTwo = mConnection.getTextBeforeCursor(2, 0);
+            if (lastTwo != null && lastTwo.length() == 2) {
+                final String lastTwoStr = lastTwo.toString();
+                final String sentenceSeparatorAndSpace = inputTransaction.getMSettingsValues()
+                        .mSpacingAndPunctuations.mSentenceSeparatorAndSpace;
+                if (lastTwoStr.equals(sentenceSeparatorAndSpace) || lastTwoStr.equals(". ")) {
+                    mConnection.deleteTextBeforeCursor(2);
+                    mConnection.commitText(", ", 1);
+                    cancelDoubleSpacePeriodCountdown();
+                    startDoubleSpacePeriodCountdown(inputTransaction);
+                    inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
+                    inputTransaction.setRequiresUpdateSuggestions();
+                    return true;
+                } else if (lastTwoStr.equals(", ")) {
+                    mConnection.deleteTextBeforeCursor(2);
+                    mConnection.commitText("? ", 1);
+                    cancelDoubleSpacePeriodCountdown();
+                    startDoubleSpacePeriodCountdown(inputTransaction);
+                    inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
+                    inputTransaction.setRequiresUpdateSuggestions();
+                    return true;
+                } else if (lastTwoStr.equals("? ")) {
+                    mConnection.deleteTextBeforeCursor(2);
+                    mConnection.commitText("! ", 1);
+                    cancelDoubleSpacePeriodCountdown();
+                    startDoubleSpacePeriodCountdown(inputTransaction);
+                    inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
+                    inputTransaction.setRequiresUpdateSuggestions();
+                    return true;
+                }
+            }
+        }
+
+        if (!inputTransaction.getMSettingsValues().mUseDoubleSpacePeriod) {
+            return false;
+        }
+
         // We only do this when we see one space and an accepted code point before the cursor.
         // The code point may be a surrogate pair but the space may not, so we need 3 chars.
         final CharSequence lastTwo = mConnection.getTextBeforeCursor(3, 0);
@@ -1386,6 +1724,9 @@ public final class InputLogic {
             final String textToInsert = inputTransaction.getMSettingsValues().mSpacingAndPunctuations
                     .mSentenceSeparatorAndSpace;
             mConnection.commitText(textToInsert, 1);
+            if (inputTransaction.getMSettingsValues().mUseMultiSpacePunctuation) {
+                startDoubleSpacePeriodCountdown(inputTransaction);
+            }
             inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
             inputTransaction.setRequiresUpdateSuggestions();
             return true;
@@ -1932,6 +2273,9 @@ public final class InputLogic {
      * @param alsoResetLastComposedWord whether to also reset the last composed word.
      */
     private void resetComposingState(final boolean alsoResetLastComposedWord) {
+        mDoubleTapHandler.removeCallbacks(mDoubleTapTimeoutRunnable);
+        mBufferedDoubleTapCodePoint = Event.NOT_A_CODE_POINT;
+        mBufferedDoubleTapEvent = null;
         mWordComposer.reset();
         if (alsoResetLastComposedWord) {
             mLastComposedWord = LastComposedWord.NOT_A_COMPOSED_WORD;
@@ -2004,13 +2348,28 @@ public final class InputLogic {
      * @param keyCode the key code to send inside the key event.
      */
     public void sendDownUpKeyEvent(final int keyCode) {
+        sendDownUpKeyEvent(keyCode, false);
+    }
+
+    public void sendDownUpKeyEvent(final int keyCode, final boolean withShift) {
         final long eventTime = SystemClock.uptimeMillis();
+        final int meta = withShift ? (KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON) : 0;
+        if (withShift) {
+            mConnection.sendKeyEvent(new KeyEvent(eventTime, eventTime,
+                    KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                    KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
+        }
         mConnection.sendKeyEvent(new KeyEvent(eventTime, eventTime,
-                KeyEvent.ACTION_DOWN, keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                KeyEvent.ACTION_DOWN, keyCode, 0, meta, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                 KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
         mConnection.sendKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), eventTime,
-                KeyEvent.ACTION_UP, keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                KeyEvent.ACTION_UP, keyCode, 0, meta, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                 KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
+        if (withShift) {
+            mConnection.sendKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), eventTime,
+                    KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                    KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
+        }
     }
 
     /**
@@ -2183,7 +2542,13 @@ public final class InputLogic {
         final SuggestedWords suggestedWords = mSuggestedWords;
         // TODO: Locale should be determined based on context and the text given.
         final Locale locale = getDictionaryFacilitatorLocale();
-        final CharSequence chosenWordWithSuggestions = chosenWord;
+        CharSequence chosenWordWithSuggestions = chosenWord;
+        if (settingsValues.mEnableMacroReplacements) {
+            final String macro = getMacroReplacement(chosenWord);
+            if (macro != null) {
+                chosenWordWithSuggestions = macro;
+            }
+        }
         // b/21926256
         //      SuggestionSpanUtils.getTextWithSuggestionSpan(mLatinIME, chosenWord,
         //                suggestedWords, locale);

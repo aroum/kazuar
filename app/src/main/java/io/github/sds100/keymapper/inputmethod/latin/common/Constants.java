@@ -195,6 +195,8 @@ public final class Constants {
      */
     // The code to show input method picker.
     public static final int CUSTOM_CODE_SHOW_INPUT_METHOD_PICKER = 1;
+    // The code to copy debug info.
+    public static final int CUSTOM_CODE_COPY_DEBUG_INFO = 2;
 
     /**
      * Some common keys code. Must be positive.
@@ -252,6 +254,27 @@ public final class Constants {
     public static final int CODE_SWITCH_ONE_HANDED_MODE = -19;
     // Code value representing the code is not specified.
     public static final int CODE_UNSPECIFIED = -20;
+    public static final int CODE_SWIPE_SHIFT = -21;
+    public static final int CODE_COPY = -320;
+    public static final int CODE_PASTE = -321;
+    public static final int CODE_CUT = -322;
+    public static final int CODE_UNDO = -336;
+    public static final int CODE_DELETE_WORD = -337;
+    public static final int CODE_REDO = -338;
+    public static final int CODE_SELECT_TOGGLE = -310;
+    public static final int CODE_SELECT_ALL = -324;
+    public static final int CODE_CLEAR = -504;
+    public static final int CODE_SWITCH_TO_EDITING = -341;
+    public static final int CODE_FORWARD_DELETE = -342;
+    public static final int CODE_ARROW_LEFT = -501;
+    public static final int CODE_ARROW_RIGHT = -502;
+    public static final int CODE_ARROW_UP = -503;
+    public static final int CODE_ARROW_DOWN = -505;
+    public static final int CODE_MOVE_HOME = -506;
+    public static final int CODE_MOVE_END = -507;
+    public static final int CODE_PAGE_UP = -508;
+    public static final int CODE_PAGE_DOWN = -509;
+
 
     public static boolean isLetterCode(final int code) {
         return code >= CODE_SPACE;
@@ -261,6 +284,7 @@ public final class Constants {
     public static String printableCode(final int code) {
         switch (code) {
         case CODE_SHIFT: return "shift";
+        case CODE_SWIPE_SHIFT: return "swipeShift";
         case CODE_CAPSLOCK: return "capslock";
         case CODE_SWITCH_ALPHA_SYMBOL: return "symbol";
         case CODE_OUTPUT_TEXT: return "text";

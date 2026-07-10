@@ -32,14 +32,16 @@ import java.util.Map;
 
 public final class KeyboardTheme implements Comparable<KeyboardTheme> {
 
-    public static final String THEME_FAMILY_MATERIAL = "Material";
+    public static final String THEME_FAMILY_MATERIAL = "Gruvbox";
     public static final String THEME_FAMILY_HOLO = "Holo (Legacy)";
+    public static final String THEME_FAMILY_CUSTOM = "Custom";
     public static final String THEME_VARIANT_LIGHT = "Light";
     public static final String THEME_VARIANT_DARK = "Dark";
     public static final String THEME_VARIANT_WHITE = "White";
     public static final String THEME_VARIANT_BLUE = "Blue";
+    public static final String THEME_VARIANT_CUSTOM = "Custom";
 
-    public static final String[] THEME_FAMILIES = {THEME_FAMILY_MATERIAL, THEME_FAMILY_HOLO};
+    public static final String[] THEME_FAMILIES = {THEME_FAMILY_MATERIAL, THEME_FAMILY_HOLO, THEME_FAMILY_CUSTOM};
     public static final Map<String, String[]> THEME_VARIANTS = new HashMap<>();
 
     static {
@@ -47,6 +49,8 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
                 new String[] {THEME_VARIANT_LIGHT, THEME_VARIANT_DARK});
         THEME_VARIANTS.put(THEME_FAMILY_HOLO,
                 new String[] {THEME_VARIANT_WHITE, THEME_VARIANT_BLUE});
+        THEME_VARIANTS.put(THEME_FAMILY_CUSTOM,
+                new String[] {THEME_VARIANT_CUSTOM});
     }
 
     private static final String TAG = KeyboardTheme.class.getSimpleName();
@@ -66,6 +70,7 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
     public static final int THEME_ID_LXX_DARK = 7;
     public static final int THEME_ID_LXX_AUTO = 9;
     public static final int THEME_ID_LXX_AUTO_BORDER = 8;
+    public static final int THEME_ID_CUSTOM = 11;
     public static final int DEFAULT_THEME_ID = THEME_ID_LXX_DARK_BORDER;
 
     private static KeyboardTheme[] AVAILABLE_KEYBOARD_THEMES;
@@ -102,6 +107,8 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
         new KeyboardTheme(THEME_ID_LXX_AUTO_AMOLED, "LXXAutoAmoled", R.style.KeyboardTheme_LXX_Auto_Amoled,
                 // This has never been selected as default theme.
                 VERSION_CODES.LOLLIPOP),
+        new KeyboardTheme(THEME_ID_CUSTOM, "Custom", R.style.KeyboardTheme_LXX_Dark,
+                VERSION_CODES.BASE),
     };
 
     static {
@@ -237,12 +244,15 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
     }
 
     public static String getThemeFamily(int themeId) {
+        if (themeId == THEME_ID_CUSTOM) return THEME_FAMILY_CUSTOM;
         if (themeId == THEME_ID_ICS || themeId == THEME_ID_KLP) return THEME_FAMILY_HOLO;
         return THEME_FAMILY_MATERIAL;
     }
 
     public static String getThemeVariant(int themeId) {
         switch (themeId) {
+            case THEME_ID_CUSTOM:
+                return THEME_VARIANT_CUSTOM;
             case THEME_ID_LXX_DARK:
             case THEME_ID_LXX_DARK_AMOLED:
             case THEME_ID_LXX_DARK_BORDER:
@@ -295,6 +305,9 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
 
     public static int getThemeForParameters(String family, String variant,
             boolean keyBorders, boolean dayNight, boolean amoledMode) {
+        if (THEME_FAMILY_CUSTOM.equals(family)) {
+            return THEME_ID_CUSTOM;
+        }
         if (THEME_FAMILY_HOLO.equals(family)) {
             if (THEME_VARIANT_BLUE.equals(variant)) return THEME_ID_ICS;
             return THEME_ID_KLP;

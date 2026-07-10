@@ -79,6 +79,7 @@
         parent="MoreKeysKeyboardView.LXX_Dark"
     >
         <item name="android:background">@drawable/keyboard_popup_panel_background_lxx_dark_amoled</item>
+        <item name="android:backgroundTint">@color/background_amoled_black</item>
         <item name="keyBackground">@drawable/btn_keyboard_key_popup_lxx_dark</item>
     </style>
 

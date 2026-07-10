@@ -71,7 +71,7 @@ public final class SuggestionStripView extends RelativeLayout implements OnClick
 
     private final ViewGroup mSuggestionsStrip;
     private final ImageButton mVoiceKey;
-    private final ImageButton mClipboardKey;
+    private final TextView mClipboardKey;
     private final ImageButton mOtherKey;
     MainKeyboardView mMainKeyboardView;
 
@@ -172,7 +172,7 @@ public final class SuggestionStripView extends RelativeLayout implements OnClick
         keyboardAttr.recycle();
         mVoiceKey.setImageDrawable(iconVoice);
         mVoiceKey.setOnClickListener(this);
-        mClipboardKey.setImageDrawable(iconClipboard);
+        mClipboardKey.setText("⧉");
         mClipboardKey.setOnClickListener(this);
         mClipboardKey.setOnLongClickListener(this);
 

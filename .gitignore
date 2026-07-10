@@ -9,3 +9,6 @@ app/build
 app/release
 app/.cxx
 fastlane/Appfile
+/logs_*
+
+/log

@@ -1,0 +1,44 @@
+<Keyboard language="en" keyWidth="10%">
+    <Row>
+        <Key keyLabel="q" />
+        <Key keyLabel="w" />
+        <Key keyLabel="e" />
+        <Key keyLabel="r" />
+        <Key keyLabel="t" />
+        <Key keyLabel="y" />
+        <Key keyLabel="u" />
+        <Key keyLabel="i" />
+        <Key keyLabel="o" />
+        <Key keyLabel="p" />
+    </Row>
+    <Row>
+        <Key keyLabel="a" />
+        <Key keyLabel="s" />
+        <Key keyLabel="d" />
+        <Key keyLabel="f" />
+        <Key keyLabel="g" />
+        <Key keyLabel="h" />
+        <Key keyLabel="j" />
+        <Key keyLabel="k" />
+        <Key keyLabel="l" />
+    </Row>
+    <Row>
+        <Key keyLabel="Shift" keyIcon="shift" keyWidth="15%" />
+        <Key keyLabel="z" />
+        <Key keyLabel="x" />
+        <Key keyLabel="c" />
+        <Key keyLabel="v" />
+        <Key keyLabel="b" />
+        <Key keyLabel="n" />
+        <Key keyLabel="m" />
+        <Key keyLabel="⌫" keyIcon="delete" keyWidth="15%" />
+    </Row>
+    <Row>
+        <Key keyLabel="?123" codes="-3" keyWidth="15%" />
+        <Key keyLabel="globe" keyIcon="language" keyWidth="10%" />
+        <Key keyLabel="spc" keyIcon="space" keyWidth="50%" />
+        <Key keyLabel="," />
+        <Key keyLabel="." />
+        <Key keyLabel="Enter" keyIcon="enter" keyWidth="15%" />
+    </Row>
+</Keyboard>

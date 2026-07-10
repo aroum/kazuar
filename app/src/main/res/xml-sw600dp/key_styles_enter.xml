@@ -84,7 +84,7 @@
         <case latin:keyboardTheme="ICS|KLP|LXXLightBorder|LXXDarkBorder">
             <key-style
                 latin:styleName="defaultEnterKeyStyle"
-                latin:keySpec="!icon/enter_key|!code/key_enter"
+                latin:keySpec="⏎|!code/key_enter"
                 latin:keyLabelFlags="preserveCase|autoXScale|followKeyLabelRatio|followFunctionalTextColor"
                 latin:keyActionFlags="noKeyPreview"
                 latin:backgroundType="action"
@@ -94,7 +94,7 @@
         <default>
             <key-style
                 latin:styleName="defaultEnterKeyStyle"
-                latin:keySpec="!icon/enter_key|!code/key_enter"
+                latin:keySpec="⏎|!code/key_enter"
                 latin:keyLabelFlags="preserveCase|autoXScale|followKeyLabelRatio|followFunctionalTextColor|keepBackgroundAspectRatio"
                 latin:keyActionFlags="noKeyPreview"
                 latin:backgroundType="action"
@@ -110,7 +110,7 @@
         >
             <key-style
                 latin:styleName="enterKeyStyle"
-                latin:keySpec="!icon/enter_key|!code/key_shift_enter"
+                latin:keySpec="⏎|!code/key_shift_enter"
                 latin:parentStyle="defaultEnterKeyStyle" />
         </case>
         <case

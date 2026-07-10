@@ -150,7 +150,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
      */
     private static final String SCHEME_PACKAGE = "package";
 
-    final Settings mSettings;
+    public final Settings mSettings;
     private final DictionaryFacilitator mDictionaryFacilitator =
             DictionaryFacilitatorProvider.getDictionaryFacilitator(
                     false /* isNeededForSpellChecking */);
@@ -167,7 +167,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     private RichInputMethodManager mRichImm;
     @UsedForTesting
-    final KeyboardSwitcher mKeyboardSwitcher;
+    public final KeyboardSwitcher mKeyboardSwitcher;
     private final SubtypeState mSubtypeState = new SubtypeState();
     private EmojiAltPhysicalKeyDetector mEmojiAltPhysicalKeyDetector;
     private StatsUtilsManager mStatsUtilsManager;
@@ -725,6 +725,28 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public void onCreate() {
+        final Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable throwable) {
+                try {
+                    final java.io.File file = new java.io.File(getExternalFilesDir(null), "crash_log.txt");
+                    final java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(file, true));
+                    pw.println("--- CRASH REPORT ---");
+                    pw.println("Time: " + new java.util.Date().toString());
+                    pw.println("Thread: " + thread.getName());
+                    throwable.printStackTrace(pw);
+                    pw.println();
+                    pw.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Could not write crash log to file", e);
+                }
+                if (defaultHandler != null) {
+                    defaultHandler.uncaughtException(thread, throwable);
+                }
+            }
+        });
+
         Settings.init(this);
         DebugFlags.init(DeviceProtectedUtils.getSharedPreferences(this));
         RichInputMethodManager.init(this);
@@ -1604,7 +1626,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // TODO: Instead of checking for alphabetic keyboard here, separate keycodes for
     // alphabetic shift and shift while in symbol layout and get rid of this method.
     private int getCodePointForKeyboard(final int codePoint) {
-        if (Constants.CODE_SHIFT == codePoint) {
+        if (Constants.CODE_SHIFT == codePoint || Constants.CODE_SWIPE_SHIFT == codePoint) {
             final Keyboard currentKeyboard = mKeyboardSwitcher.getKeyboard();
             if (null != currentKeyboard && currentKeyboard.mId.isAlphabetKeyboard()) {
                 return codePoint;
@@ -1620,13 +1642,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                             final boolean isKeyRepeat) {
         // TODO: this processing does not belong inside LatinIME, the caller should be doing this.
         final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
-        // x and y include some padding, but everything down the line (especially native
-        // code) needs the coordinates in the keyboard frame.
-        // TODO: We should reconsider which coordinate system should be used to represent
-        // keyboard event. Also we should pull this up -- LatinIME has no business doing
-        // this transformation, it should be done already before calling onEvent.
-        final int keyX = mainKeyboardView.getKeyX(x);
-        final int keyY = mainKeyboardView.getKeyY(y);
+        final int keyX = (mainKeyboardView != null) ? mainKeyboardView.getKeyX(x) : x;
+        final int keyY = (mainKeyboardView != null) ? mainKeyboardView.getKeyY(y) : y;
         final Event event = createSoftwareKeypressEvent(getCodePointForKeyboard(codePoint),
                 keyX, keyY, isKeyRepeat);
         onEvent(event);
@@ -1643,7 +1660,13 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                         mKeyboardSwitcher.getKeyboardShiftMode(),
                         mKeyboardSwitcher.getCurrentKeyboardScriptId(), mHandler);
         updateStateAfterInputTransaction(completeInputTransaction);
-        mKeyboardSwitcher.onEvent(event, getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+        int autoCapsState = getCurrentAutoCapsState();
+        final Event txEvent = completeInputTransaction.getMEvent();
+        final int code = txEvent.isFunctionalKeyEvent() ? txEvent.getMKeyCode() : txEvent.getMCodePoint();
+        if (Character.isLetter(code)) {
+            autoCapsState = Constants.TextUtils.CAP_MODE_OFF;
+        }
+        mKeyboardSwitcher.onEvent(txEvent, autoCapsState, getCurrentRecapitalizeState());
     }
 
     // A helper method to split the code point and the key code. Ultimately, they should not be
@@ -1673,7 +1696,13 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                 mInputLogic.onTextInput(mSettings.getCurrent(), event,
                         mKeyboardSwitcher.getKeyboardShiftMode(), mHandler);
         updateStateAfterInputTransaction(completeInputTransaction);
-        mKeyboardSwitcher.onEvent(event, getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+        int autoCapsState = getCurrentAutoCapsState();
+        final Event txEvent = completeInputTransaction.getMEvent();
+        final int code = txEvent.isFunctionalKeyEvent() ? txEvent.getMKeyCode() : txEvent.getMCodePoint();
+        if (Character.isLetter(code)) {
+            autoCapsState = Constants.TextUtils.CAP_MODE_OFF;
+        }
+        mKeyboardSwitcher.onEvent(txEvent, autoCapsState, getCurrentRecapitalizeState());
     }
 
     @Override
@@ -1859,7 +1888,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
      *
      * @param inputTransaction The transaction that has been executed.
      */
-    private void updateStateAfterInputTransaction(final InputTransaction inputTransaction) {
+    public void updateStateAfterInputTransaction(final InputTransaction inputTransaction) {
         switch (inputTransaction.getRequiredShiftUpdate()) {
             case InputTransaction.SHIFT_UPDATE_LATER:
                 mHandler.postUpdateShiftState();

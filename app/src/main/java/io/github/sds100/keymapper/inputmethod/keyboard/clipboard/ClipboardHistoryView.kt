@@ -35,7 +35,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
     private lateinit var clipboardRecyclerView: ClipboardHistoryRecyclerView
     private lateinit var placeholderView: TextView
     private lateinit var alphabetKey: TextView
-    private lateinit var clearKey: ImageButton
+    private lateinit var clearKey: TextView
     private lateinit var clipboardAdapter: ClipboardAdapter
 
     var keyboardActionListener: KeyboardActionListener? = null
@@ -95,7 +95,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
             setOnTouchListener(this@ClipboardHistoryView)
             setOnClickListener(this@ClipboardHistoryView)
         }
-        clearKey = findViewById<ImageButton>(R.id.clipboard_clear).apply {
+        clearKey = findViewById<TextView>(R.id.clipboard_clear).apply {
             setOnTouchListener(this@ClipboardHistoryView)
             setOnClickListener(this@ClipboardHistoryView)
         }
@@ -103,7 +103,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
 
     private fun setupAlphabetKey(key: TextView?, label: String, params: KeyDrawParams) {
         key?.apply {
-            text = label
+            text = "\u2328"
             typeface = params.mTypeface
             setTextColor(params.mFunctionalTextColor)
             setTextSize(TypedValue.COMPLEX_UNIT_PX, params.mLabelSize.toFloat())
@@ -119,9 +119,13 @@ class ClipboardHistoryView @JvmOverloads constructor(
         }
     }
 
-    private fun setupClearKey(iconSet: KeyboardIconsSet) {
-        val resId = iconSet.getIconResourceId(KeyboardIconsSet.NAME_CLEAR_CLIPBOARD_KEY)
-        clearKey.setImageResource(resId)
+    private fun setupClearKey(params: KeyDrawParams) {
+        clearKey.apply {
+            text = "\u2A09"
+            typeface = params.mTypeface
+            setTextColor(params.mFunctionalTextColor)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, params.mLabelSize.toFloat())
+        }
     }
 
     fun setHardwareAcceleratedDrawingEnabled(enabled: Boolean) {
@@ -145,7 +149,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
         params.updateParams(clipboardLayoutParams.actionBarContentHeight, keyVisualAttr)
         setupAlphabetKey(alphabetKey, switchToAlphaLabel, params)
         setupClipKey(params)
-        setupClearKey(iconSet)
+        setupClearKey(params)
 
         placeholderView.apply {
             typeface = params.mTypeface

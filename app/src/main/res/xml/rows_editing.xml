@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+    xmlns:latin="http://schemas.android.com/apk/res-auto"
+>
+    <include
+        latin:keyboardLayout="@xml/key_styles_common" />
+
+    <!-- Row 1 -->
+    <Row latin:keyWidth="20%p">
+        <Key latin:keySpec="⌦|!code/key_forward_delete" latin:keyLabelFlags="preserveCase" latin:keyActionFlags="isRepeatable" latin:backgroundType="functional" />
+        <Key latin:keySpec="⇱|!code/key_move_home" latin:keyLabelFlags="preserveCase" />
+        <Key latin:keySpec="↑|!code/key_arrow_up" latin:keyActionFlags="isRepeatable" />
+        <Key latin:keySpec="⇲|!code/key_move_end" latin:keyLabelFlags="preserveCase" />
+        <Key latin:keyStyle="deleteKeyStyle" />
+    </Row>
+
+    <!-- Row 2 -->
+    <Row latin:keyWidth="20%p">
+        <Key latin:keySpec="⇆|!code/key_tab" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="←|!code/key_arrow_left" latin:keyActionFlags="isRepeatable" />
+        <Key latin:keySpec="⬚|!code/key_select_toggle" latin:keyLabelFlags="preserveCase" latin:backgroundType="stickyOff" />
+        <Key latin:keySpec="→|!code/key_arrow_right" latin:keyActionFlags="isRepeatable" />
+        <Key latin:keySpec="⬅|!code/key_delete_word" latin:keyLabelFlags="preserveCase" latin:keyActionFlags="isRepeatable|noKeyPreview" latin:backgroundType="functional" />
+    </Row>
+
+    <!-- Row 3 -->
+    <Row latin:keyWidth="20%p">
+        <Key latin:keySpec="✂|!code/key_cut" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="❐|!code/key_copy" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="↓|!code/key_arrow_down" latin:keyActionFlags="isRepeatable" />
+        <Key latin:keySpec="⎘|!code/key_paste" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="⛶|!code/key_select_all" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+    </Row>
+
+    <!-- Row 4 -->
+    <Row latin:keyWidth="20%p">
+        <Key latin:keySpec="⌨|!code/key_switch_to_editing" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="↶|!code/key_undo" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keyStyle="spaceKeyStyle" />
+        <Key latin:keySpec="↷|!code/key_redo" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="⏎|!code/key_enter" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+    </Row>
+</merge>
+

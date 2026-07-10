@@ -36,6 +36,7 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.JniUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.RunInLocale;
 import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
+import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet;
 
 import java.util.Collections;
 import java.util.Locale;
@@ -73,6 +74,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_KEY_USE_PERSONALIZED_DICTS = "pref_key_use_personalized_dicts";
     public static final String PREF_KEY_USE_DOUBLE_SPACE_PERIOD =
             "pref_key_use_double_space_period";
+    public static final String PREF_KEY_USE_MULTI_SPACE_PUNCTUATION =
+            "pref_key_use_multi_space_punctuation";
     public static final String PREF_BLOCK_POTENTIALLY_OFFENSIVE =
             "pref_key_block_potentially_offensive";
     public static final boolean ENABLE_SHOW_LANGUAGE_SWITCH_KEY_SETTINGS =
@@ -101,6 +104,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
             "pref_vibration_duration_settings";
     public static final String PREF_KEYPRESS_SOUND_VOLUME = "pref_keypress_sound_volume";
     public static final String PREF_KEY_LONGPRESS_TIMEOUT = "pref_key_longpress_timeout";
+    public static final String PREF_KEY_REPEAT_INTERVAL = "pref_key_repeat_interval";
     public static final String PREF_ENABLE_EMOJI_ALT_PHYSICAL_KEY =
             "pref_enable_emoji_alt_physical_key";
     public static final String PREF_GESTURE_PREVIEW_TRAIL = "pref_gesture_preview_trail";
@@ -110,6 +114,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public static final String PREF_ONE_HANDED_MODE = "pref_one_handed_mode_enabled";
     public static final String PREF_ONE_HANDED_GRAVITY = "pref_one_handed_mode_gravity";
+    public static final String PREF_KEYBOARD_LAYOUT_RU = "pref_keyboard_layout_ru";
+    public static final String PREF_KEYBOARD_LAYOUT_EN = "pref_keyboard_layout_en";
 
     public static final String PREF_KEY_IS_INTERNAL = "pref_key_is_internal";
 
@@ -189,6 +195,9 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
             }
             loadSettings(mContext, mSettingsValues.mLocale, mSettingsValues.mInputAttributes);
             StatsUtils.onLoadSettings(mSettingsValues);
+            if (PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)) {
+                KeyboardLayoutSet.onKeyboardThemeChanged();
+            }
         } finally {
             mSettingsValuesLock.unlock();
         }
@@ -279,16 +288,18 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public static boolean readKeyPreviewPopupEnabled(final SharedPreferences prefs,
                                                      final Resources res) {
-        final boolean defaultKeyPreviewPopup = res.getBoolean(
-                R.bool.config_default_key_preview_popup);
-        if (!readFromBuildConfigIfToShowKeyPreviewPopupOption(res)) {
-            return defaultKeyPreviewPopup;
-        }
-        return prefs.getBoolean(PREF_POPUP_ON, defaultKeyPreviewPopup);
+        return false;
     }
 
     public static boolean readAlwaysIncognitoMode(final SharedPreferences prefs) {
         return prefs.getBoolean(PREF_ALWAYS_INCOGNITO_MODE, false);
+    }
+
+    public static boolean isIncognitoModeIgnoredForApp(final SharedPreferences prefs, final String packageName) {
+        if (packageName == null) {
+            return false;
+        }
+        return prefs.getBoolean("incognito_ignore_" + packageName.toLowerCase(Locale.US), false);
     }
 
     public static String readPrefAdditionalSubtypes(final SharedPreferences prefs,
@@ -330,6 +341,18 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public static int readDefaultKeyLongpressTimeout(final Resources res) {
         return res.getInteger(R.integer.config_default_longpress_key_timeout);
+    }
+
+    public static int readKeyRepeatInterval(final SharedPreferences prefs,
+                                            final Resources res) {
+        final int milliseconds = prefs.getInt(
+                PREF_KEY_REPEAT_INTERVAL, UNDEFINED_PREFERENCE_VALUE_INT);
+        return (milliseconds != UNDEFINED_PREFERENCE_VALUE_INT) ? milliseconds
+                : readDefaultKeyRepeatInterval(res);
+    }
+
+    public static int readDefaultKeyRepeatInterval(final Resources res) {
+        return res.getInteger(R.integer.config_key_repeat_interval);
     }
 
     public static int readKeypressVibrationDuration(final SharedPreferences prefs,

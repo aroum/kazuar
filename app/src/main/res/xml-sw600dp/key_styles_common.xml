@@ -43,7 +43,7 @@
         latin:styleName="baseForShiftKeyStyle"
         latin:keyActionFlags="noKeyPreview"
         latin:keyLabelFlags="preserveCase"
-        latin:moreKeys="!noPanelAutoMoreKey!, |!code/key_capslock" />
+        latin:moreKeys="!noPanelAutoMoreKey!" />
     <switch>
         <case
             latin:keyboardLayoutSetElement="alphabetManualShifted|alphabetAutomaticShifted"
@@ -73,7 +73,7 @@
     </switch>
     <key-style
         latin:styleName="deleteKeyStyle"
-        latin:keySpec="!icon/delete_key|!code/key_delete"
+        latin:keySpec="⌫|!code/key_delete"
         latin:keyActionFlags="isRepeatable|noKeyPreview"
         latin:backgroundType="functional" />
     <include
@@ -121,7 +121,7 @@
         >
             <key-style
                 latin:styleName="tabKeyStyle"
-                latin:keySpec="!icon/tab_key|!code/key_action_previous"
+                latin:keySpec="⇆|!code/key_action_previous"
                 latin:backgroundType="functional" />
         </case>
         <case
@@ -130,13 +130,13 @@
         >
             <key-style
                 latin:styleName="tabKeyStyle"
-                latin:keySpec="!icon/tab_key|!code/key_action_next"
+                latin:keySpec="⇆|!code/key_action_next"
                 latin:backgroundType="functional" />
         </case>
         <default>
             <key-style
                 latin:styleName="tabKeyStyle"
-                latin:keySpec="!icon/tab_key|!code/key_tab"
+                latin:keySpec="⇆|!code/key_tab"
                 latin:backgroundType="functional" />
         </default>
     </switch>

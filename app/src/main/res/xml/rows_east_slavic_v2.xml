@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+**
+** Copyright 2011, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License");
+** you may not use this file except in compliance with the License.
+** You may obtain a copy of the License at
+**
+**     http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing, software
+** distributed under the License is distributed on an "AS IS" BASIS,
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+** See the License for the specific language governing permissions and
+** limitations under the License.
+*/
+-->
+
+<merge
+    xmlns:latin="http://schemas.android.com/apk/res-auto"
+>
+    <include
+        latin:keyboardLayout="@xml/key_styles_common" />
+    
+    <!-- Row 1: Numbers with Symbols on hold -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="1" latin:keyHintLabel="!" latin:moreKeys="!"  />
+        <Key latin:keySpec="2" latin:keyHintLabel="@" latin:moreKeys="@"  />
+        <Key latin:keySpec="3" latin:keyHintLabel="&#x2116;" latin:moreKeys="&#x2116;"  />
+        <Key latin:keySpec="4" latin:keyHintLabel="$" latin:moreKeys="$"  />
+        <Key latin:keySpec="5" latin:keyHintLabel="%" latin:moreKeys="\\%,&#x00B0;"  />
+        <Key latin:keySpec="6" latin:keyHintLabel="^" latin:moreKeys="^"  />
+        <Key latin:keySpec="7" latin:keyHintLabel="?" latin:moreKeys="?"  />
+        <Key latin:keySpec="8" latin:keyHintLabel="*" latin:moreKeys="*"  />
+        <Key latin:keySpec="9" latin:keyHintLabel="(" latin:moreKeys="("  />
+        <Key latin:keySpec="0" latin:keyHintLabel=")" latin:moreKeys=")"  />
+    </Row>
+
+    <!-- Row 2: Letters й-х -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="й" latin:keyHintLabel="~" latin:moreKeys="~,\`" />
+        <Key latin:keySpec="ц" latin:keyHintLabel="&quot;" latin:moreKeys="&quot;" />
+        <Key latin:keySpec="у" latin:keyHintLabel="#" latin:moreKeys="#" />
+        <Key latin:keySpec="к" latin:keyHintLabel=":" latin:moreKeys=":" />
+        <Key latin:keySpec="е" latin:keyHintLabel="ё" latin:moreKeys="ё,\\;" />
+        <Key latin:keySpec="н" latin:keyHintLabel="↷" latin:moreKeys="↷|!code/key_redo" />
+        <Key latin:keySpec="г" latin:keyHintLabel="_" latin:moreKeys="_" />
+        <Key latin:keySpec="ш" latin:keyHintLabel="+" latin:moreKeys="+" />
+        <Key latin:keySpec="з" latin:keyHintLabel="[" latin:moreKeys="[,{,«" />
+        <Key latin:keySpec="х" latin:keyHintLabel="]" latin:moreKeys="],},»" />
+    </Row>
+
+    <!-- Row 3: Letters ф-ж -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="ф" latin:keyHintLabel="⛶" latin:moreKeys="⛶|!code/key_select_all" />
+        <Key latin:keySpec="ы" latin:keyHintLabel="'" latin:moreKeys="\'" />
+        <Key latin:keySpec="в" latin:keyHintLabel="&amp;" latin:moreKeys="&amp;" />
+        <Key latin:keySpec="а" latin:keyHintLabel=";" latin:moreKeys="\\;" />
+        <Key latin:keySpec="п" latin:keyHintLabel="/" latin:moreKeys="/" />
+        <Key latin:keySpec="р" latin:keyHintLabel="|" latin:moreKeys="|" />
+        <Key latin:keySpec="о" latin:keyHintLabel="\\" latin:moreKeys="\\\\" />
+        <Key latin:keySpec="л" latin:keyHintLabel="-" latin:moreKeys="-" />
+        <Key latin:keySpec="д" latin:keyHintLabel="=" latin:moreKeys="=" />
+        <Key latin:keySpec="ж" latin:keyHintLabel="⌫" latin:moreKeys="⌫|!code/key_delete" />
+    </Row>
+
+    <!-- Row 4: Letters я-б + Shortcuts + Space -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="я" latin:keyHintLabel="↶" latin:moreKeys="↶|!code/key_undo"  />
+        <Key latin:keySpec="ч" latin:keyHintLabel="✂" latin:moreKeys="✂|!code/key_cut"  />
+        <Key latin:keySpec="с" latin:keyHintLabel="❐" latin:moreKeys="❐|!code/key_copy"  />
+        <Key latin:keySpec="м" latin:keyHintLabel="⎘" latin:moreKeys="⎘|!code/key_paste"  />
+        <Key latin:keyStyle="spaceKeyStyle" latin:keyWidth="20%p" />
+        <Key latin:keySpec="и" latin:keyHintLabel="&lt;" latin:moreKeys="&lt;"  />
+        <Key latin:keySpec="т" latin:keyHintLabel="&gt;" latin:moreKeys="&gt;"  />
+        <Key latin:keySpec="ь" latin:keyHintLabel="," latin:moreKeys="\\,"  />
+        <Key latin:keySpec="б" latin:keyHintLabel="." latin:moreKeys="."  />
+    </Row>
+</merge>

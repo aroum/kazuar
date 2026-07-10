@@ -27,11 +27,6 @@
         android:key="screen_appearance"
         android:icon="@drawable/ic_settings_appearance"/>
     <PreferenceScreen
-        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.GestureSettingsFragment"
-        android:title="@string/settings_screen_gesture"
-        android:key="screen_gesture"
-        android:icon="@drawable/ic_settings_gesture"/>
-    <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsFragment"
         android:title="@string/settings_screen_correction"
         android:key="screen_correction"
@@ -41,4 +36,9 @@
         android:title="@string/settings_screen_advanced"
         android:key="screen_advanced"
         android:icon="@drawable/ic_settings_advanced"/>
+    <PreferenceScreen
+        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.BackupSettingsFragment"
+        android:title="@string/settings_screen_backup"
+        android:key="screen_backup"
+        android:icon="@drawable/ic_settings_backup"/>
 </PreferenceScreen>

@@ -21,6 +21,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 
+import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardTheme;
+import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.permissions.PermissionsManager;
 import io.github.sds100.keymapper.inputmethod.latin.utils.FragmentUtils;
 
@@ -40,6 +42,18 @@ public final class SettingsActivity extends PreferenceActivity
 
     @Override
     protected void onCreate(final Bundle savedState) {
+        final KeyboardTheme keyboardTheme = KeyboardTheme.getKeyboardTheme(this);
+        final String variant = KeyboardTheme.getThemeVariant(keyboardTheme.mThemeId);
+        boolean isDark = KeyboardTheme.THEME_VARIANT_DARK.equals(variant);
+        if (KeyboardTheme.getIsDayNight(keyboardTheme.mThemeId)) {
+            final int currentNightMode = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            isDark = (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES);
+        }
+        if (isDark) {
+            setTheme(R.style.platformActivityThemeDark);
+        } else {
+            setTheme(R.style.platformActivityThemeLight);
+        }
         super.onCreate(savedState);
         final ActionBar actionBar = getActionBar();
         if (actionBar != null) {

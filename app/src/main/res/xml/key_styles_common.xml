@@ -43,7 +43,7 @@
         latin:styleName="baseForShiftKeyStyle"
         latin:keyActionFlags="noKeyPreview"
         latin:keyLabelFlags="preserveCase"
-        latin:moreKeys="!noPanelAutoMoreKey!, |!code/key_capslock" />
+        latin:moreKeys="!noPanelAutoMoreKey!" />
     <switch>
         <case
             latin:keyboardLayoutSetElement="alphabetManualShifted|alphabetAutomaticShifted"
@@ -73,7 +73,7 @@
     </switch>
     <key-style
         latin:styleName="deleteKeyStyle"
-        latin:keySpec="!icon/delete_key|!code/key_delete"
+        latin:keySpec="⌫|!code/key_delete"
         latin:keyActionFlags="isRepeatable|noKeyPreview"
         latin:backgroundType="functional" />
     <!-- emojiKeyStyle must be defined before including @xml/key_syles_enter. -->
@@ -132,13 +132,13 @@
         latin:backgroundType="functional" />
     <key-style
         latin:styleName="tabKeyStyle"
-        latin:keySpec="!icon/tab_key|!code/key_tab"
+        latin:keySpec="⇆|!code/key_tab"
         latin:backgroundType="functional" />
     <!-- Note: This key style is not for functional tab key. This is used for the tab key which is
          laid out as normal letter key. -->
     <key-style
         latin:styleName="nonSpecialBackgroundTabKeyStyle"
-        latin:keySpec="!icon/tab_key|!code/key_tab" />
+        latin:keySpec="⇆|!code/key_tab" />
     <key-style
         latin:styleName="baseForLayoutSwitchKeyStyle"
         latin:keyLabelFlags="preserveCase|followFunctionalTextColor"

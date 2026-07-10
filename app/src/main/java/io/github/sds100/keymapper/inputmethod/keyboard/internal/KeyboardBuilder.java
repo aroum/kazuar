@@ -35,6 +35,7 @@ import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardTheme;
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
+import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils.ParseException;
@@ -158,6 +159,10 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
 
         params.GRID_WIDTH = res.getInteger(R.integer.config_keyboard_grid_width);
         params.GRID_HEIGHT = res.getInteger(R.integer.config_keyboard_grid_height);
+    }
+
+    public KP getParams() {
+        return mParams;
     }
 
     public void setAllowRedundantMoreKes(final boolean enabled) {
@@ -552,6 +557,50 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
                     TAG_INCLUDE, parser);
             keyboardLayout = keyboardAttr.getResourceId(
                     R.styleable.Keyboard_Include_keyboardLayout, 0);
+            if (keyboardLayout != 0) {
+                final String entryName = mResources.getResourceEntryName(keyboardLayout);
+                final String language = mParams.mId.getLocale().getLanguage();
+                final String layoutVersion = "ru".equals(language) ?
+                        Settings.getInstance().getCurrent().mKeyboardLayoutRu :
+                        Settings.getInstance().getCurrent().mKeyboardLayoutEn;
+                if ("v2".equals(layoutVersion)) {
+                    final String packageName = mContext.getPackageName();
+                    if ("rows_qwerty".equals(entryName)) {
+                        int v2Id = mResources.getIdentifier("rows_qwerty_v2", "xml", packageName);
+                        if (v2Id != 0) {
+                            keyboardLayout = v2Id;
+                        }
+                    } else if ("rows_east_slavic".equals(entryName)) {
+                        int v2Id = mResources.getIdentifier("rows_east_slavic_v2", "xml", packageName);
+                        if (v2Id != 0) {
+                            keyboardLayout = v2Id;
+                        }
+                    } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
+                        int v2Id = mResources.getIdentifier("rows_symbols_v2", "xml", packageName);
+                        if (v2Id != 0) {
+                            keyboardLayout = v2Id;
+                        }
+                    }
+                } else if ("v3".equals(layoutVersion)) {
+                    final String packageName = mContext.getPackageName();
+                    if ("rows_qwerty".equals(entryName)) {
+                        int v3Id = mResources.getIdentifier("rows_qwerty_v3", "xml", packageName);
+                        if (v3Id != 0) {
+                            keyboardLayout = v3Id;
+                        }
+                    } else if ("rows_east_slavic".equals(entryName)) {
+                        int v3Id = mResources.getIdentifier("rows_east_slavic_v3", "xml", packageName);
+                        if (v3Id != 0) {
+                            keyboardLayout = v3Id;
+                        }
+                    } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
+                        int v3Id = mResources.getIdentifier("rows_symbols_v3", "xml", packageName);
+                        if (v3Id != 0) {
+                            keyboardLayout = v3Id;
+                        }
+                    }
+                }
+            }
             if (row != null) {
                 // Override current x coordinate.
                 row.setXPos(row.getKeyX(keyAttr));

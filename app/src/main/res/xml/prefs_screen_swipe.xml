@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:latin="http://schemas.android.com/apk/res-auto"
+    android:title="Setup swipe controls">
+
+    <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        android:key="pref_swipe_threshold"
+        android:title="Swipe length / threshold (%)"
+        android:summary="Adjust the minimum length required to trigger a swipe"
+        latin:minValue="10"
+        latin:maxValue="80"
+        android:defaultValue="40" />
+
+    <ListPreference
+        android:key="pref_swipe_up_action"
+        android:title="Swipe Up Action"
+        android:entries="@array/swipe_action_names"
+        android:entryValues="@array/swipe_action_values"
+        android:defaultValue="-21" />
+
+    <ListPreference
+        android:key="pref_swipe_down_action"
+        android:title="Swipe Down Action"
+        android:entries="@array/swipe_action_names"
+        android:entryValues="@array/swipe_action_values"
+        android:defaultValue="10" />
+
+    <ListPreference
+        android:key="pref_swipe_left_action"
+        android:title="Swipe Left Action"
+        android:entries="@array/swipe_action_names"
+        android:entryValues="@array/swipe_action_values"
+        android:defaultValue="-10" />
+
+    <ListPreference
+        android:key="pref_swipe_right_action"
+        android:title="Swipe Right Action"
+        android:entries="@array/swipe_action_names"
+        android:entryValues="@array/swipe_action_values"
+        android:defaultValue="-341" />
+
+</PreferenceScreen>

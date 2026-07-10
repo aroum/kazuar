@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+**
+** Copyright 2011, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License");
+** you may not use this file except in compliance with the License.
+** You may obtain a copy of the License at
+**
+**     http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing, software
+** distributed under the License is distributed on an "AS IS" BASIS,
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+** See the License for the specific language governing permissions and
+** limitations under the License.
+*/
+-->
+
+<merge
+    xmlns:latin="http://schemas.android.com/apk/res-auto"
+>
+    <include
+        latin:keyboardLayout="@xml/key_styles_common" />
+
+    <!-- Row 1 -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="!" />
+        <Key latin:keySpec="@" latin:moreKeys="&#x00B2;" />
+        <Key latin:keySpec="&#x2116;" latin:moreKeys="&#x00B3;" />
+        <Key latin:keySpec="$" />
+        <Key latin:keySpec="%" latin:moreKeys="\\%,&#x00B0;" />
+        <Key latin:keySpec="^" />
+        <Key latin:keySpec="?" />
+        <Key latin:keySpec="*" latin:moreKeys="&#x2022;,&#x00D7;" />
+        <Key latin:keySpec="(" />
+        <Key latin:keySpec=")" />
+    </Row>
+
+    <!-- Row 2 -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="~" latin:moreKeys="\`" />
+        <Key latin:keySpec="&quot;" />
+        <Key latin:keySpec="#" />
+        <Key latin:keySpec=":" />
+        <Key latin:keySpec="\\\\" latin:moreKeys="|" />
+        <Key latin:keySpec="↷|!code/key_redo" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="&amp;" />
+        <Key latin:keySpec="+" latin:moreKeys="&#x00B1;" />
+        <Key latin:keySpec="[{«|[" latin:moreKeys="[,{,«" />
+        <Key latin:keySpec="]}»|]" latin:moreKeys="],},»" />
+    </Row>
+
+    <!-- Row 3 -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="⛶|!code/key_select_all" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="'" />
+        <Spacer latin:keyWidth="10%p" />
+        <Key latin:keySpec=";" />
+        <Key latin:keySpec="/" latin:moreKeys="&#x00F7;" />
+        <Key latin:keySpec="," />
+        <Key latin:keySpec="." />
+        <Key latin:keySpec="-" latin:moreKeys="&#x2014;,_" />
+        <Key latin:keySpec="=" latin:moreKeys="&#x2248;,&#x2260;" />
+        <Key latin:keyStyle="deleteKeyStyle" latin:keyHintLabel="⬅" latin:moreKeys="⬅|!code/key_delete_word" />
+    </Row>
+
+    <!-- Row 4 -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="↶|!code/key_undo" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="Cut|!code/key_cut" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="Copy|!code/key_copy" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keySpec="⎘|!code/key_paste" latin:keyLabelFlags="preserveCase" latin:backgroundType="functional" />
+        <Key latin:keyStyle="spaceKeyStyle" latin:keyWidth="20%p" />
+        <Key latin:keySpec="&lt;" />
+        <Key latin:keySpec="&gt;" />
+        <Spacer latin:keyWidth="10%p" />
+        <Spacer latin:keyWidth="10%p" />
+    </Row>
+</merge>

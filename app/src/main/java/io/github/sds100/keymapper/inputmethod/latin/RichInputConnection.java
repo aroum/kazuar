@@ -1018,4 +1018,11 @@ public final class RichInputConnection implements PrivateCommandPerformer {
         return InputConnectionCompatUtils.requestCursorUpdates(
                 mIC, enableMonitor, requestImmediateCallback);
     }
+
+    public void performContextMenuAction(final int id) {
+        mIC = mParent.getCurrentInputConnection();
+        if (isConnected()) {
+            mIC.performContextMenuAction(id);
+        }
+    }
 }

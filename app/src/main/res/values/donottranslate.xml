@@ -140,4 +140,68 @@
         <item>tr:AsciiCapable,SupportTouchPositionCorrection,EmojiCapable</item>
         <item>qwerty</item>
     </string-array>
+
+    <string-array name="layout_version_names">
+        <item>V1 (Default)</item>
+        <item>V2 (Experimental)</item>
+        <item>V3 (Experimental)</item>
+    </string-array>
+
+    <string-array name="layout_version_values">
+        <item>v1</item>
+        <item>v2</item>
+        <item>v3</item>
+    </string-array>
+
+    <string-array name="layout_choices_names">
+        <item>V1 (Default)</item>
+        <item>V2 (Experimental)</item>
+        <item>V3 (Experimental)</item>
+        <item>Custom (from file)</item>
+    </string-array>
+
+    <string-array name="layout_choices_values">
+        <item>v1</item>
+        <item>v2</item>
+        <item>v3</item>
+        <item>custom</item>
+    </string-array>
+
+    <string-array name="icon_style_names">
+        <item>Hide</item>
+        <item>Aroum</item>
+        <item>Vrifmus</item>
+        <item>Pavel</item>
+    </string-array>
+
+    <string-array name="icon_style_values">
+        <item>hide</item>
+        <item>aroum</item>
+        <item>vrifmus</item>
+        <item>pavel</item>
+    </string-array>
+
+    <string-array name="swipe_action_names">
+        <item>No Action</item>
+        <item>Shift / Caps Lock</item>
+        <item>Enter</item>
+        <item>Switch Language</item>
+        <item>Switch to Editing Mode</item>
+        <item>Backspace</item>
+        <item>Settings</item>
+        <item>Emoji</item>
+        <item>Clipboard</item>
+    </string-array>
+
+    <string-array name="swipe_action_values">
+        <item>0</item>
+        <item>-21</item>
+        <item>10</item>
+        <item>-10</item>
+        <item>-341</item>
+        <item>-5</item>
+        <item>-6</item>
+        <item>-11</item>
+        <item>-12</item>
+    </string-array>
 </resources>

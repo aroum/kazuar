@@ -25,6 +25,17 @@
     </PreferenceScreen>
 
     <PreferenceCategory
+        android:title="Replacements">
+
+        <CheckBoxPreference
+            android:key="pref_enable_macro_replacements"
+            android:title="Enable Macro Replacements"
+            android:summary="Automatically replace shortcut words (e.g. AOSP -> Android Open Source Project) when typing separators"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/settings_category_correction">
 
         <CheckBoxPreference
@@ -61,6 +72,13 @@
             android:title="@string/use_double_space_period"
             android:summary="@string/use_double_space_period_summary"
             android:defaultValue="true"
+            android:persistent="true" />
+
+        <CheckBoxPreference
+            android:key="pref_key_use_multi_space_punctuation"
+            android:title="@string/use_multi_space_punctuation"
+            android:summary="@string/use_multi_space_punctuation_summary"
+            android:defaultValue="false"
             android:persistent="true" />
 
     </PreferenceCategory>

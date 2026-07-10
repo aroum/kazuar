@@ -22,6 +22,16 @@
     <style name="platformActivityTheme" parent="@android:style/Theme.DeviceDefault.Light">
         <item name="android:colorAccent">@color/highlight_color_lxx_light</item>
     </style>
+    <style name="platformActivityThemeLight" parent="@android:style/Theme.DeviceDefault.Light">
+        <item name="android:colorAccent">@color/highlight_color_lxx_light</item>
+        <item name="android:windowBackground">@color/keyboard_background_lxx_light</item>
+        <item name="android:colorPrimary">@color/keyboard_background_lxx_light</item>
+        <item name="android:colorPrimaryDark">@color/keyboard_background_lxx_light</item>
+    </style>
+    <style name="platformActivityThemeDark" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:colorAccent">@color/highlight_color_lxx_dark</item>
+        <item name="android:windowBackground">@color/keyboard_background_lxx_dark</item>
+    </style>
     <style name="platformDialogTheme" parent="@android:style/Theme.DeviceDefault.Light.Dialog">
         <item name="android:colorAccent">@color/highlight_color_lxx_light</item>
     </style>

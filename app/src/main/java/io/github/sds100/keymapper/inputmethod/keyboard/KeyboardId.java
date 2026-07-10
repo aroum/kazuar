@@ -71,6 +71,7 @@ public final class KeyboardId {
     public static final int ELEMENT_EMOJI_CATEGORY15 = 25;
     public static final int ELEMENT_EMOJI_CATEGORY16 = 26;
     public static final int ELEMENT_CLIPBOARD = 27;
+    public static final int ELEMENT_EDITING = 28;
 
     public final RichInputMethodSubtype mSubtype;
     public final int mWidth;
@@ -259,6 +260,7 @@ public final class KeyboardId {
         case ELEMENT_EMOJI_CATEGORY15: return "emojiCategory15";
         case ELEMENT_EMOJI_CATEGORY16: return "emojiCategory16";
         case ELEMENT_CLIPBOARD: return "clipboard";
+        case ELEMENT_EDITING: return "editing";
         default: return null;
         }
     }

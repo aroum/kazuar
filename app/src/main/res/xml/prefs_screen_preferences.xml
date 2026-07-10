@@ -51,21 +51,8 @@
 
     </PreferenceCategory>
 
-    <CheckBoxPreference
-        android:key="popup_on"
-        android:title="@string/popup_on_keypress"
-        android:defaultValue="@bool/config_default_key_preview_popup"
-        android:persistent="true" />
-
     <PreferenceCategory
         android:title="@string/settings_category_additional_keys">
-
-        <CheckBoxPreference
-            android:key="pref_show_number_row"
-            android:title="@string/number_row"
-            android:summary="@string/number_row_summary"
-            android:defaultValue="false"
-            android:persistent="true" />
 
         <CheckBoxPreference
             android:key="pref_show_language_switch_key"
@@ -73,17 +60,7 @@
             android:defaultValue="false"
             android:persistent="true" />
 
-        <CheckBoxPreference
-            android:key="pref_show_emoji_key"
-            android:title="@string/show_emoji_key"
-            android:defaultValue="false"
-            android:persistent="true" />
 
-        <CheckBoxPreference
-            android:key="pref_voice_input_key"
-            android:title="@string/voice_input"
-            android:defaultValue="true"
-            android:persistent="true" />
 
         <CheckBoxPreference
             android:key="pref_show_clipboard_key"

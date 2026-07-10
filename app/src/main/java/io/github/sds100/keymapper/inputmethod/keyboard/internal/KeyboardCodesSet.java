@@ -57,7 +57,26 @@ public final class KeyboardCodesSet {
         "key_alpha_from_clipboard",
         "key_start_onehanded",
         "key_stop_onehanded",
-        "key_switch_onehanded"
+        "key_switch_onehanded",
+        "key_copy",
+        "key_paste",
+        "key_cut",
+        "key_undo",
+        "key_delete_word",
+        "key_redo",
+        "key_select_toggle",
+        "key_select_all",
+        "key_clear",
+        "key_arrow_left",
+        "key_arrow_right",
+        "key_arrow_up",
+        "key_arrow_down",
+        "key_move_home",
+        "key_move_end",
+        "key_page_up",
+        "key_page_down",
+        "key_switch_to_editing",
+        "key_forward_delete"
     };
 
     private static final int[] DEFAULT = {
@@ -82,7 +101,26 @@ public final class KeyboardCodesSet {
         Constants.CODE_ALPHA_FROM_CLIPBOARD,
         Constants.CODE_START_ONE_HANDED_MODE,
         Constants.CODE_STOP_ONE_HANDED_MODE,
-        Constants.CODE_SWITCH_ONE_HANDED_MODE
+        Constants.CODE_SWITCH_ONE_HANDED_MODE,
+        Constants.CODE_COPY,
+        Constants.CODE_PASTE,
+        Constants.CODE_CUT,
+        Constants.CODE_UNDO,
+        Constants.CODE_DELETE_WORD,
+        Constants.CODE_REDO,
+        Constants.CODE_SELECT_TOGGLE,
+        Constants.CODE_SELECT_ALL,
+        Constants.CODE_CLEAR,
+        Constants.CODE_ARROW_LEFT,
+        Constants.CODE_ARROW_RIGHT,
+        Constants.CODE_ARROW_UP,
+        Constants.CODE_ARROW_DOWN,
+        Constants.CODE_MOVE_HOME,
+        Constants.CODE_MOVE_END,
+        Constants.CODE_PAGE_UP,
+        Constants.CODE_PAGE_DOWN,
+        Constants.CODE_SWITCH_TO_EDITING,
+        Constants.CODE_FORWARD_DELETE
     };
 
     static {

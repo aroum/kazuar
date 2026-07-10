@@ -34,6 +34,7 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ScriptUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.TargetPackageInfoGetterTask;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -78,6 +79,7 @@ public class SettingsValues {
     public final boolean mShowsClipboardKey;
     public final boolean mUsePersonalizedDicts;
     public final boolean mUseDoubleSpacePeriod;
+    public final boolean mUseMultiSpacePunctuation;
     public final boolean mBlockPotentiallyOffensive;
     public final boolean mSpaceTrackpadEnabled;
     public final boolean mDeleteSwipeEnabled;
@@ -93,6 +95,7 @@ public class SettingsValues {
     public final boolean mGestureFloatingPreviewTextEnabled;
     public final boolean mSlidingKeyInputPreviewEnabled;
     public final int mKeyLongpressTimeout;
+    public final int mKeyRepeatInterval;
     public final boolean mEnableEmojiAltPhysicalKey;
     public final boolean mShowAppIcon;
     public final boolean mIsShowAppIconSettingInPreferences;
@@ -102,6 +105,19 @@ public class SettingsValues {
     // Use split layout for keyboard.
     public final boolean mIsSplitKeyboardEnabled;
     public final int mScreenMetrics;
+
+    public final boolean mEnableDoubleTapReplacements;
+    public final int mDoubleTapTimeout;
+    public final int mDoubleSwipeTimeout;
+    public final boolean mEnableMacroReplacements;
+    public final String mKeyboardLayoutRu;
+    public final String mKeyboardLayoutEn;
+    public final ArrayList<DoubleTapRule> mCustomDoubleTapRules;
+    public final float mSwipeThreshold;
+    public final int mSwipeUpAction;
+    public final int mSwipeDownAction;
+    public final int mSwipeLeftAction;
+    public final int mSwipeRightAction;
 
     // From the input box
     @Nonnull
@@ -162,6 +178,7 @@ public class SettingsValues {
         mUsePersonalizedDicts = prefs.getBoolean(Settings.PREF_KEY_USE_PERSONALIZED_DICTS, true);
         mUseDoubleSpacePeriod = prefs.getBoolean(Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD, true)
                 && inputAttributes.mIsGeneralTextInput;
+        mUseMultiSpacePunctuation = prefs.getBoolean(Settings.PREF_KEY_USE_MULTI_SPACE_PUNCTUATION, false);
         mBlockPotentiallyOffensive = Settings.readBlockPotentiallyOffensive(prefs, res);
         mAutoCorrectEnabled = Settings.readAutoCorrectEnabled(prefs, res);
         mAutoCorrectionThreshold = mAutoCorrectEnabled
@@ -178,6 +195,7 @@ public class SettingsValues {
                 && prefs.getBoolean(DebugSettings.PREF_SHOULD_SHOW_LXX_SUGGESTION_UI, true);
         // Compute other readable settings
         mKeyLongpressTimeout = Settings.readKeyLongpressTimeout(prefs, res);
+        mKeyRepeatInterval = Settings.readKeyRepeatInterval(prefs, res);
         mKeypressVibrationDuration = Settings.readKeypressVibrationDuration(prefs, res);
         mKeypressSoundVolume = Settings.readKeypressSoundVolume(prefs, res);
         mEnableEmojiAltPhysicalKey = prefs.getBoolean(
@@ -196,8 +214,12 @@ public class SettingsValues {
                 //&& !mInputAttributes.mInputTypeNoAutoCorrect;
         mSuggestionsEnabledPerUserSettings = !mInputAttributes.mIsPasswordField &&
                 readSuggestionsEnabled(prefs);
-        mIncognitoModeEnabled = Settings.readAlwaysIncognitoMode(prefs) || mInputAttributes.mNoLearning
-                || mInputAttributes.mIsPasswordField;
+        if (Settings.isIncognitoModeIgnoredForApp(prefs, mInputAttributes.mTargetApplicationPackageName)) {
+            mIncognitoModeEnabled = false;
+        } else {
+            mIncognitoModeEnabled = Settings.readAlwaysIncognitoMode(prefs) || mInputAttributes.mNoLearning
+                    || mInputAttributes.mIsPasswordField;
+        }
         mIsInternal = Settings.isInternal(prefs);
         mHasCustomKeyPreviewAnimationParams = prefs.getBoolean(
                 DebugSettings.PREF_HAS_CUSTOM_KEY_PREVIEW_ANIMATION_PARAMS, false);
@@ -242,6 +264,22 @@ public class SettingsValues {
         mClipboardHistoryRetentionTime = Settings.readClipboardHistoryRetentionTime(prefs, res);
         mOneHandedModeEnabled = Settings.readOneHandedModeEnabled(prefs);
         mOneHandedModeGravity = Settings.readOneHandedModeGravity(prefs);
+        mEnableDoubleTapReplacements = prefs.getBoolean("pref_enable_double_tap_replacements", true);
+        mDoubleTapTimeout = prefs.getInt("pref_double_tap_timeout", 400);
+        mDoubleSwipeTimeout = prefs.getInt("pref_double_swipe_timeout", 700);
+        mEnableMacroReplacements = prefs.getBoolean("pref_enable_macro_replacements", true);
+        mKeyboardLayoutRu = prefs.getString("pref_keyboard_layout_ru", "v3");
+        mKeyboardLayoutEn = prefs.getString("pref_keyboard_layout_en", "v3");
+        final String lang = res.getConfiguration().locale.getLanguage();
+        final String layoutVersion = "ru".equals(lang) ? mKeyboardLayoutRu : mKeyboardLayoutEn;
+        final String rulesJson = prefs.getString("pref_custom_double_tap_rules_" + lang + "_" + layoutVersion, "ru".equals(lang) ? DEFAULT_RULES_JSON : "[]");
+        mCustomDoubleTapRules = parseDoubleTapRules(rulesJson);
+
+        mSwipeThreshold = prefs.getInt("pref_swipe_threshold", 40) / 100.0f;
+        mSwipeUpAction = Integer.parseInt(prefs.getString("pref_swipe_up_action", "-21"));
+        mSwipeDownAction = Integer.parseInt(prefs.getString("pref_swipe_down_action", "10"));
+        mSwipeLeftAction = Integer.parseInt(prefs.getString("pref_swipe_left_action", "-10"));
+        mSwipeRightAction = Integer.parseInt(prefs.getString("pref_swipe_right_action", "-341"));
     }
 
     public boolean isMetricsLoggingEnabled() {
@@ -403,6 +441,8 @@ public class SettingsValues {
         sb.append("" + mUsePersonalizedDicts);
         sb.append("\n   mUseDoubleSpacePeriod = ");
         sb.append("" + mUseDoubleSpacePeriod);
+        sb.append("\n   mUseMultiSpacePunctuation = ");
+        sb.append("" + mUseMultiSpacePunctuation);
         sb.append("\n   mBlockPotentiallyOffensive = ");
         sb.append("" + mBlockPotentiallyOffensive);
         sb.append("\n   mBigramPredictionEnabled = ");
@@ -417,6 +457,8 @@ public class SettingsValues {
         sb.append("" + mSlidingKeyInputPreviewEnabled);
         sb.append("\n   mKeyLongpressTimeout = ");
         sb.append("" + mKeyLongpressTimeout);
+        sb.append("\n   mKeyRepeatInterval = ");
+        sb.append("" + mKeyRepeatInterval);
         sb.append("\n   mLocale = ");
         sb.append("" + mLocale);
         sb.append("\n   mInputAttributes = ");
@@ -453,5 +495,76 @@ public class SettingsValues {
         sb.append("\n   mKeyPreviewDismissEndScaleY = ");
         sb.append("" + mKeyPreviewDismissEndYScale);
         return sb.toString();
+    }
+
+    public static class DoubleTapRule {
+        public final String key;
+        public final String replacement;
+        public final boolean enabled;
+
+        public DoubleTapRule(String key, String replacement, boolean enabled) {
+            this.key = key;
+            this.replacement = replacement;
+            this.enabled = enabled;
+        }
+    }
+
+    private static final String DEFAULT_RULES_JSON;
+    static {
+        org.json.JSONArray array = new org.json.JSONArray();
+        try {
+            String[][] defaults = {
+                {"ы", "ю"},
+                {"ь", "ъ"},
+                {"ш", "щ"},
+                {"й", "э"},
+                {"ч", "ф"},
+                {"х", "ц"}
+            };
+            for (String[] pair : defaults) {
+                org.json.JSONObject obj = new org.json.JSONObject();
+                obj.put("key", pair[0]);
+                obj.put("replacement", pair[1]);
+                obj.put("enabled", true);
+                array.put(obj);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize default double tap rules", e);
+        }
+        DEFAULT_RULES_JSON = array.toString();
+    }
+
+    private static ArrayList<DoubleTapRule> parseDoubleTapRules(String jsonStr) {
+        ArrayList<DoubleTapRule> list = new ArrayList<>();
+        try {
+            org.json.JSONArray array = new org.json.JSONArray(jsonStr);
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+                String key = obj.getString("key");
+                String replacement = obj.getString("replacement");
+                boolean enabled = obj.getBoolean("enabled");
+                list.add(new DoubleTapRule(key, replacement, enabled));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse double tap rules", e);
+        }
+        return list;
+    }
+
+    public static String serializeDoubleTapRules(ArrayList<DoubleTapRule> list) {
+        org.json.JSONArray array = new org.json.JSONArray();
+        try {
+            for (DoubleTapRule rule : list) {
+                org.json.JSONObject obj = new org.json.JSONObject();
+                obj.put("key", rule.key);
+                obj.put("replacement", rule.replacement);
+                obj.put("enabled", rule.enabled);
+                array.put(obj);
+            }
+            return array.toString();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to serialize double tap rules", e);
+            return "[]";
+        }
     }
 }

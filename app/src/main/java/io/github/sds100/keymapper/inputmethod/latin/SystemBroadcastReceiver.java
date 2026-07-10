@@ -107,11 +107,60 @@ public final class SystemBroadcastReceiver extends BroadcastReceiver {
             Log.i(TAG, "toggleAppIcon() : FLAG_SYSTEM = " + isSystemApp);
         }
         final SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(context);
-        context.getPackageManager().setComponentEnabledSetting(
+        final String iconStyle = prefs.getString("pref_icon_style", "aroum");
+
+        PackageManager pm = context.getPackageManager();
+        String packageName = context.getPackageName();
+        ComponentName aroumAlias = new ComponentName(context, packageName + ".LauncherAliasDefault");
+        ComponentName vrifmusAlias = new ComponentName(context, packageName + ".LauncherAliasOld");
+        ComponentName pavelAlias = new ComponentName(context, packageName + ".LauncherAliasPavel");
+
+        // SetupActivity itself must always be disabled
+        pm.setComponentEnabledSetting(
                 new ComponentName(context, SetupActivity.class),
-                Settings.readShowSetupWizardIcon(prefs, context)
-                        ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                        : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
+
+        if ("hide".equalsIgnoreCase(iconStyle)) {
+            pm.setComponentEnabledSetting(aroumAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(vrifmusAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(pavelAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        } else if ("vrifmus".equalsIgnoreCase(iconStyle)) {
+            pm.setComponentEnabledSetting(vrifmusAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(aroumAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(pavelAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        } else if ("pavel".equalsIgnoreCase(iconStyle)) {
+            pm.setComponentEnabledSetting(pavelAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(aroumAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(vrifmusAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        } else {
+            pm.setComponentEnabledSetting(aroumAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(vrifmusAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+            pm.setComponentEnabledSetting(pavelAlias,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        }
     }
 }

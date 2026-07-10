@@ -11,8 +11,24 @@ android {
         applicationId "io.github.sds100.keymapper.inputmethod.latin"
         minSdkVersion 19
         targetSdkVersion 34
-        versionCode 20
-        versionName '1.4.6'
+        versionCode 24
+        versionName '1.4.10'
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "release.jks"
+            def keystorePasswordEnv = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+            def keyAliasEnv = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+            def keyPasswordEnv = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+
+            if (new File(keystorePath).exists() && !keystorePasswordEnv.isEmpty()) {
+                storeFile file(keystorePath)
+                storePassword keystorePasswordEnv
+                keyAlias keyAliasEnv
+                keyPassword keyPasswordEnv
+            }
+        }
     }
 
     buildTypes {
@@ -21,6 +37,7 @@ android {
             debuggable false
             jniDebuggable false
             renderscriptDebuggable false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
@@ -30,7 +47,11 @@ android {
             debuggable = true
 
             versionNameSuffix "-ci.$RUN_NUMBER"
-            signingConfig signingConfigs.debug
+            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
         }
     }
 
@@ -67,7 +88,7 @@ android {
 
 android.applicationVariants.all { variant ->
     variant.outputs.all {
-        outputFileName = "keymapper-gui-keyboard-${variant.versionName}.apk"
+        outputFileName = "kazuar-keyboard-${variant.versionName}.apk"
     }
 }
 

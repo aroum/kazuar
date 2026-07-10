@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Фоновый круг, чтобы логотип вписывался в безопасную зону адаптивной иконки -->
+    <path
+        android:pathData="M 54,54 m -42,0 a 42,42 0 1,1 84,0 a 42,42 0 1,1 -84,0"
+        android:fillColor="#282828" />
+
+    <!-- Центрированная и масштабированная группа старого логотипа -->
+    <group
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:translateX="17.75"
+        android:translateY="17.5">
+
+        <group
+            android:scaleX="0.844517"
+            android:scaleY="0.857939"
+            android:translateX="-443.156949"
+            android:translateY="-650.973975">
+
+            <!-- Круг-основа (темно-серый) -->
+            <group
+                android:scaleX="0.753769"
+                android:scaleY="0.741976"
+                android:translateX="184.491927"
+                android:translateY="215.934851">
+                <path
+                    android:pathData="M 565.24,846.263 m -111.05,0 a 111.05,111.05 0 1,1 222.1,0 a 111.05,111.05 0 1,1 -222.1,0"
+                    android:fillColor="#282828" />
+            </group>
+
+            <!-- Путь 1 (линия обводки) -->
+            <group
+                android:scaleX="1.184109"
+                android:scaleY="1.165584"
+                android:translateX="-112.470925"
+                android:translateY="-136.723657">
+                <path
+                    android:pathData="M605.54,848.81L603.707,881.897"
+                    android:strokeColor="#000000"
+                    android:strokeWidth="1" />
+            </group>
+
+            <!-- Путь 2 (светло-кремовое тело) -->
+            <group
+                android:scaleX="1.184109"
+                android:scaleY="1.165584"
+                android:translateX="-112.470925"
+                android:translateY="-136.723657">
+                <path
+                    android:pathData="M568.507,887.218C569.916,880.38 606.776,858.914 605.222,847.176C603.487,834.079 571.381,848.753 566.705,846.867C562.03,844.98 577.839,833.608 585.769,829.444C595.528,824.321 598.915,806.101 603.374,806.008C608.518,805.901 634.398,804.882 636.035,810.337C639.169,820.784 641.869,826.709 641.972,833.667C642.062,839.751 641.481,848.267 632.547,856.182C624.404,863.397 602.477,881.306 592.65,893.804C587.494,900.362 567.097,894.056 568.507,887.218Z"
+                    android:fillColor="#FBF1C7" />
+            </group>
+
+            <!-- Маленький коричневый кружок -->
+            <group
+                android:scaleX="1.184109"
+                android:scaleY="1.165584"
+                android:translateX="-156.24367"
+                android:translateY="-135.444842">
+                <path
+                    android:pathData="M 643.28,827.97 m -5.133,0 a 5.133,5.133 0 1,1 10.266,0 a 5.133,5.133 0 1,1 -10.266,0"
+                    android:fillColor="#665C54" />
+            </group>
+
+            <!-- Путь 3 (желтый с обводкой) -->
+            <group
+                android:scaleX="1.184109"
+                android:scaleY="1.165584"
+                android:translateX="-112.470925"
+                android:translateY="-136.723657">
+                <path
+                    android:pathData="M601.072,820.849C595.521,818.174 604.18,803.166 615.218,794.829C624.982,787.455 638.496,780.752 641.603,784.345C645.247,788.561 634.881,792.973 633.795,803.114C632.752,812.849 641.012,823.433 633.959,825.294C629.493,826.473 625.805,818.488 618.451,816.42C610.569,814.203 605.911,823.181 601.072,820.849Z"
+                    android:fillColor="#D79921"
+                    android:strokeColor="#FBF1C7"
+                    android:strokeWidth="4.17" />
+            </group>
+
+            <!-- Путь 4 (бирюзовый с обводкой) -->
+            <group
+                android:scaleX="1.184109"
+                android:scaleY="1.165584"
+                android:translateX="-112.470925"
+                android:translateY="-136.723657">
+                <path
+                    android:pathData="M585.622,896.911C579.571,899.501 568.235,894.879 568.418,887.221C568.634,878.146 600.464,866.248 605.899,853.153C610.045,843.168 622.791,861.603 616.891,866.477C603.719,877.358 593.701,893.454 585.622,896.911Z"
+                    android:fillColor="#458588"
+                    android:strokeColor="#FBF1C7"
+                    android:strokeWidth="4.17" />
+            </group>
+
+        </group>
+    </group>
+</vector>

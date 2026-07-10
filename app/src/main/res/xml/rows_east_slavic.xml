@@ -23,32 +23,59 @@
 >
     <include
         latin:keyboardLayout="@xml/key_styles_common" />
-    <include
-        latin:keyboardLayout="@xml/row_optional_number_row" />
-    <Row
-        latin:keyWidth="9.091%p"
-    >
-        <include
-            latin:keyboardLayout="@xml/rowkeys_east_slavic1" />
+    
+    <!-- Row 1: Numbers / Symbols -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="1" latin:keyHintLabel="!" latin:moreKeys="!" />
+        <Key latin:keySpec="2" latin:keyHintLabel="&quot;" latin:moreKeys="&quot;" />
+        <Key latin:keySpec="3" latin:keyHintLabel="&#x2116;" latin:moreKeys="&#x2116;" />
+        <Key latin:keySpec="4" latin:keyHintLabel=";" latin:moreKeys=";" />
+        <Key latin:keySpec="5" latin:keyHintLabel="%" latin:moreKeys="\\%,&#x00B0;" />
+        <Key latin:keySpec="6" latin:keyHintLabel=":" latin:moreKeys=":" />
+        <Key latin:keySpec="7" latin:keyHintLabel="?" latin:moreKeys="?" />
+        <Key latin:keySpec="8" latin:keyHintLabel="*" latin:moreKeys="*" />
+        <Key latin:keySpec="9" latin:keyHintLabel="(" latin:moreKeys="(" />
+        <Key latin:keySpec="0" latin:keyHintLabel=")" latin:moreKeys=")" />
     </Row>
-    <Row
-            latin:keyWidth="9.091%p"
-    >
-        <include
-            latin:keyboardLayout="@xml/rowkeys_east_slavic2" />
+
+    <!-- Row 2: Letters й-х -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="й" />
+        <Key latin:keySpec="б" />
+        <Key latin:keySpec="у" />
+        <Key latin:keySpec="к" latin:keyHintLabel="↷" latin:moreKeys="↷|!code/key_redo" />
+        <Key latin:keySpec="е" latin:keyHintLabel="ё" latin:moreKeys="ё" />
+        <Key latin:keySpec="н" latin:keyHintLabel="/" latin:moreKeys="/" />
+        <Key latin:keySpec="г" latin:keyHintLabel="_" latin:moreKeys="_" />
+        <Key latin:keySpec="ш" latin:keyHintLabel="+" latin:moreKeys="+" />
+        <Key latin:keySpec="з" latin:keyHintLabel="[" latin:moreKeys="[,{,«" />
+        <Key latin:keySpec="х" latin:keyHintLabel="]" latin:moreKeys="],},»" />
     </Row>
-    <Row
-        latin:keyWidth="8.711%p"
-    >
-        <Key
-            latin:keyStyle="shiftKeyStyle"
-            latin:keyWidth="10.8%p" />
-        <include
-            latin:keyboardLayout="@xml/rowkeys_east_slavic3" />
-        <Key
-            latin:keyStyle="deleteKeyStyle"
-            latin:keyWidth="fillRight" />
+
+    <!-- Row 3: Letters ж-д + Backspace -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="ж" />
+        <Key latin:keySpec="ы" />
+        <Key latin:keySpec="в" />
+        <Key latin:keySpec="а" />
+        <Key latin:keySpec="п" latin:keyHintLabel="." latin:moreKeys="." />
+        <Key latin:keySpec="р" latin:keyHintLabel="\\\\" latin:moreKeys="\\\\" />
+        <Key latin:keySpec="о" latin:keyHintLabel="-" latin:moreKeys="-" />
+        <Key latin:keySpec="л" latin:keyHintLabel="=" latin:moreKeys="=" />
+        <Key latin:keySpec="д" latin:keyHintLabel="|" latin:moreKeys="|" />
+        <Key latin:keyStyle="deleteKeyStyle" />
     </Row>
-    <include
-        latin:keyboardLayout="@xml/row_qwerty4" />
+
+    <!-- Row 4: Letters я-ь + Shortcuts + Space + Return -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="я" latin:keyHintLabel="↶" latin:moreKeys="↶|!code/key_undo" />
+        <Key latin:keySpec="ч" latin:keyHintLabel="✂" latin:moreKeys="✂|!code/key_cut" />
+        <Key latin:keySpec="с" latin:keyHintLabel="❐" latin:moreKeys="❐|!code/key_copy" />
+        <Key latin:keySpec="м" latin:keyHintLabel="⎘" latin:moreKeys="⎘|!code/key_paste" />
+        <Key latin:keyStyle="spaceKeyStyle" latin:keyWidth="20%p" />
+        <Key latin:keySpec="и" latin:keyHintLabel="&lt;" latin:moreKeys="&lt;" />
+        <Key latin:keySpec="т" latin:keyHintLabel="&gt;" latin:moreKeys="&gt;" />
+        <Key latin:keySpec="ь" latin:keyHintLabel="," latin:moreKeys="\\," />
+        <Key latin:keyStyle="enterKeyStyle" />
+    </Row>
 </merge>

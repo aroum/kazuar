@@ -22,6 +22,7 @@ import io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsF
 import io.github.sds100.keymapper.inputmethod.latin.settings.CustomInputStyleSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.GestureSettingsFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.IncognitoModeRulesFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.PreferencesSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.spellcheck.SpellCheckerSettingsFragment;
@@ -42,6 +43,7 @@ public class FragmentUtils {
         sLatinImeFragments.add(CorrectionSettingsFragment.class.getName());
         sLatinImeFragments.add(AdvancedSettingsFragment.class.getName());
         sLatinImeFragments.add(DebugSettingsFragment.class.getName());
+        sLatinImeFragments.add(IncognitoModeRulesFragment.class.getName());
         sLatinImeFragments.add(SettingsFragment.class.getName());
         sLatinImeFragments.add(SpellCheckerSettingsFragment.class.getName());
         sLatinImeFragments.add(UserDictionaryAddWordFragment.class.getName());
