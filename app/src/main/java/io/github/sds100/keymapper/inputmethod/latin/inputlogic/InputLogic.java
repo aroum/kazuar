@@ -1269,7 +1269,8 @@ public final class InputLogic {
                 // setting phantom space state after ending a sentence with a non-word.
                 if (wasComposingWord
                     && settingsValues.mAutospaceAfterPunctuationEnabled
-                    && settingsValues.isUsuallyFollowedBySpace(codePoint)) {
+                    && settingsValues.isUsuallyFollowedBySpace(codePoint)
+                    && !(codePoint == Constants.CODE_PERIOD && Character.isDigit(mConnection.getCodePointBeforeCursor()))) {
                 mSpaceState = SpaceState.PHANTOM;
             }
 
@@ -1721,8 +1722,9 @@ public final class InputLogic {
         if (canBeFollowedByDoubleSpacePeriod(firstCodePoint)) {
             cancelDoubleSpacePeriodCountdown();
             mConnection.deleteTextBeforeCursor(1);
-            final String textToInsert = inputTransaction.getMSettingsValues().mSpacingAndPunctuations
-                    .mSentenceSeparatorAndSpace;
+            final String textToInsert = Character.isDigit(firstCodePoint)
+                    ? "."
+                    : inputTransaction.getMSettingsValues().mSpacingAndPunctuations.mSentenceSeparatorAndSpace;
             mConnection.commitText(textToInsert, 1);
             if (inputTransaction.getMSettingsValues().mUseMultiSpacePunctuation) {
                 startDoubleSpacePeriodCountdown(inputTransaction);
