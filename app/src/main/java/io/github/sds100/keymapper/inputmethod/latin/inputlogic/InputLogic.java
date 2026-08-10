@@ -1442,9 +1442,7 @@ public final class InputLogic {
                 }
                 final int numCharsDeleted = mConnection.getExpectedSelectionEnd()
                         - mConnection.getExpectedSelectionStart();
-                mConnection.setSelection(mConnection.getExpectedSelectionEnd(),
-                        mConnection.getExpectedSelectionEnd());
-                mConnection.deleteTextBeforeCursor(numCharsDeleted);
+                mConnection.commitText("", 1);
                 StatsUtils.onBackspaceSelectedText(numCharsDeleted);
             } else {
                 // There is no selection, just delete one character.

@@ -40,6 +40,10 @@ For instructions on customizing and configuring the keyboard, please refer to th
 * [Icon Reference](docs/utf8_icons.md) — List of unicode characters used for functional keys.
 * [Settings Menu Outline](docs/app_menu.md) — Overview of available menu options and settings.
 
+## Versioning
+
+This project uses [Calendar Versioning (CalVer)](https://calver.org/) with the format `YY.MM.DD` (e.g., `26.08.10` for releases created on August 10, 2026).
+
 ## Acknowledgements
 
 We would like to express our gratitude to the talented artists who designed the application icons:
