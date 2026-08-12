@@ -22,11 +22,21 @@ android {
             def keyAliasEnv = System.getenv("RELEASE_KEY_ALIAS") ?: ""
             def keyPasswordEnv = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
 
-            if (new File(keystorePath).exists() && !keystorePasswordEnv.isEmpty()) {
-                storeFile file(keystorePath)
+            def ksFile = file(keystorePath)
+            if (!ksFile.exists()) {
+                ksFile = file("../" + keystorePath)
+            }
+            if (!ksFile.exists()) {
+                ksFile = file("app/" + keystorePath)
+            }
+
+            if (ksFile.exists() && !keystorePasswordEnv.isEmpty()) {
+                storeFile ksFile
                 storePassword keystorePasswordEnv
                 keyAlias keyAliasEnv
                 keyPassword keyPasswordEnv
+            } else {
+                storeFile file("debug.keystore")
             }
         }
     }
