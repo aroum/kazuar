@@ -66,7 +66,6 @@ import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
 import io.github.sds100.keymapper.inputmethod.compat.EditorInfoCompatUtils;
 import io.github.sds100.keymapper.inputmethod.compat.ViewOutlineProviderCompatUtils;
 import io.github.sds100.keymapper.inputmethod.compat.ViewOutlineProviderCompatUtils.InsetsUpdater;
-import io.github.sds100.keymapper.inputmethod.dictionarypack.DictionaryPackConstants;
 import io.github.sds100.keymapper.inputmethod.event.Event;
 import io.github.sds100.keymapper.inputmethod.event.HardwareEventDecoder;
 import io.github.sds100.keymapper.inputmethod.event.HardwareKeyboardEventDecoder;
@@ -175,9 +174,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // {@link #onEvaluateInputViewShown()}.
     private boolean mIsExecutingStartShowingInputView;
 
-    // Object for reacting to adding/removing a dictionary pack.
-    private final BroadcastReceiver mDictionaryPackInstallReceiver =
-            new DictionaryPackInstallBroadcastReceiver(this);
 
     private final BroadcastReceiver mDictionaryDumpBroadcastReceiver =
             new DictionaryDumpBroadcastReceiver(this);
@@ -770,16 +766,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         filter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
         ContextCompat.registerReceiver(this, mRingerModeChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
-        // Register to receive installation and removal of a dictionary pack.
-        final IntentFilter packageFilter = new IntentFilter();
-        packageFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
-        packageFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-        packageFilter.addDataScheme(SCHEME_PACKAGE);
-        ContextCompat.registerReceiver(this, mDictionaryPackInstallReceiver, packageFilter, ContextCompat.RECEIVER_EXPORTED);
-
-        final IntentFilter newDictFilter = new IntentFilter();
-        newDictFilter.addAction(DictionaryPackConstants.NEW_DICTIONARY_INTENT_ACTION);
-        ContextCompat.registerReceiver(this, mDictionaryPackInstallReceiver, newDictFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
 
         final IntentFilter dictDumpFilter = new IntentFilter();
         dictDumpFilter.addAction(DictionaryDumpBroadcastReceiver.DICTIONARY_DUMP_INTENT_ACTION);
@@ -934,7 +920,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         mSettings.onDestroy();
         unregisterReceiver(mHideSoftInputReceiver);
         unregisterReceiver(mRingerModeChangeReceiver);
-        unregisterReceiver(mDictionaryPackInstallReceiver);
         unregisterReceiver(mDictionaryDumpBroadcastReceiver);
         unregisterReceiver(mRestartAfterDeviceUnlockReceiver);
         unregisterReceiver(mKeyMapperBroadcastReceiver);
@@ -950,7 +935,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @UsedForTesting
     public void recycle() {
-        unregisterReceiver(mDictionaryPackInstallReceiver);
         unregisterReceiver(mDictionaryDumpBroadcastReceiver);
         unregisterReceiver(mRingerModeChangeReceiver);
         unregisterReceiver(mRestartAfterDeviceUnlockReceiver);

@@ -185,22 +185,5 @@
                 <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
         </receiver>
-
-        <receiver
-            android:name="DictionaryPackInstallBroadcastReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="io.github.sds100.keymapper.inputmethod.dictionarypack.aosp.UNKNOWN_CLIENT" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Content providers -->
-        <provider
-            android:name="io.github.sds100.keymapper.inputmethod.dictionarypack.DictionaryProvider"
-            android:authorities="@string/authority"
-            android:exported="false"
-            android:grantUriPermissions="true"
-            android:label="@string/dictionary_provider_name"
-            android:multiprocess="false"></provider>
     </application>
 </manifest>

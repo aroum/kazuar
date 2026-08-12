@@ -27,7 +27,6 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 
-import io.github.sds100.keymapper.inputmethod.dictionarypack.DictionaryPackConstants;
 import io.github.sds100.keymapper.inputmethod.latin.define.DecoderSpecificConstants;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DictionaryInfoUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DictionaryInfoUtils.DictionaryInfo;
@@ -102,7 +101,7 @@ public final class BinaryDictionaryFileDumper {
      */
     public static Uri.Builder getProviderUriBuilder(final String path) {
         return new Uri.Builder().scheme(ContentResolver.SCHEME_CONTENT)
-                .authority(DictionaryPackConstants.AUTHORITY).appendPath(path);
+                .authority("io.github.sds100.keymapper.inputmethod.dictionarypack.aosp").appendPath(path);
     }
 
     /**
