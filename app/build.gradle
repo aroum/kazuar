@@ -47,15 +47,10 @@ android {
         ci {
             minifyEnabled true
             shrinkResources true
-            debuggable = true
+            debuggable = false
 
-            versionNameSuffix "-ci.$RUN_NUMBER"
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
-            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
+            signingConfig signingConfigs.release
         }
     }
 
