@@ -139,7 +139,7 @@ public final class BinaryDictionaryFileDumper {
      */
     private static List<WordListInfo> getWordListWordListInfos(final Locale locale,
             final Context context, final boolean hasDefaultWordList) {
-        final String clientId = context.getString(R.string.dictionary_pack_client_id);
+        final String clientId = "io.github.sds100.keymapper.inputmethod.latin";
         final ContentProviderClient client = context.getContentResolver().
                 acquireContentProviderClient(getProviderUriBuilder("").build());
         if (null == client) return Collections.emptyList();

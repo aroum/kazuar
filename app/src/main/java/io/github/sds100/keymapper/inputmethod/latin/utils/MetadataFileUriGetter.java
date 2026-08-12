@@ -30,7 +30,7 @@ public class MetadataFileUriGetter {
     }
 
     public static String getMetadataUri(final Context context) {
-        return context.getString(R.string.dictionary_pack_metadata_uri);
+        return "";
     }
 
     public static String getMetadataAdditionalId(final Context context) {

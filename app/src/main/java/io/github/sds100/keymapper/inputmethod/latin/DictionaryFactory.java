@@ -113,7 +113,7 @@ public final class DictionaryFactory {
             // If it's a file left over from the last version however, it's not great.
             BinaryDictionaryFileDumper.reportBrokenFileToDictionaryProvider(
                     providerClient,
-                    context.getString(R.string.dictionary_pack_client_id),
+                    "io.github.sds100.keymapper.inputmethod.latin",
                     wordlistId);
         }
     }
