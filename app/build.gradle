@@ -33,20 +33,24 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             debuggable false
             jniDebuggable false
             renderscriptDebuggable false
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
         }
         debug {
             versionNameSuffix "-debug"
         }
         ci {
+            minifyEnabled true
+            shrinkResources true
             debuggable = true
 
             versionNameSuffix "-ci.$RUN_NUMBER"
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
             if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
                 signingConfig signingConfigs.release
             } else {

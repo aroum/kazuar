@@ -26,3 +26,19 @@
 # TODO: remove once used in code.
 -keep class io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayout { *; }
 
+# Keep InputMethodService and Activity components
+-keep public class * extends android.inputmethodservice.InputMethodService
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.view.View {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+# Keep preference classes used via XML reflection
+-keep public class * extends androidx.preference.Preference
+-keep public class * extends android.preference.Preference
+
+
