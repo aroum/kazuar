@@ -14,6 +14,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
 jobs:
   apk:
     name: Generate APK
@@ -45,14 +48,13 @@ jobs:
 
       - name: Install NDK with retries
         run: |
-          SDKMANAGER="sdkmanager"
-          if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          elif [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
-            SDKMANAGER="$ANDROID_HOME/tools/bin/sdkmanager"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER="sdkmanager"
           fi
           for i in {1..5}; do
-            echo "y" | $SDKMANAGER "ndk;21.4.7075529" && break
+            yes | $SDKMANAGER --licenses > /dev/null 2>&1 || true
+            yes | $SDKMANAGER "ndk;21.4.7075529" && break
             echo "NDK download failed, retrying in 5 seconds..."
             sleep 5
           done

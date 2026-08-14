@@ -19,7 +19,7 @@
 -->
 
 <resources>
-    <style name="KeyboardIcons.LXX_Dark.Parent">
+    <style name="KeyboardIcons.LXX_Dark">
         <!-- Keyboard icons -->
         <item name="iconShiftKey">@drawable/sym_keyboard_shift_lxx_dark</item>
         <item name="iconShiftKeyShifted">@drawable/sym_keyboard_shift_locked_lxx_dark</item>
