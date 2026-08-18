@@ -1,21 +1,13 @@
 package io.github.sds100.keymapper.inputmethod.compat
 
+import android.os.Build
 import android.view.inputmethod.EditorInfo
 import java.util.*
 
 object EditorInfoCompatUtils {
-    // Note that EditorInfo.IME_FLAG_FORCE_ASCII has been introduced
-// in API level 16 (Build.VERSION_CODES.JELLY_BEAN).
-    private val FIELD_IME_FLAG_FORCE_ASCII = CompatUtils.getField(
-            EditorInfo::class.java, "IME_FLAG_FORCE_ASCII")
-    private val OBJ_IME_FLAG_FORCE_ASCII: Int? = CompatUtils.getFieldValue(
-            null /* receiver */, null /* defaultValue */, FIELD_IME_FLAG_FORCE_ASCII) as Int
-    private val FIELD_HINT_LOCALES = CompatUtils.getField(
-            EditorInfo::class.java, "hintLocales")
-
     @kotlin.jvm.JvmStatic
     fun hasFlagForceAscii(imeOptions: Int): Boolean {
-        return if (OBJ_IME_FLAG_FORCE_ASCII == null) false else imeOptions and OBJ_IME_FLAG_FORCE_ASCII != 0
+        return imeOptions and EditorInfo.IME_FLAG_FORCE_ASCII != 0
     }
 
     @kotlin.jvm.JvmStatic
@@ -49,7 +41,7 @@ object EditorInfoCompatUtils {
         if (hasFlagForceAscii(imeOptions)) {
             flags.append("flagForceAscii|")
         }
-        return if (action != null) flags.toString() + action else flags.toString()
+        return flags.toString() + action
     }
 
     @kotlin.jvm.JvmStatic
@@ -57,10 +49,12 @@ object EditorInfoCompatUtils {
         if (editorInfo == null) {
             return null
         }
-        val localeList = CompatUtils.getFieldValue(editorInfo, null, FIELD_HINT_LOCALES)
-                ?: return null
-        return if (LocaleListCompatUtils.isEmpty(localeList)) {
-            null
-        } else LocaleListCompatUtils.get(localeList, 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val hintLocales = editorInfo.hintLocales
+            if (hintLocales != null && !hintLocales.isEmpty) {
+                return hintLocales.get(0)
+            }
+        }
+        return null
     }
 }

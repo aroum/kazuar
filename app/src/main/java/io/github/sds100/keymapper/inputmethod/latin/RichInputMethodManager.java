@@ -28,7 +28,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
-import io.github.sds100.keymapper.inputmethod.compat.InputMethodManagerCompatWrapper;
 import io.github.sds100.keymapper.inputmethod.compat.InputMethodSubtypeCompatUtils;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
 import io.github.sds100.keymapper.inputmethod.latin.utils.AdditionalSubtypeUtils;
@@ -64,7 +63,7 @@ public class RichInputMethodManager {
     private static final RichInputMethodManager sInstance = new RichInputMethodManager();
 
     private Context mContext;
-    private InputMethodManagerCompatWrapper mImmWrapper;
+    private InputMethodManager mImm;
     private InputMethodInfoCache mInputMethodInfoCache;
     private RichInputMethodSubtype mCurrentRichInputMethodSubtype;
     private InputMethodInfo mShortcutInputMethodInfo;
@@ -82,7 +81,7 @@ public class RichInputMethodManager {
     }
 
     private boolean isInitialized() {
-        return mImmWrapper != null;
+        return mImm != null;
     }
 
     private void checkInitialized() {
@@ -95,15 +94,15 @@ public class RichInputMethodManager {
         if (isInitialized()) {
             return;
         }
-        mImmWrapper = new InputMethodManagerCompatWrapper(context);
+        mImm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         mContext = context;
         mInputMethodInfoCache = new InputMethodInfoCache(
-                mImmWrapper.mImm, context.getPackageName());
+                mImm, context.getPackageName());
 
         // Initialize additional subtypes.
         SubtypeLocaleUtils.init(context);
         final InputMethodSubtype[] additionalSubtypes = getAdditionalSubtypes();
-        mImmWrapper.mImm.setAdditionalInputMethodSubtypes(
+        mImm.setAdditionalInputMethodSubtypes(
                 getInputMethodIdOfThisIme(), additionalSubtypes);
 
         // Initialize the current input method subtype and the shortcut IME.
@@ -119,7 +118,7 @@ public class RichInputMethodManager {
 
     public InputMethodManager getInputMethodManager() {
         checkInitialized();
-        return mImmWrapper.mImm;
+        return mImm;
     }
 
     public List<InputMethodSubtype> getMyEnabledInputMethodSubtypeList(
@@ -129,11 +128,9 @@ public class RichInputMethodManager {
     }
 
     public boolean switchToNextInputMethod(final IBinder token, final boolean onlyCurrentIme) {
-        if (mImmWrapper.switchToNextInputMethod(token, onlyCurrentIme)) {
+        if (mImm.switchToNextInputMethod(token, onlyCurrentIme)) {
             return true;
         }
-        // Was not able to call {@link InputMethodManager#switchToNextInputMethodIBinder,boolean)}
-        // because the current device is running ICS or previous and lacks the API.
         if (switchToNextInputSubtypeInThisIme(token, onlyCurrentIme)) {
             return true;
         }
@@ -356,7 +353,7 @@ public class RichInputMethodManager {
     }
 
     public boolean hasMultipleEnabledIMEsOrSubtypes(final boolean shouldIncludeAuxiliarySubtypes) {
-        final List<InputMethodInfo> enabledImis = mImmWrapper.mImm.getEnabledInputMethodList();
+        final List<InputMethodInfo> enabledImis = mImm.getEnabledInputMethodList();
         return hasMultipleEnabledSubtypes(shouldIncludeAuxiliarySubtypes, enabledImis);
     }
 
@@ -490,19 +487,16 @@ public class RichInputMethodManager {
 
     public void refreshSubtypeCaches() {
         mInputMethodInfoCache.clear();
-        updateCurrentSubtype(mImmWrapper.mImm.getCurrentInputMethodSubtype());
+        updateCurrentSubtype(mImm.getCurrentInputMethodSubtype());
         updateShortcutIme();
     }
 
     public boolean shouldOfferSwitchingToNextInputMethod(final IBinder binder,
             boolean defaultValue) {
-        // Use the default value instead on Jelly Bean MR2 and previous where
-        // {@link InputMethodManager#shouldOfferSwitchingToNextInputMethod} isn't yet available
-        // and on KitKat where the API is still just a stub to return true always.
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
             return defaultValue;
         }
-        return mImmWrapper.shouldOfferSwitchingToNextInputMethod(binder);
+        return mImm.shouldOfferSwitchingToNextInputMethod(binder);
     }
 
     public boolean isSystemLocaleSameAsLocaleOfAllEnabledSubtypesOfEnabledImes() {
