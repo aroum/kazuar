@@ -31,26 +31,27 @@ import io.github.sds100.keymapper.inputmethod.latin.userdictionary.UserDictionar
 import io.github.sds100.keymapper.inputmethod.latin.userdictionary.UserDictionaryLocalePicker;
 import io.github.sds100.keymapper.inputmethod.latin.userdictionary.UserDictionarySettings;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 public class FragmentUtils {
-    private static final HashSet<String> sLatinImeFragments = new HashSet<>();
-    static {
-        sLatinImeFragments.add(PreferencesSettingsFragment.class.getName());
-        sLatinImeFragments.add(AppearanceSettingsFragment.class.getName());
-        sLatinImeFragments.add(CustomInputStyleSettingsFragment.class.getName());
-        sLatinImeFragments.add(GestureSettingsFragment.class.getName());
-        sLatinImeFragments.add(CorrectionSettingsFragment.class.getName());
-        sLatinImeFragments.add(AdvancedSettingsFragment.class.getName());
-        sLatinImeFragments.add(DebugSettingsFragment.class.getName());
-        sLatinImeFragments.add(IncognitoModeRulesFragment.class.getName());
-        sLatinImeFragments.add(SettingsFragment.class.getName());
-        sLatinImeFragments.add(SpellCheckerSettingsFragment.class.getName());
-        sLatinImeFragments.add(UserDictionaryAddWordFragment.class.getName());
-        sLatinImeFragments.add(UserDictionaryList.class.getName());
-        sLatinImeFragments.add(UserDictionaryLocalePicker.class.getName());
-        sLatinImeFragments.add(UserDictionarySettings.class.getName());
-    }
+    private static final Set<String> sLatinImeFragments = new HashSet<>(Arrays.asList(
+            PreferencesSettingsFragment.class.getName(),
+            AppearanceSettingsFragment.class.getName(),
+            CustomInputStyleSettingsFragment.class.getName(),
+            GestureSettingsFragment.class.getName(),
+            CorrectionSettingsFragment.class.getName(),
+            AdvancedSettingsFragment.class.getName(),
+            DebugSettingsFragment.class.getName(),
+            IncognitoModeRulesFragment.class.getName(),
+            SettingsFragment.class.getName(),
+            SpellCheckerSettingsFragment.class.getName(),
+            UserDictionaryAddWordFragment.class.getName(),
+            UserDictionaryList.class.getName(),
+            UserDictionaryLocalePicker.class.getName(),
+            UserDictionarySettings.class.getName()
+    ));
 
     public static boolean isValidFragment(String fragmentName) {
         return sLatinImeFragments.contains(fragmentName);
