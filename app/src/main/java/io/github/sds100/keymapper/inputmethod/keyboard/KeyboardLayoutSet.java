@@ -27,9 +27,9 @@ import android.util.Xml;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodSubtype;
 
+import androidx.core.os.UserManagerCompat;
 import io.github.sds100.keymapper.inputmethod.compat.EditorInfoCompatUtils;
 import io.github.sds100.keymapper.inputmethod.compat.InputMethodSubtypeCompatUtils;
-import io.github.sds100.keymapper.inputmethod.compat.UserManagerCompatUtils;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyboardBuilder;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyboardParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.UniqueKeysCache;
@@ -316,12 +316,9 @@ public final class KeyboardLayoutSet {
             params.mNoSettingsKey = InputAttributes.inPrivateImeOptions(
                     mPackageName, NO_SETTINGS_KEY, editorInfo);
 
-            // When the device is still unlocked, features like showing the IME setting app need to
+            // When the device is still locked, features like showing the IME setting app need to
             // be locked down.
-            // TODO: Switch to {@code UserManagerCompat.isUserUnlocked()} in the support-v4 library
-            // when it becomes publicly available.
-            @UserManagerCompatUtils.LockState final int lockState = UserManagerCompatUtils.getUserLockState(context);
-            if (lockState == UserManagerCompatUtils.LOCK_STATE_LOCKED) {
+            if (!UserManagerCompat.isUserUnlocked(context)) {
                 params.mNoSettingsKey = true;
             }
         }
