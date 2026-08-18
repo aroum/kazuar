@@ -139,12 +139,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     private static final String KEY_MAPPER_INPUT_METHOD_EXTRA_TEXT = "io.github.sds100.keymapper.inputmethod.EXTRA_TEXT";
     private static final String KEY_MAPPER_INPUT_METHOD_EXTRA_KEY_EVENT = "io.github.sds100.keymapper.inputmethod.EXTRA_KEY_EVENT";
 
-    /**
-     * The name of the scheme used by the Package Manager to warn of a new package installation,
-     * replacement or removal.
-     */
-    private static final String SCHEME_PACKAGE = "package";
-
     public final Settings mSettings;
     private final DictionaryFacilitator mDictionaryFacilitator =
             DictionaryFacilitatorProvider.getDictionaryFacilitator(
