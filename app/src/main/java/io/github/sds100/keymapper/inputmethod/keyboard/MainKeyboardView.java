@@ -38,7 +38,6 @@ import io.github.sds100.keymapper.inputmethod.accessibility.AccessibilityUtils;
 import io.github.sds100.keymapper.inputmethod.accessibility.MainKeyboardAccessibilityDelegate;
 import io.github.sds100.keymapper.inputmethod.annotations.ExternallyReferenced;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.DrawingPreviewPlacerView;
-import io.github.sds100.keymapper.inputmethod.keyboard.internal.DrawingProxy;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureFloatingTextDrawingPreview;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureTrailsDrawingPreview;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyDrawParams;
@@ -107,8 +106,10 @@ import javax.annotation.Nullable;
  * @attr ref R.styleable#MainKeyboardView_gestureRecognitionSpeedThreshold
  * @attr ref R.styleable#MainKeyboardView_suppressKeyPreviewAfterBatchInputDuration
  */
-public final class MainKeyboardView extends KeyboardView implements DrawingProxy,
+public final class MainKeyboardView extends KeyboardView implements
         MoreKeysPanel.Controller {
+    public static final int FADE_IN = 0;
+    public static final int FADE_OUT = 1;
     private static final String TAG = MainKeyboardView.class.getSimpleName();
 
     /** Listener for {@link KeyboardActionListener}. */
@@ -308,20 +309,18 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         animatorToStart.setCurrentPlayTime(startTime);
     }
 
-    // Implements {@link DrawingProxy#startWhileTypingAnimation(int)}.
     /**
      * Called when a while-typing-animation should be started.
-     * @param fadeInOrOut {@link DrawingProxy#FADE_IN} starts while-typing-fade-in animation.
-     * {@link DrawingProxy#FADE_OUT} starts while-typing-fade-out animation.
+     * @param fadeInOrOut {@link #FADE_IN} starts while-typing-fade-in animation.
+     * {@link #FADE_OUT} starts while-typing-fade-out animation.
      */
-    @Override
     public void startWhileTypingAnimation(final int fadeInOrOut) {
         switch (fadeInOrOut) {
-        case DrawingProxy.FADE_IN:
+        case FADE_IN:
             cancelAndStartAnimators(
                     mAltCodeKeyWhileTypingFadeoutAnimator, mAltCodeKeyWhileTypingFadeinAnimator);
             break;
-        case DrawingProxy.FADE_OUT:
+        case FADE_OUT:
             cancelAndStartAnimators(
                     mAltCodeKeyWhileTypingFadeinAnimator, mAltCodeKeyWhileTypingFadeoutAnimator);
             break;
@@ -458,8 +457,6 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         windowContentView.addView(mDrawingPreviewPlacerView);
     }
 
-    // Implements {@link DrawingProxy#onKeyPressed(Key,boolean)}.
-    @Override
     public void onKeyPressed(@Nonnull final Key key, final boolean withPreview) {
         key.onPressed();
         invalidateKey(key);
@@ -490,8 +487,6 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         invalidateKey(key);
     }
 
-    // Implements {@link DrawingProxy#onKeyReleased(Key,boolean)}.
-    @Override
     public void onKeyReleased(@Nonnull final Key key, final boolean withAnimation) {
         key.onReleased();
         invalidateKey(key);
@@ -514,7 +509,6 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         mSlidingKeyInputDrawingPreview.setPreviewEnabled(enabled);
     }
 
-    @Override
     public void showSlidingKeyInputPreview(@Nullable final PointerTracker tracker) {
         locatePreviewPlacerView();
         if (tracker != null) {
@@ -542,13 +536,10 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         }
     }
 
-    // Implements {@link DrawingProxy#dismissGestureFloatingPreviewTextWithoutDelay()}.
-    @Override
     public void dismissGestureFloatingPreviewTextWithoutDelay() {
         mGestureFloatingTextDrawingPreview.dismissGestureFloatingPreviewText();
     }
 
-    @Override
     public void showGestureTrail(@Nonnull final PointerTracker tracker,
             final boolean showsFloatingPreviewText) {
         locatePreviewPlacerView();
@@ -584,8 +575,6 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         mDrawingPreviewPlacerView.removeAllViews();
     }
 
-    // Implements {@link DrawingProxy@showMoreKeysKeyboard(Key,PointerTracker)}.
-    @Override
     @Nullable
     public MoreKeysPanel showMoreKeysKeyboard(@Nonnull final Key key,
             @Nonnull final PointerTracker tracker) {

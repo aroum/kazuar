@@ -27,13 +27,12 @@ import android.view.MotionEvent;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.BatchInputArbiter;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.BatchInputArbiter.BatchInputArbiterListener;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.BogusMoveEventDetector;
-import io.github.sds100.keymapper.inputmethod.keyboard.internal.DrawingProxy;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureEnabler;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureStrokeDrawingParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureStrokeDrawingPoints;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.GestureStrokeRecognitionParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.PointerTrackerQueue;
-import io.github.sds100.keymapper.inputmethod.keyboard.internal.TimerProxy;
+import io.github.sds100.keymapper.inputmethod.keyboard.internal.TimerHandler;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.TypingTimeRecorder;
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
@@ -101,8 +100,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     public final int mPointerId;
 
-    private static DrawingProxy sDrawingProxy;
-    private static TimerProxy sTimerProxy;
+    private static MainKeyboardView sDrawingProxy;
+    private static TimerHandler sTimerProxy;
     private static KeyboardActionListener sListener = KeyboardActionListener.EMPTY_LISTENER;
 
     // The {@link KeyDetector} is set whenever the down event is processed. Also this is updated
@@ -167,8 +166,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private final GestureStrokeDrawingPoints mGestureStrokeDrawingPoints;
 
     // TODO: Add PointerTrackerFactory singleton and move some class static methods into it.
-    public static void init(final TypedArray mainKeyboardViewAttr, final TimerProxy timerProxy,
-            final DrawingProxy drawingProxy) {
+    public static void init(final TypedArray mainKeyboardViewAttr, final TimerHandler timerProxy,
+            final MainKeyboardView drawingProxy) {
         sParams = new PointerTrackerParams(mainKeyboardViewAttr);
         sGestureStrokeRecognitionParams = new GestureStrokeRecognitionParams(mainKeyboardViewAttr);
         sGestureStrokeDrawingParams = new GestureStrokeDrawingParams(mainKeyboardViewAttr);

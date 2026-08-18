@@ -21,14 +21,14 @@ import android.os.SystemClock;
 import android.view.ViewConfiguration;
 
 import io.github.sds100.keymapper.inputmethod.keyboard.Key;
+import io.github.sds100.keymapper.inputmethod.keyboard.MainKeyboardView;
 import io.github.sds100.keymapper.inputmethod.keyboard.PointerTracker;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.utils.LeakGuardHandlerWrapper;
 
 import javax.annotation.Nonnull;
 
-public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
-        implements TimerProxy {
+public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView> {
     private static final int MSG_TYPING_STATE_EXPIRED = 0;
     private static final int MSG_REPEAT_KEY = 1;
     private static final int MSG_LONGPRESS_KEY = 2;
@@ -41,7 +41,7 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
     private final int mIgnoreAltCodeKeyTimeout;
     private final int mGestureRecognitionUpdateTime;
 
-    public TimerHandler(@Nonnull final DrawingProxy ownerInstance,
+    public TimerHandler(@Nonnull final MainKeyboardView ownerInstance,
             final int ignoreAltCodeKeyTimeout, final int gestureRecognitionUpdateTime) {
         super(ownerInstance);
         mIgnoreAltCodeKeyTimeout = ignoreAltCodeKeyTimeout;
@@ -50,13 +50,13 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
 
     @Override
     public void handleMessage(final Message msg) {
-        final DrawingProxy drawingProxy = getOwnerInstance();
+        final MainKeyboardView drawingProxy = getOwnerInstance();
         if (drawingProxy == null) {
             return;
         }
         switch (msg.what) {
         case MSG_TYPING_STATE_EXPIRED:
-            drawingProxy.startWhileTypingAnimation(DrawingProxy.FADE_IN);
+            drawingProxy.startWhileTypingAnimation(MainKeyboardView.FADE_IN);
             break;
         case MSG_REPEAT_KEY:
             final PointerTracker tracker1 = (PointerTracker) msg.obj;
@@ -143,7 +143,7 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
 
         final boolean isTyping = isTypingState();
         removeMessages(MSG_TYPING_STATE_EXPIRED);
-        final DrawingProxy drawingProxy = getOwnerInstance();
+        final MainKeyboardView drawingProxy = getOwnerInstance();
         if (drawingProxy == null) {
             return;
         }
@@ -152,7 +152,7 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
         final int typedCode = typedKey.getCode();
         if (typedCode == Constants.CODE_SPACE || typedCode == Constants.CODE_ENTER) {
             if (isTyping) {
-                drawingProxy.startWhileTypingAnimation(DrawingProxy.FADE_IN);
+                drawingProxy.startWhileTypingAnimation(MainKeyboardView.FADE_IN);
             }
             return;
         }
@@ -162,7 +162,7 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<DrawingProxy>
         if (isTyping) {
             return;
         }
-        drawingProxy.startWhileTypingAnimation(DrawingProxy.FADE_OUT);
+        drawingProxy.startWhileTypingAnimation(MainKeyboardView.FADE_OUT);
     }
 
     @Override
