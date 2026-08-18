@@ -1766,7 +1766,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                 mKeyboardSwitcher.getKeyboardShiftMode(), inputStyle, sequenceNumber, callback);
     }
 
-    @Override
     public void showSuggestionStrip(final SuggestedWords suggestedWords) {
         if (suggestedWords.isEmpty()) {
             setNeutralSuggestionStrip();
@@ -1792,7 +1791,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     // This will show either an empty suggestion strip (if prediction is enabled) or
     // punctuation suggestions (if it's disabled).
-    @Override
     public void setNeutralSuggestionStrip() {
         final SettingsValues currentSettings = mSettings.getCurrent();
         final SuggestedWords neutralSuggestions = currentSettings.mBigramPredictionEnabled

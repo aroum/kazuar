@@ -82,7 +82,6 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         }
     }
 
-    @Override
     public void startKeyRepeatTimerOf(@Nonnull final PointerTracker tracker, final int repeatCount,
             final int delay) {
         final Key key = tracker.getKey();
@@ -106,7 +105,6 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         return hasMessages(MSG_REPEAT_KEY);
     }
 
-    @Override
     public void startLongPressTimerOf(@Nonnull final PointerTracker tracker, final int delay) {
         final Key key = tracker.getKey();
         if (key == null) {
@@ -119,13 +117,11 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         sendMessageDelayed(obtainMessage(messageId, tracker), delay);
     }
 
-    @Override
     public void cancelLongPressTimersOf(@Nonnull final PointerTracker tracker) {
         removeMessages(MSG_LONGPRESS_KEY, tracker);
         removeMessages(MSG_LONGPRESS_SHIFT_KEY, tracker);
     }
 
-    @Override
     public void cancelLongPressShiftKeyTimer() {
         removeMessages(MSG_LONGPRESS_SHIFT_KEY);
     }
@@ -135,7 +131,6 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         removeMessages(MSG_LONGPRESS_SHIFT_KEY);
     }
 
-    @Override
     public void startTypingStateTimer(@Nonnull final Key typedKey) {
         if (typedKey.isModifier() || typedKey.altCodeWhileTyping()) {
             return;
@@ -165,28 +160,23 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         drawingProxy.startWhileTypingAnimation(MainKeyboardView.FADE_OUT);
     }
 
-    @Override
     public boolean isTypingState() {
         return hasMessages(MSG_TYPING_STATE_EXPIRED);
     }
 
-    @Override
     public void startDoubleTapShiftKeyTimer() {
         sendMessageDelayed(obtainMessage(MSG_DOUBLE_TAP_SHIFT_KEY),
                 ViewConfiguration.getDoubleTapTimeout());
     }
 
-    @Override
     public void cancelDoubleTapShiftKeyTimer() {
         removeMessages(MSG_DOUBLE_TAP_SHIFT_KEY);
     }
 
-    @Override
     public boolean isInDoubleTapShiftKeyTimeout() {
         return hasMessages(MSG_DOUBLE_TAP_SHIFT_KEY);
     }
 
-    @Override
     public void cancelKeyTimersOf(@Nonnull final PointerTracker tracker) {
         cancelKeyRepeatTimerOf(tracker);
         cancelLongPressTimersOf(tracker);
@@ -197,7 +187,6 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
         cancelLongPressTimers();
     }
 
-    @Override
     public void startUpdateBatchInputTimer(@Nonnull final PointerTracker tracker) {
         if (mGestureRecognitionUpdateTime <= 0) {
             return;
@@ -207,12 +196,10 @@ public final class TimerHandler extends LeakGuardHandlerWrapper<MainKeyboardView
                 mGestureRecognitionUpdateTime);
     }
 
-    @Override
     public void cancelUpdateBatchInputTimer(@Nonnull final PointerTracker tracker) {
         removeMessages(MSG_UPDATE_BATCH_INPUT, tracker);
     }
 
-    @Override
     public void cancelAllUpdateBatchInputTimers() {
         removeMessages(MSG_UPDATE_BATCH_INPUT);
     }

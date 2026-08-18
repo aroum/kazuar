@@ -954,7 +954,6 @@ public final class RichInputConnection {
         }
     }
 
-    @Override
     public boolean performPrivateCommand(final String action, final Bundle data) {
         mIC = mParent.getCurrentInputConnection();
         if (!isConnected()) {
