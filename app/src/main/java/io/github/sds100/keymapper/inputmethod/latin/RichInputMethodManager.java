@@ -139,7 +139,7 @@ public class RichInputMethodManager {
 
     private boolean switchToNextInputSubtypeInThisIme(final IBinder token,
             final boolean onlyCurrentIme) {
-        final InputMethodManager imm = mImmWrapper.mImm;
+        final InputMethodManager imm = mImm;
         final InputMethodSubtype currentSubtype = imm.getCurrentInputMethodSubtype();
         final List<InputMethodSubtype> enabledSubtypes = getMyEnabledInputMethodSubtypeList(
                 true /* allowsImplicitlySelectedSubtypes */);
@@ -161,7 +161,7 @@ public class RichInputMethodManager {
     }
 
     private boolean switchToNextInputMethodAndSubtype(final IBinder token) {
-        final InputMethodManager imm = mImmWrapper.mImm;
+        final InputMethodManager imm = mImm;
         final List<InputMethodInfo> enabledImis = imm.getEnabledInputMethodList();
         final int currentIndex = getImiIndexInList(getInputMethodInfoOfThisIme(), enabledImis);
         if (currentIndex == INDEX_NOT_FOUND) {
@@ -467,12 +467,12 @@ public class RichInputMethodManager {
     }
 
     public void setInputMethodAndSubtype(final IBinder token, final InputMethodSubtype subtype) {
-        mImmWrapper.mImm.setInputMethodAndSubtype(
+        mImm.setInputMethodAndSubtype(
                 token, getInputMethodIdOfThisIme(), subtype);
     }
 
     public void setAdditionalInputMethodSubtypes(final InputMethodSubtype[] subtypes) {
-        mImmWrapper.mImm.setAdditionalInputMethodSubtypes(
+        mImm.setAdditionalInputMethodSubtypes(
                 getInputMethodIdOfThisIme(), subtypes);
         // Clear the cache so that we go read the {@link InputMethodInfo} of this IME and list of
         // subtypes again next time.
