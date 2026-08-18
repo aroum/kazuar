@@ -20,11 +20,11 @@ import android.text.TextUtils;
 import android.util.SparseIntArray;
 
 import io.github.sds100.keymapper.inputmethod.keyboard.Key;
-import io.github.sds100.keymapper.inputmethod.latin.common.CollectionUtils;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -238,7 +238,7 @@ public final class MoreKeySpec {
             final String entry = array[i];
             if (TextUtils.isEmpty(entry)) {
                 if (out == null) {
-                    out = CollectionUtils.arrayAsList(array, 0, i);
+                    out = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(array, 0, i)));
                 }
             } else if (out != null) {
                 out.add(entry);
@@ -273,7 +273,7 @@ public final class MoreKeySpec {
                 } else {
                     // Filter out excessive '%' marker.
                     if (out == null) {
-                        out = CollectionUtils.arrayAsList(moreKeys, 0, moreKeyIndex);
+                        out = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(moreKeys, 0, moreKeyIndex)));
                     }
                 }
             } else {
@@ -285,14 +285,14 @@ public final class MoreKeySpec {
         if (additionalCount > 0 && additionalIndex == 0) {
             // No '%' marker is found in more keys.
             // Insert all additional more keys to the head of more keys.
-            out = CollectionUtils.arrayAsList(additionalMoreKeys, additionalIndex, additionalCount);
+            out = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(additionalMoreKeys, additionalIndex, additionalCount)));
             for (int i = 0; i < moreKeysCount; i++) {
                 out.add(moreKeys[i]);
             }
         } else if (additionalIndex < additionalCount) {
             // The number of '%' markers are less than additional more keys.
             // Append remained additional more keys to the tail of more keys.
-            out = CollectionUtils.arrayAsList(moreKeys, 0, moreKeysCount);
+            out = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(moreKeys, 0, moreKeysCount)));
             for (int i = additionalIndex; i < additionalCount; i++) {
                 out.add(additionalMoreKeys[i]);
             }

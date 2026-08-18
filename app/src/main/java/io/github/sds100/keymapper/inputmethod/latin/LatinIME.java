@@ -89,7 +89,6 @@ import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsActivity;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripView;
-import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripViewAccessor;
 import android.view.ContextThemeWrapper;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ApplicationUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
@@ -107,7 +106,7 @@ import static io.github.sds100.keymapper.inputmethod.latin.common.Constants.ImeO
  * Input method implementation for Qwerty'ish keyboard.
  */
 public class LatinIME extends InputMethodService implements KeyboardActionListener,
-        SuggestionStripView.Listener, SuggestionStripViewAccessor,
+        SuggestionStripView.Listener,
         DictionaryFacilitator.DictionaryInitializationListener,
         PermissionsManager.PermissionsResultCallback {
     static final String TAG = LatinIME.class.getSimpleName();
@@ -150,8 +149,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     private final DictionaryFacilitator mDictionaryFacilitator =
             DictionaryFacilitatorProvider.getDictionaryFacilitator(
                     false /* isNeededForSpellChecking */);
-    final InputLogic mInputLogic = new InputLogic(this /* LatinIME */,
-            this /* SuggestionStripViewAccessor */, mDictionaryFacilitator);
+    final InputLogic mInputLogic = new InputLogic(this /* LatinIME */, mDictionaryFacilitator);
     // We expect to have only one decoder in almost all cases, hence the default capacity of 1.
     // If it turns out we need several, it will get grown seamlessly.
     final SparseArray<HardwareEventDecoder> mHardwareEventDecoders = new SparseArray<>(1);

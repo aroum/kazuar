@@ -26,7 +26,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
-import io.github.sds100.keymapper.inputmethod.latin.common.CollectionUtils;
 import io.github.sds100.keymapper.inputmethod.latin.common.LocaleUtils;
 import io.github.sds100.keymapper.inputmethod.latin.define.DebugFlags;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ExecutorUtils;
@@ -317,7 +316,7 @@ public class PersonalDictionaryLookup implements Closeable {
      */
     public Set<String> getWordsForLocale(@Nonnull final Locale inputLocale) {
         final HashMap<String, HashMap<Locale, String>> dictWords = mDictWords;
-        if (CollectionUtils.isNullOrEmpty(dictWords)) {
+        if (dictWords == null || dictWords.isEmpty()) {
             return Collections.emptySet();
         }
 
@@ -325,7 +324,7 @@ public class PersonalDictionaryLookup implements Closeable {
         final String inputLocaleString = inputLocale.toString();
         for (String word : dictWords.keySet()) {
             HashMap<Locale, String> localeStringMap = dictWords.get(word);
-                if (!CollectionUtils.isNullOrEmpty(localeStringMap)) {
+                if (localeStringMap != null && !localeStringMap.isEmpty()) {
                     for (Locale wordLocale : localeStringMap.keySet()) {
                         final String wordLocaleString = wordLocale.toString();
                         final int match = LocaleUtils.getMatchLevel(wordLocaleString, inputLocaleString);
@@ -351,7 +350,7 @@ public class PersonalDictionaryLookup implements Closeable {
      */
     public Set<String> getShortcutsForLocale(@Nonnull final Locale inputLocale) {
         final Map<Locale, HashMap<String, String>> shortcutsPerLocale = mShortcutsPerLocale;
-        if (CollectionUtils.isNullOrEmpty(shortcutsPerLocale)) {
+        if (shortcutsPerLocale == null || shortcutsPerLocale.isEmpty()) {
             return Collections.emptySet();
         }
 
@@ -359,7 +358,7 @@ public class PersonalDictionaryLookup implements Closeable {
         if (!TextUtils.isEmpty(inputLocale.getCountry())) {
             // First look for the country-specific shortcut: en_US, en_UK, fr_FR, etc.
             final Map<String, String> countryShortcuts = shortcutsPerLocale.get(inputLocale);
-            if (!CollectionUtils.isNullOrEmpty(countryShortcuts)) {
+            if (countryShortcuts != null && !countryShortcuts.isEmpty()) {
                 shortcuts.addAll(countryShortcuts.keySet());
             }
         }
@@ -368,13 +367,13 @@ public class PersonalDictionaryLookup implements Closeable {
         final Locale languageOnlyLocale =
                 LocaleUtils.constructLocaleFromString(inputLocale.getLanguage());
         final Map<String, String> languageShortcuts = shortcutsPerLocale.get(languageOnlyLocale);
-        if (!CollectionUtils.isNullOrEmpty(languageShortcuts)) {
+        if (languageShortcuts != null && !languageShortcuts.isEmpty()) {
             shortcuts.addAll(languageShortcuts.keySet());
         }
 
         // If all else fails, look for a global shortcut.
         final Map<String, String> globalShortcuts = shortcutsPerLocale.get(ANY_LOCALE);
-        if (!CollectionUtils.isNullOrEmpty(globalShortcuts)) {
+        if (globalShortcuts != null && !globalShortcuts.isEmpty()) {
             shortcuts.addAll(globalShortcuts.keySet());
         }
 
@@ -413,7 +412,7 @@ public class PersonalDictionaryLookup implements Closeable {
         final String lowercased = word.toLowerCase(inputLocale);
         final HashMap<Locale, String> dictLocales = dictWords.get(lowercased);
 
-        if (CollectionUtils.isNullOrEmpty(dictLocales)) {
+        if (dictLocales == null || dictLocales.isEmpty()) {
             if (DebugFlags.DEBUG_ENABLED) {
                 Log.d(mTag, "isValidWord() : No entry for word [" + word + "]");
             }
@@ -464,7 +463,7 @@ public class PersonalDictionaryLookup implements Closeable {
         final HashMap<Locale, HashMap<String, String>> shortcutsPerLocale = mShortcutsPerLocale;
 
         // Exit as early as possible. Most users don't use shortcuts.
-        if (CollectionUtils.isNullOrEmpty(shortcutsPerLocale)) {
+        if (shortcutsPerLocale == null || shortcutsPerLocale.isEmpty()) {
             if (DebugFlags.DEBUG_ENABLED) {
                 Log.d(mTag, "expandShortcut() : User has no shortcuts");
             }
@@ -509,11 +508,11 @@ public class PersonalDictionaryLookup implements Closeable {
             @Nullable final HashMap<Locale, HashMap<String, String>> shortcutsPerLocale,
             @Nonnull final String shortcut,
             @Nonnull final Locale locale) {
-        if (CollectionUtils.isNullOrEmpty(shortcutsPerLocale)) {
+        if (shortcutsPerLocale == null || shortcutsPerLocale.isEmpty()) {
             return null;
         }
         final HashMap<String, String> localeShortcuts = shortcutsPerLocale.get(locale);
-        if (CollectionUtils.isNullOrEmpty(localeShortcuts)) {
+        if (localeShortcuts == null || localeShortcuts.isEmpty()) {
             return null;
         }
         return localeShortcuts.get(shortcut);
@@ -587,7 +586,7 @@ public class PersonalDictionaryLookup implements Closeable {
                 }
                 // Check if there is an existing entry for this word.
                 HashMap<Locale, String> dictLocales = dictWords.get(dictWord);
-                if (CollectionUtils.isNullOrEmpty(dictLocales)) {
+                if (dictLocales == null || dictLocales.isEmpty()) {
                     // If there is no entry for this word, create one.
                     if (DebugFlags.DEBUG_ENABLED) {
                         Log.d(mTag, "loadPersonalDictionary() : Word [" + dictWord +

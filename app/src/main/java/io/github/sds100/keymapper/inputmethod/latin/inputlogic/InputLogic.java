@@ -57,7 +57,6 @@ import io.github.sds100.keymapper.inputmethod.latin.define.DebugFlags;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValuesForSuggestion;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SpacingAndPunctuations;
-import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripViewAccessor;
 import io.github.sds100.keymapper.inputmethod.latin.utils.AsyncResultHolder;
 import io.github.sds100.keymapper.inputmethod.latin.utils.InputTypeUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.RecapitalizeStatus;
@@ -76,9 +75,7 @@ import javax.annotation.Nonnull;
 public final class InputLogic {
     private static final String TAG = InputLogic.class.getSimpleName();
 
-    // TODO : Remove this member when we can.
     final LatinIME mLatinIME;
-    private final SuggestionStripViewAccessor mSuggestionStripViewAccessor;
 
     // Never null.
     private InputLogicHandler mInputLogicHandler = InputLogicHandler.NULL_HANDLER;
@@ -224,10 +221,8 @@ public final class InputLogic {
      * dictionary.
      */
     public InputLogic(final LatinIME latinIME,
-            final SuggestionStripViewAccessor suggestionStripViewAccessor,
             final DictionaryFacilitator dictionaryFacilitator) {
         mLatinIME = latinIME;
-        mSuggestionStripViewAccessor = suggestionStripViewAccessor;
         mWordComposer = new WordComposer();
         mConnection = new RichInputConnection(latinIME);
         mInputLogicHandler = InputLogicHandler.NULL_HANDLER;
@@ -405,7 +400,7 @@ public final class InputLogic {
         // the risk of calling commitCompletion twice because we don't know how the app will react.
         if (suggestionInfo.isKindOf(SuggestedWordInfo.KIND_APP_DEFINED)) {
             mSuggestedWords = SuggestedWords.getEmptyInstance();
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
             inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
             resetComposingState(true /* alsoResetLastComposedWord */);
             mConnection.commitCompletion(suggestionInfo.mApplicationSpecifiedCompletionInfo);
@@ -1210,7 +1205,7 @@ public final class InputLogic {
             inputTransaction.setRequiresUpdateSuggestions();
         } else if (swapWeakSpace && trySwapSwapperAndSpace(event, inputTransaction)) {
             mSpaceState = SpaceState.SWAP_PUNCTUATION;
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
         } else if (Constants.CODE_SPACE == codePoint) {
             if (!mSuggestedWords.isPunctuationSuggestions()) {
                 mSpaceState = SpaceState.WEAK;
@@ -1258,7 +1253,7 @@ public final class InputLogic {
 
             // Set punctuation right away. onUpdateSelection will fire but tests whether it is
             // already displayed or not, so it's okay.
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
         }
 
         inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
@@ -1482,7 +1477,7 @@ public final class InputLogic {
                         inputTransaction.getMSettingsValues(), currentKeyboardScriptId);
             }
             if (mConnection.hasSlowInputConnection()) {
-                mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+                mLatinIME.setNeutralSuggestionStrip();
             } else if (inputTransaction.getMSettingsValues().isSuggestionsEnabledPerUserSettings()
                     && inputTransaction.getMSettingsValues().mSpacingAndPunctuations
                             .mCurrentLanguageHasSpaces
@@ -1804,12 +1799,12 @@ public final class InputLogic {
                         + "requested!");
             }
             // Clear the suggestions strip.
-            mSuggestionStripViewAccessor.showSuggestionStrip(SuggestedWords.getEmptyInstance());
+            mLatinIME.showSuggestionStrip(SuggestedWords.getEmptyInstance());
             return;
         }
 
         if (!mWordComposer.isComposingWord() && !settingsValues.mBigramPredictionEnabled) {
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
             return;
         }
 
@@ -1841,7 +1836,7 @@ public final class InputLogic {
         final SuggestedWords suggestedWords = holder.get(null,
                 Constants.GET_SUGGESTED_WORDS_TIMEOUT);
         if (suggestedWords != null) {
-            mSuggestionStripViewAccessor.showSuggestionStrip(suggestedWords);
+            mLatinIME.showSuggestionStrip(suggestedWords);
         }
         if (DebugFlags.DEBUG_ENABLED) {
             long runTimeMillis = System.currentTimeMillis() - startTimeMillis;
@@ -1876,7 +1871,7 @@ public final class InputLogic {
                 || mConnection.hasSelection()
         // If we don't know the cursor location, return.
                 || mConnection.getExpectedSelectionStart() < 0) {
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
             return;
         }
         final int expectedCursorPosition = mConnection.getExpectedSelectionStart();
@@ -1912,7 +1907,7 @@ public final class InputLogic {
                 SuggestedWordInfo.NOT_A_CONFIDENCE /* autoCommitFirstWordConfidence */);
         suggestions.add(typedWordInfo);
         if (!isResumableWord(settingsValues, typedWordString)) {
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
             return;
         }
         int i = 0;
@@ -2227,7 +2222,7 @@ public final class InputLogic {
         final boolean shouldFinishComposition = mWordComposer.isComposingWord();
         resetComposingState(true /* alsoResetLastComposedWord */);
         if (clearSuggestionStrip) {
-            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            mLatinIME.setNeutralSuggestionStrip();
         }
         mConnection.resetCachesUponCursorMoveAndReturnSuccess(newSelStart, newSelEnd,
                 shouldFinishComposition);
