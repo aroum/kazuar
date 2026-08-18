@@ -41,4 +41,16 @@
 -keep public class * extends androidx.preference.Preference
 -keep public class * extends android.preference.Preference
 
+# Optimization & Code shrinking enhancements
+-optimizationpasses 5
+-repackageclasses ''
+-allowaccessmodification
+
+# Strip debug logging calls in optimized builds
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+}
+
 

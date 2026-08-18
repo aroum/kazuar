@@ -66,8 +66,24 @@ class ClipboardHistoryManager(
             val entry = ClipboardHistoryEntry(timeStamp, content)
             historyEntries.add(entry)
             sortHistoryEntries()
+
+            // Enforce maximum entries for unpinned items to avoid unbounded RAM consumption
+            val unpinnedEntries = historyEntries.filter { !it.isPinned }
+            if (unpinnedEntries.size > MAX_UNPINNED_HISTORY_ENTRIES) {
+                val oldestUnpinned = unpinnedEntries.minByOrNull { it.timeStamp }
+                if (oldestUnpinned != null) {
+                    val removeIndex = historyEntries.indexOf(oldestUnpinned)
+                    if (removeIndex != -1) {
+                        historyEntries.removeAt(removeIndex)
+                        onHistoryChangeListener?.onClipboardHistoryEntriesRemoved(removeIndex, 1)
+                    }
+                }
+            }
+
             val at = historyEntries.indexOf(entry)
-            onHistoryChangeListener?.onClipboardHistoryEntryAdded(at)
+            if (at != -1) {
+                onHistoryChangeListener?.onClipboardHistoryEntryAdded(at)
+            }
         }
     }
 
@@ -185,6 +201,7 @@ class ClipboardHistoryManager(
     }
 
     companion object {
+        const val MAX_UNPINNED_HISTORY_ENTRIES = 30
         const val PINNED_CLIPS_DATA_FILE_NAME = "pinned_clips.data"
         const val TAG = "ClipboardHistoryManager"
     }
