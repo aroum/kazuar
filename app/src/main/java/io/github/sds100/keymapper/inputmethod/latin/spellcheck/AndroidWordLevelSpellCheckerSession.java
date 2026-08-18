@@ -358,6 +358,7 @@ public abstract class AndroidWordLevelSpellCheckerSession extends Session {
                     }
                     Log.i(TAG, "onGetSuggestionsInternal() : Suggestions =" + builder);
                 }
+            }
             final int flags =
                     SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO
                     | (result.mHasRecommendedSuggestions
