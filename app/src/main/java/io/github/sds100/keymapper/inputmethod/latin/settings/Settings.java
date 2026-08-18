@@ -35,7 +35,6 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.JniUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.RunInLocale;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
 import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet;
 
 import java.util.Collections;
@@ -194,7 +193,6 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                 return;
             }
             loadSettings(mContext, mSettingsValues.mLocale, mSettingsValues.mInputAttributes);
-            StatsUtils.onLoadSettings(mSettingsValues);
             if (PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)) {
                 KeyboardLayoutSet.onKeyboardThemeChanged();
             }

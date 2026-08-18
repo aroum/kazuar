@@ -39,7 +39,6 @@ import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
 import io.github.sds100.keymapper.inputmethod.latin.define.DebugFlags;
 import io.github.sds100.keymapper.inputmethod.latin.utils.BinaryDictionaryUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ScriptUtils;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.SuggestionResults;
 
 import java.util.ArrayList;
@@ -359,15 +358,6 @@ public abstract class AndroidWordLevelSpellCheckerSession extends Session {
                     }
                     Log.i(TAG, "onGetSuggestionsInternal() : Suggestions =" + builder);
                 }
-            }
-            // Handle word not in dictionary.
-            // This is called only once per unique word, so entering multiple
-            // instances of the same word does not result in more than one call
-            // to this method.
-            // Also, upon changing the orientation of the device, this is called
-            // again for every unique invalid word in the text box.
-            StatsUtils.onInvalidWordIdentification(text);
-
             final int flags =
                     SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO
                     | (result.mHasRecommendedSuggestions

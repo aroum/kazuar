@@ -90,15 +90,12 @@ import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsActivity;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripView;
 import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripViewAccessor;
-import io.github.sds100.keymapper.inputmethod.latin.touchinputconsumer.GestureConsumer;
+import android.view.ContextThemeWrapper;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ApplicationUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
-import io.github.sds100.keymapper.inputmethod.latin.utils.DialogUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.IntentUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.JniUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.LeakGuardHandlerWrapper;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtilsManager;
 import io.github.sds100.keymapper.inputmethod.latin.utils.SubtypeLocaleUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ViewLayoutUtils;
 
@@ -169,7 +166,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     public final KeyboardSwitcher mKeyboardSwitcher;
     private final SubtypeState mSubtypeState = new SubtypeState();
     private EmojiAltPhysicalKeyDetector mEmojiAltPhysicalKeyDetector;
-    private StatsUtilsManager mStatsUtilsManager;
     // Working variable for {@link #startShowingInputView()} and
     // {@link #onEvaluateInputViewShown()}.
     private boolean mIsExecutingStartShowingInputView;
@@ -315,8 +311,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     private AlertDialog mOptionsDialog;
 
     private final boolean mIsHardwareAcceleratedDrawingEnabled;
-
-    private GestureConsumer mGestureConsumer = GestureConsumer.NULL_GESTURE_CONSUMER;
 
     private final ClipboardHistoryManager mClipboardHistoryManager = new ClipboardHistoryManager(this);
 
@@ -714,7 +708,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         super();
         mSettings = Settings.getInstance();
         mKeyboardSwitcher = KeyboardSwitcher.getInstance();
-        mStatsUtilsManager = StatsUtilsManager.getInstance();
         mIsHardwareAcceleratedDrawingEnabled = this.enableHardwareAcceleration();
         Log.i(TAG, "Hardware accelerated drawing: " + mIsHardwareAcceleratedDrawingEnabled);
     }
@@ -750,7 +743,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         KeyboardSwitcher.init(this);
         AudioAndHapticFeedbackManager.init(this);
         AccessibilityUtils.init(this);
-        mStatsUtilsManager.onCreate(this /* context */, mDictionaryFacilitator);
         super.onCreate();
 
         mClipboardHistoryManager.onCreate();
@@ -813,7 +805,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                         mKeyEventRelayServiceCallback);
         mKeyEventRelayServiceWrapperCi.onCreate();
 
-        StatsUtils.onCreate(mSettings.getCurrent(), mRichImm);
     }
 
     // Has to be package-visible for unit tests
@@ -834,7 +825,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
         refreshPersonalizationDictionarySession(currentSettingsValues);
         resetDictionaryFacilitatorIfNecessary();
-        mStatsUtilsManager.onLoadSettings(this /* context */, currentSettingsValues);
     }
 
     private void refreshPersonalizationDictionarySession(
@@ -923,7 +913,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         unregisterReceiver(mDictionaryDumpBroadcastReceiver);
         unregisterReceiver(mRestartAfterDeviceUnlockReceiver);
         unregisterReceiver(mKeyMapperBroadcastReceiver);
-        mStatsUtilsManager.onDestroy(this /* context */);
         mKeyEventRelayServiceWrapperRelease.onDestroy();
         mKeyEventRelayServiceWrapperRelease = null;
         mKeyEventRelayServiceWrapperDebug.onDestroy();
@@ -977,7 +966,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public View onCreateInputView() {
-        StatsUtils.onCreateInputView();
         return mKeyboardSwitcher.onCreateInputView(mIsHardwareAcceleratedDrawingEnabled);
     }
 
@@ -1006,15 +994,11 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     @Override
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInputView(editorInfo, restarting);
-        mStatsUtilsManager.onStartInputView();
     }
 
     @Override
     public void onFinishInputView(final boolean finishingInput) {
-        StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
-        mStatsUtilsManager.onFinishInputView();
-        mGestureConsumer = GestureConsumer.NULL_GESTURE_CONSUMER;
     }
 
     @Override
@@ -1026,8 +1010,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     public void onCurrentInputMethodSubtypeChanged(final InputMethodSubtype subtype) {
         // Note that the calling sequence of onCreate() and onCurrentInputMethodSubtypeChanged()
         // is not guaranteed. It may even be called at the same time on a different thread.
-        InputMethodSubtype oldSubtype = mRichImm.getCurrentSubtype().getRawSubtype();
-        StatsUtils.onSubtypeChanged(oldSubtype, subtype);
         mRichImm.onSubtypeChanged(subtype);
         mInputLogic.onSubtypeChanged(SubtypeLocaleUtils.getCombiningRulesExtraValue(subtype),
                 mSettings.getCurrent());
@@ -1056,9 +1038,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         super.onStartInputView(editorInfo, restarting);
 
         mDictionaryFacilitator.onStartInput();
-        // Switch to the null consumer to handle cases leading to early exit below, for which we
-        // also wouldn't be consuming gesture data.
-        mGestureConsumer = GestureConsumer.NULL_GESTURE_CONSUMER;
         mRichImm.refreshSubtypeCaches();
         final KeyboardSwitcher switcher = mKeyboardSwitcher;
         switcher.updateKeyboardTheme();
@@ -1102,12 +1081,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             return;
         }
 
-        // Update to a gesture consumer with the current editor and IME state.
-        mGestureConsumer = GestureConsumer.newInstance(editorInfo,
-                mInputLogic.getPrivateCommandPerformer(),
-                mRichImm.getCurrentSubtypeLocale(),
-                switcher.getKeyboard());
-
         // Forward this event to the accessibility utilities, if enabled.
         final AccessibilityUtils accessUtils = AccessibilityUtils.Companion.getInstance();
         if (accessUtils.isTouchExplorationEnabled()) {
@@ -1116,10 +1089,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
         final boolean inputTypeChanged = !currentSettingsValues.isSameInputType(editorInfo);
         final boolean isDifferentTextField = !restarting || inputTypeChanged;
-
-        StatsUtils.onStartInputView(editorInfo.inputType,
-                Settings.getInstance().getCurrent().mDisplayOrientation,
-                !isDifferentTextField);
 
         // The EditorInfo might have a flag that affects fullscreen mode.
         // Note: This call should be done by InputMethodService?
@@ -1692,9 +1661,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     @Override
     public void onStartBatchInput() {
         mInputLogic.onStartBatchInput(mSettings.getCurrent(), mKeyboardSwitcher, mHandler);
-        mGestureConsumer.onGestureStarted(
-                mRichImm.getCurrentSubtypeLocale(),
-                mKeyboardSwitcher.getKeyboard());
     }
 
     @Override
@@ -1705,13 +1671,11 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     @Override
     public void onEndBatchInput(final InputPointers batchPointers) {
         mInputLogic.onEndBatchInput(batchPointers);
-        mGestureConsumer.onGestureCompleted(batchPointers);
     }
 
     @Override
     public void onCancelBatchInput() {
         mInputLogic.onCancelBatchInput(mHandler);
-        mGestureConsumer.onGestureCanceled();
     }
 
     /**
@@ -1723,9 +1687,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
      * @param suggestedWords suggested words by the IME for the full gesture.
      */
     public void onTailBatchInputResultShown(final SuggestedWords suggestedWords) {
-        mGestureConsumer.onImeSuggestionsProcessed(suggestedWords,
-                mInputLogic.getComposingStart(), mInputLogic.getComposingLength(),
-                mDictionaryFacilitator);
     }
 
     // This method must run on the UI Thread.
@@ -2127,7 +2088,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             }
         };
         final AlertDialog.Builder builder = new AlertDialog.Builder(
-                DialogUtils.getPlatformDialogThemeContext(this));
+                new ContextThemeWrapper(this, R.style.platformDialogTheme));
         builder.setItems(items, listener).setTitle(title);
         final AlertDialog dialog = builder.create();
         dialog.setCancelable(true /* cancelable */);

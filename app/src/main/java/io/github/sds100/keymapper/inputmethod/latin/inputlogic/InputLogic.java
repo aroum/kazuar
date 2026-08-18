@@ -61,7 +61,6 @@ import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripV
 import io.github.sds100.keymapper.inputmethod.latin.utils.AsyncResultHolder;
 import io.github.sds100.keymapper.inputmethod.latin.utils.InputTypeUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.RecapitalizeStatus;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.TextRange;
 
 import java.util.ArrayList;
@@ -248,13 +247,6 @@ public final class InputLogic {
         mEnteredText = null;
         mWordBeingCorrectedByCursor = null;
         mConnection.onStartInput();
-        if (!mWordComposer.getTypedWord().isEmpty()) {
-            // For messaging apps that offer send button, the IME does not get the opportunity
-            // to capture the last word. This block should capture those uncommitted words.
-            // The timestamp at which it is captured is not accurate but close enough.
-            StatsUtils.onWordCommitUserTyped(
-                    mWordComposer.getTypedWord(), mWordComposer.isBatchMode());
-        }
         mWordComposer.restartCombining(combiningSpec);
         resetComposingState(true /* alsoResetLastComposedWord */);
         mDeleteCount = 0;
@@ -311,8 +303,6 @@ public final class InputLogic {
     public void finishInput() {
         if (mWordComposer.isComposingWord()) {
             mConnection.finishComposingText();
-            StatsUtils.onWordCommitUserTyped(
-                    mWordComposer.getTypedWord(), mWordComposer.isBatchMode());
         }
         resetComposingState(true /* alsoResetLastComposedWord */);
         mInputLogicHandler.reset();
@@ -357,7 +347,6 @@ public final class InputLogic {
             insertAutomaticSpaceIfOptionsAndTextAllow(settingsValues);
         }
         mConnection.commitText(text, 1);
-        StatsUtils.onWordCommitUserTyped(mEnteredText, mWordComposer.isBatchMode());
         mConnection.endBatchEdit();
         // Space state must be updated before calling updateShiftState
         mSpaceState = SpaceState.NONE;
@@ -385,9 +374,6 @@ public final class InputLogic {
         final String suggestion = suggestionInfo.mWord;
         // If this is a punctuation picked from the suggestion strip, pass it to onCodeInput
         if (suggestion.length() == 1 && suggestedWords.isPunctuationSuggestions()) {
-            // We still want to log a suggestion click.
-            StatsUtils.onPickSuggestionManually(
-                    mSuggestedWords, suggestionInfo, mDictionaryFacilitator);
             // Word separators are suggested before the user inputs something.
             // Rely on onCodeInput to do the complicated swapping/stripping logic consistently.
             final Event event = Event.createPunctuationSuggestionPickedEvent(suggestionInfo);
@@ -439,11 +425,6 @@ public final class InputLogic {
         // If we're not showing the "Touch again to save", then update the suggestion strip.
         // That's going to be predictions (or punctuation suggestions), so INPUT_STYLE_NONE.
         handler.postUpdateSuggestionStrip(SuggestedWords.INPUT_STYLE_NONE);
-
-        StatsUtils.onPickSuggestionManually(
-                mSuggestedWords, suggestionInfo, mDictionaryFacilitator);
-        StatsUtils.onWordCommitSuggestionPickedManually(
-                suggestionInfo.mWord, mWordComposer.isBatchMode());
         return inputTransaction;
     }
 
@@ -1227,7 +1208,6 @@ public final class InputLogic {
         if (tryPerformDoubleSpacePeriod(event, inputTransaction)) {
             mSpaceState = SpaceState.DOUBLE;
             inputTransaction.setRequiresUpdateSuggestions();
-            StatsUtils.onDoubleSpacePeriod();
         } else if (swapWeakSpace && trySwapSwapperAndSpace(event, inputTransaction)) {
             mSpaceState = SpaceState.SWAP_PUNCTUATION;
             mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
@@ -1362,10 +1342,8 @@ public final class InputLogic {
                     unlearnWord(rejectedSuggestion, inputTransaction.getMSettingsValues(),
                             Constants.EVENT_REJECTION);
                 }
-                StatsUtils.onBackspaceWordDelete(rejectedSuggestion.length());
             } else {
                 mWordComposer.applyProcessedEvent(event);
-                StatsUtils.onBackspacePressed(1);
             }
             if (mWordComposer.isComposingWord()) {
                 setComposingTextInternal(getTextWithUnderline(mWordComposer.getTypedWord()), 1);
@@ -1377,8 +1355,6 @@ public final class InputLogic {
             if (mLastComposedWord.canRevertCommit()) {
                 final String lastComposedWord = mLastComposedWord.mTypedWord;
                 revertCommit(inputTransaction, inputTransaction.getMSettingsValues());
-                StatsUtils.onRevertAutoCorrect();
-                StatsUtils.onWordCommitUserTyped(lastComposedWord, mWordComposer.isBatchMode());
                 // Restart suggestions when backspacing into a reverted word. This is required for
                 // the final corrected word to be learned, as learning only occurs when suggestions
                 // are active.
@@ -1400,7 +1376,6 @@ public final class InputLogic {
                 // This is triggered on backspace after a key that inputs multiple characters,
                 // like the smiley key or the .com key.
                 mConnection.deleteTextBeforeCursor(mEnteredText.length());
-                StatsUtils.onDeleteMultiCharInput(mEnteredText.length());
                 mEnteredText = null;
                 // If we have mEnteredText, then we know that mHasUncommittedTypedChars == false.
                 // In addition we know that spaceState is false, and that we should not be
@@ -1416,12 +1391,10 @@ public final class InputLogic {
                     inputTransaction.setRequiresUpdateSuggestions();
                     mWordComposer.setCapitalizedModeAtStartComposingTime(
                             WordComposer.CAPS_MODE_OFF);
-                    StatsUtils.onRevertDoubleSpacePeriod();
                     return;
                 }
             } else if (SpaceState.SWAP_PUNCTUATION == inputTransaction.getMSpaceState()) {
                 if (mConnection.revertSwapPunctuation()) {
-                    StatsUtils.onRevertSwapPunctuation();
                     // Likewise
                     return;
                 }
@@ -1443,7 +1416,6 @@ public final class InputLogic {
                 final int numCharsDeleted = mConnection.getExpectedSelectionEnd()
                         - mConnection.getExpectedSelectionStart();
                 mConnection.commitText("", 1);
-                StatsUtils.onBackspaceSelectedText(numCharsDeleted);
             } else {
                 // There is no selection, just delete one character.
                 if (inputTransaction.getMSettingsValues().mInputAttributes.isTypeNull()
@@ -1471,7 +1443,6 @@ public final class InputLogic {
                         sendDownUpKeyEvent(KeyEvent.KEYCODE_DEL);
                         totalDeletedLength++;
                     }
-                    StatsUtils.onBackspacePressed(totalDeletedLength);
                 } else {
                     final int codePointBeforeCursor = mConnection.getCodePointBeforeCursor();
                     if (codePointBeforeCursor == Constants.NOT_A_CODE) {
@@ -1482,7 +1453,6 @@ public final class InputLogic {
                         // catch it and have their broken interface react. If you need the keyboard
                         // to do this, you're doing it wrong -- please fix your app.
                         mConnection.deleteTextBeforeCursor(1);
-                        // TODO: Add a new StatsUtils method onBackspaceWhenNoText()
                         return;
                     }
                     final int lengthToDelete =
@@ -1504,7 +1474,6 @@ public final class InputLogic {
                             totalDeletedLength += lengthToDeleteAgain;
                         }
                     }
-                    StatsUtils.onBackspacePressed(totalDeletedLength);
                 }
             }
             if (!hasUnlearnedWordBeingDeleted) {
@@ -2452,10 +2421,8 @@ public final class InputLogic {
         if (!mWordComposer.isComposingWord()) return;
         final String typedWord = mWordComposer.getTypedWord();
         if (typedWord.length() > 0) {
-            final boolean isBatchMode = mWordComposer.isBatchMode();
             commitChosenWord(settingsValues, typedWord,
                     LastComposedWord.COMMIT_TYPE_USER_TYPED_WORD, separatorString);
-            StatsUtils.onWordCommitUserTyped(typedWord, isBatchMode);
         }
     }
 
@@ -2499,7 +2466,6 @@ public final class InputLogic {
                 throw new RuntimeException("We have an auto-correction but the typed word "
                         + "is empty? Impossible! I must commit suicide.");
             }
-            final boolean isBatchMode = mWordComposer.isBatchMode();
             commitChosenWord(settingsValues, stringToCommit,
                     LastComposedWord.COMMIT_TYPE_DECIDED_WORD, separator);
             if (!typedWord.equals(stringToCommit)) {
@@ -2512,14 +2478,6 @@ public final class InputLogic {
                 mConnection.commitCorrection(new CorrectionInfo(
                         mConnection.getExpectedSelectionEnd() - stringToCommit.length(),
                         typedWord, stringToCommit));
-                String prevWordsContext = (autoCorrectionOrNull != null)
-                        ? autoCorrectionOrNull.mPrevWordsContext
-                        : "";
-                StatsUtils.onAutoCorrection(typedWord, stringToCommit, isBatchMode,
-                        mDictionaryFacilitator, prevWordsContext);
-                StatsUtils.onWordCommitAutoCorrect(stringToCommit, isBatchMode);
-            } else {
-                StatsUtils.onWordCommitUserTyped(stringToCommit, isBatchMode);
             }
         }
     }
@@ -2705,7 +2663,7 @@ public final class InputLogic {
      * underlying editor.
      * @return An object for sending private commands to the underlying editor.
      */
-    public PrivateCommandPerformer getPrivateCommandPerformer() {
+    public RichInputConnection getPrivateCommandPerformer() {
         return mConnection;
     }
 

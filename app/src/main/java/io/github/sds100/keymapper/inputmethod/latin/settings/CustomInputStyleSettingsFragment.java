@@ -40,10 +40,10 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodSubtype;
 import android.widget.Toast;
 
+import android.view.ContextThemeWrapper;
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.RichInputMethodManager;
 import io.github.sds100.keymapper.inputmethod.latin.utils.AdditionalSubtypeUtils;
-import io.github.sds100.keymapper.inputmethod.latin.utils.DialogUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.IntentUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.SubtypeLocaleUtils;
 
@@ -246,7 +246,7 @@ public final class CustomInputStyleSettingsFragment extends PreferenceFragment
     private AlertDialog createDialog() {
         final String imeId = mRichImm.getInputMethodIdOfThisIme();
         final AlertDialog.Builder builder = new AlertDialog.Builder(
-                DialogUtils.getPlatformDialogThemeContext(getActivity()));
+                new ContextThemeWrapper(getActivity(), R.style.platformDialogTheme));
         builder.setTitle(R.string.custom_input_styles_title)
                 .setMessage(R.string.custom_input_style_note_message)
                 .setNegativeButton(R.string.not_now, null)

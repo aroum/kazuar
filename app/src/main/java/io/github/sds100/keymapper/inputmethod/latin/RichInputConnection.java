@@ -35,14 +35,12 @@ import io.github.sds100.keymapper.inputmethod.compat.InputConnectionCompatUtils;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
 import io.github.sds100.keymapper.inputmethod.latin.common.UnicodeSurrogate;
-import io.github.sds100.keymapper.inputmethod.latin.inputlogic.PrivateCommandPerformer;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SpacingAndPunctuations;
 import io.github.sds100.keymapper.inputmethod.latin.utils.CapsModeUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DebugLogUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.NgramContextUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ScriptUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.SpannableStringUtils;
-import io.github.sds100.keymapper.inputmethod.latin.utils.StatsUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.TextRange;
 
 import java.util.concurrent.TimeUnit;
@@ -58,7 +56,7 @@ import javax.annotation.Nullable;
  * all the time to find out what text is in the buffer, when we need it to determine caps mode
  * for example.
  */
-public final class RichInputConnection implements PrivateCommandPerformer {
+public final class RichInputConnection {
     private static final String TAG = "RichInputConnection";
     private static final boolean DBG = false;
     private static final boolean DEBUG_PREVIOUS_TEXT = false;
@@ -464,7 +462,6 @@ public final class RichInputConnection implements PrivateCommandPerformer {
         if (duration >= timeout) {
             final String operationName = OPERATION_NAMES[operation];
             Log.w(TAG, "Slow InputConnection: " + operationName + " took " + duration + " ms.");
-            StatsUtils.onInputConnectionLaggy(operation, duration);
             mLastSlowInputConnectionTime = SystemClock.uptimeMillis();
         }
     }
