@@ -101,7 +101,9 @@ jobs:
             IS_PRERELEASE="true"
           fi
           
-          cp "app/build/outputs/apk/ci/${RAW_APK_NAME}.apk" "app/build/outputs/apk/ci/${FINAL_NAME}.apk"
+          if [ "${RAW_APK_NAME}" != "${FINAL_NAME}" ]; then
+            cp "app/build/outputs/apk/ci/${RAW_APK_NAME}.apk" "app/build/outputs/apk/ci/${FINAL_NAME}.apk"
+          fi
           
           echo "FINAL_APK_NAME=${FINAL_NAME}" >> $GITHUB_ENV
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_ENV
