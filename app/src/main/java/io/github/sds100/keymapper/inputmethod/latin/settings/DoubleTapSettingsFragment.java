@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceScreen;
+import android.text.InputFilter;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -64,6 +66,15 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         @Override
         protected void onBindView(final View view) {
             super.onBindView(view);
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mListener != null) {
+                        mListener.onRuleClick(mIndex);
+                    }
+                }
+            });
 
             view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
@@ -130,6 +141,15 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         if (view != null) {
             final ListView lv = view.findViewById(android.R.id.list);
             if (lv != null) {
+                lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                        final Object item = getPreferenceScreen().getRootAdapter().getItem(position);
+                        if (item instanceof DoubleTapRulePreference) {
+                            showAddOrEditDialog(((DoubleTapRulePreference) item).getIndex());
+                        }
+                    }
+                });
                 lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> parent, View v, int position, long id) {
@@ -255,6 +275,7 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         layout.setPadding(40, 20, 40, 20);
 
         final EditText keyInput = new EditText(context);
+        keyInput.setFilters(new InputFilter[] { new InputFilter.LengthFilter(1) });
         keyInput.setHint(isRu 
             ? ("ru".equals(mLang) ? "Клавиша (напр. ы)" : "Клавиша (напр. q)")
             : ("ru".equals(mLang) ? "Key (e.g. ы)" : "Key (e.g. q)"));
@@ -282,6 +303,9 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                 if (key.isEmpty() || replacement.isEmpty()) {
                     Toast.makeText(context, isRu ? "Поля не должны быть пустыми" : "Fields must not be empty", Toast.LENGTH_SHORT).show();
                     return;
+                }
+                if (key.length() > 1) {
+                    key = key.substring(0, 1);
                 }
                 if (index == -1) {
                     mRules.add(new DoubleTapRule(key, replacement, true));
