@@ -1186,6 +1186,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     public void onWindowShown() {
         super.onWindowShown();
         setNavigationBarVisibility(isInputViewShown());
+        mKeyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState(),
+                getCurrentRecapitalizeState());
     }
 
     @Override
@@ -1236,13 +1238,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                     + ", cs=" + composingSpanStart + ", ce=" + composingSpanEnd);
         }
 
-        // This call happens whether our view is displayed or not, but if it's not then we should
-        // not attempt recorrection. This is true even with a hardware keyboard connected: if the
-        // view is not displayed we have no means of showing suggestions anyway, and if it is then
-        // we want to show suggestions anyway.
         final SettingsValues settingsValues = mSettings.getCurrent();
-        if (isInputViewShown()
-                && mInputLogic.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
+        if (mInputLogic.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
                 settingsValues)) {
             mKeyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState(),
                     getCurrentRecapitalizeState());

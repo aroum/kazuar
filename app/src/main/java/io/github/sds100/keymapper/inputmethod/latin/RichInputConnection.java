@@ -266,6 +266,14 @@ public final class RichInputConnection {
             return false;
         }
         mCommittedTextBeforeComposingText.append(textBeforeCursor);
+        if ((mExpectedSelStart == 0 || mExpectedSelStart == INVALID_CURSOR_POSITION)
+                && textBeforeCursor.length() > 0) {
+            final boolean wasEqual = mExpectedSelStart == mExpectedSelEnd;
+            mExpectedSelStart = textBeforeCursor.length();
+            if (wasEqual || mExpectedSelStart > mExpectedSelEnd) {
+                mExpectedSelEnd = mExpectedSelStart;
+            }
+        }
         return true;
     }
 
@@ -376,7 +384,7 @@ public final class RichInputConnection {
         // heavy pressing of delete, for example DEFAULT_TEXT_CACHE_SIZE - 5 times or so.
         // getCapsMode should be updated to be able to return a "not enough info" result so that
         // we can get more context only when needed.
-        if (TextUtils.isEmpty(mCommittedTextBeforeComposingText) && 0 != mExpectedSelStart) {
+        if (TextUtils.isEmpty(mCommittedTextBeforeComposingText)) {
             if (!reloadTextCache()) {
                 Log.w(TAG, "Unable to connect to the editor. "
                         + "Setting caps mode without knowing text.");
@@ -405,7 +413,7 @@ public final class RichInputConnection {
         // go fetch the cache again (as it happens, INVALID_CURSOR_POSITION < 0, so we need to
         // test for this explicitly)
         if (INVALID_CURSOR_POSITION != mExpectedSelStart
-                && (cachedLength >= n || cachedLength >= mExpectedSelStart)) {
+                && (cachedLength >= n || (cachedLength >= mExpectedSelStart && mExpectedSelStart > 0))) {
             final StringBuilder s = new StringBuilder(mCommittedTextBeforeComposingText);
             // We call #toString() here to create a temporary object.
             // In some situations, this method is called on a worker thread, and it's possible
