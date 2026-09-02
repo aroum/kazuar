@@ -18,13 +18,16 @@ package io.github.sds100.keymapper.inputmethod.latin.utils;
 
 import io.github.sds100.keymapper.inputmethod.latin.settings.AdvancedSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.AppearanceSettingsFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.BackupSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.CustomInputStyleSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.GestureSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.IncognitoModeRulesFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.PreferencesSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.spellcheck.SpellCheckerSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.userdictionary.UserDictionaryAddWordFragment;
 import io.github.sds100.keymapper.inputmethod.latin.userdictionary.UserDictionaryList;
@@ -46,6 +49,9 @@ public class FragmentUtils {
             DebugSettingsFragment.class.getName(),
             IncognitoModeRulesFragment.class.getName(),
             SettingsFragment.class.getName(),
+            BackupSettingsFragment.class.getName(),
+            DoubleTapSettingsFragment.class.getName(),
+            SwipeSettingsFragment.class.getName(),
             SpellCheckerSettingsFragment.class.getName(),
             UserDictionaryAddWordFragment.class.getName(),
             UserDictionaryList.class.getName(),

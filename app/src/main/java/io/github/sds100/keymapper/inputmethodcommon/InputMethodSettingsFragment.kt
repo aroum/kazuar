@@ -24,12 +24,18 @@ abstract class InputMethodSettingsFragment : PreferenceFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val context: Context = activity
-        preferenceScreen = preferenceManager.createPreferenceScreen(context)
-        initSettings(context)
     }
 
-    private fun initSettings(context: Context): Boolean {
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        val context: Context = activity ?: return
+        val screen = preferenceScreen
+        if (screen != null) {
+            initSettings(context, screen)
+        }
+    }
+
+    private fun initSettings(context: Context, prefScreen: android.preference.PreferenceScreen): Boolean {
         mImm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         mImi = getMyImi(context, mImm)
         if (mImi == null || mImi!!.subtypeCount <= 1) {
@@ -42,8 +48,9 @@ abstract class InputMethodSettingsFragment : PreferenceFragment() {
                 or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pref = Preference(context)
         pref.intent = intent
+        pref.order = 0
         mSubtypeEnablerPreference = pref
-        preferenceScreen.addPreference(pref)
+        prefScreen.addPreference(pref)
         updateSubtypeEnabler()
         return true
     }
