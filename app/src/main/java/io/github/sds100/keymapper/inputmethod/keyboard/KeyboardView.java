@@ -37,11 +37,10 @@ import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelpe
 
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyDrawParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyVisualAttributes;
-import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
-import io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapRule;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
+import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues.DoubleTapRule;
 import io.github.sds100.keymapper.inputmethod.latin.utils.TypefaceUtils;
 
 import java.util.ArrayList;
@@ -68,18 +67,15 @@ import javax.annotation.Nullable;
  * @attr ref R.styleable#Keyboard_Key_keyLetterSize
  * @attr ref R.styleable#Keyboard_Key_keyLabelSize
  * @attr ref R.styleable#Keyboard_Key_keyLargeLetterRatio
- * @attr ref R.styleable#Keyboard_Key_keyLargeLabelRatio
  * @attr ref R.styleable#Keyboard_Key_keyHintLetterRatio
  * @attr ref R.styleable#Keyboard_Key_keyShiftedLetterHintRatio
  * @attr ref R.styleable#Keyboard_Key_keyHintLabelRatio
- * @attr ref R.styleable#Keyboard_Key_keyLabelOffCenterRatio
- * @attr ref R.styleable#Keyboard_Key_keyHintLabelOffCenterRatio
  * @attr ref R.styleable#Keyboard_Key_keyPreviewTextRatio
  * @attr ref R.styleable#Keyboard_Key_keyTextColor
- * @attr ref R.styleable#Keyboard_Key_keyTextColorDisabled
+ * @attr ref R.styleable#Keyboard_Key_keyTextInactivatedColor
  * @attr ref R.styleable#Keyboard_Key_keyTextShadowColor
+ * @attr ref R.styleable#Keyboard_Key_functionalTextColor
  * @attr ref R.styleable#Keyboard_Key_keyHintLetterColor
- * @attr ref R.styleable#Keyboard_Key_keyHintLabelColor
  * @attr ref R.styleable#Keyboard_Key_keyShiftedLetterHintInactivatedColor
  * @attr ref R.styleable#Keyboard_Key_keyShiftedLetterHintActivatedColor
  * @attr ref R.styleable#Keyboard_Key_keyPreviewTextColor
@@ -519,7 +515,7 @@ public class KeyboardView extends View {
             String doubleTapReplacement = null;
             for (int i = 0; i < mCustomDoubleTapRules.size(); i++) {
                 final DoubleTapRule rule = mCustomDoubleTapRules.get(i);
-                if (rule.isEnabled && label.equalsIgnoreCase(rule.triggerKey)) {
+                if (rule.enabled && label.equalsIgnoreCase(rule.key)) {
                     doubleTapReplacement = rule.replacement;
                     break;
                 }
