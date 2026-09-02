@@ -35,8 +35,7 @@ import android.content.SharedPreferences;
 import android.graphics.RectF;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper;
 
-import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyDrawParams;
-import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyVisualAttributes;
+import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
