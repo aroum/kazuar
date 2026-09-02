@@ -175,9 +175,9 @@ class AccessibilityUtils private constructor() {
     }
 
     companion object {
-        private val TAG = AccessibilityUtils::class.java.simpleName
-        private val CLASS = AccessibilityUtils::class.java.name
-        private val PACKAGE = AccessibilityUtils::class.java.getPackage()!!.name
+        private const val TAG = "AccessibilityUtils"
+        private const val CLASS = "io.github.sds100.keymapper.inputmethod.accessibility.AccessibilityUtils"
+        private const val PACKAGE = "io.github.sds100.keymapper.inputmethod.latin"
         val instance = AccessibilityUtils()
         /*
      * Setting this constant to {@code false} will disable all keyboard
