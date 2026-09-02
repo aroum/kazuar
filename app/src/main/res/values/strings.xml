@@ -230,6 +230,13 @@
     <string name="show_hints">Show key hints</string>
     <!-- Description of the settings to show hints -->
     <string name="show_hints_summary">Show long-press hints</string>
+    <string name="settings_category_key_legends">Key legends</string>
+    <string name="show_main_labels">Main key labels</string>
+    <string name="show_main_labels_summary">Show primary characters on keys</string>
+    <string name="show_long_press_hints">Long-press hints</string>
+    <string name="show_long_press_hints_summary">Show hints for long-press characters in top-right corner</string>
+    <string name="show_double_tap_hints">Double-tap hints</string>
+    <string name="show_double_tap_hints_summary">Show hints for double-tap characters in top-left corner</string>
     <!-- Title of the settings enbaling long press on space key to change IME -->
     <string name="prefs_long_press_keyboard_to_change_lang">Change input method with space key</string>
     <!-- Description of the settings to change IME indicating long press triggers change. -->

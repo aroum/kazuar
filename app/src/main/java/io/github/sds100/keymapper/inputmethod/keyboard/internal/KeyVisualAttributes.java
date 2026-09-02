@@ -45,6 +45,7 @@ public final class KeyVisualAttributes {
     public final int mTextShadowColor;
     public final int mFunctionalTextColor;
     public final int mHintLetterColor;
+    public final int mDoubleTapHintColor;
     public final int mHintLabelColor;
     public final int mShiftedLetterHintInactivatedColor;
     public final int mShiftedLetterHintActivatedColor;
@@ -68,6 +69,7 @@ public final class KeyVisualAttributes {
         R.styleable.Keyboard_Key_keyTextShadowColor,
         R.styleable.Keyboard_Key_functionalTextColor,
         R.styleable.Keyboard_Key_keyHintLetterColor,
+        R.styleable.Keyboard_Key_keyDoubleTapHintColor,
         R.styleable.Keyboard_Key_keyHintLabelColor,
         R.styleable.Keyboard_Key_keyShiftedLetterHintInactivatedColor,
         R.styleable.Keyboard_Key_keyShiftedLetterHintActivatedColor,
@@ -131,6 +133,7 @@ public final class KeyVisualAttributes {
         mTextShadowColor = keyAttr.getColor(R.styleable.Keyboard_Key_keyTextShadowColor, 0);
         mFunctionalTextColor = keyAttr.getColor(R.styleable.Keyboard_Key_functionalTextColor, 0);
         mHintLetterColor = keyAttr.getColor(R.styleable.Keyboard_Key_keyHintLetterColor, 0);
+        mDoubleTapHintColor = keyAttr.getColor(R.styleable.Keyboard_Key_keyDoubleTapHintColor, 0);
         mHintLabelColor = keyAttr.getColor(R.styleable.Keyboard_Key_keyHintLabelColor, 0);
         mShiftedLetterHintInactivatedColor = keyAttr.getColor(
                 R.styleable.Keyboard_Key_keyShiftedLetterHintInactivatedColor, 0);

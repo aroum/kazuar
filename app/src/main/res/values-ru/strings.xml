@@ -191,6 +191,13 @@
     <string name="number_row_summary">Всегда показывать ряд с цифрами</string>
     <string name="show_hints">"Подсказывать символы"</string>
     <string name="show_hints_summary">"Показывать символы на клавишах"</string>
+    <string name="settings_category_key_legends">Обозначения на клавишах</string>
+    <string name="show_main_labels">Основные символы</string>
+    <string name="show_main_labels_summary">Отображать главные буквы и знаки на клавишах</string>
+    <string name="show_long_press_hints">Символы долгого нажатия</string>
+    <string name="show_long_press_hints_summary">Отображать символы удержания в правом верхнем углу</string>
+    <string name="show_double_tap_hints">Символы двойного нажатия</string>
+    <string name="show_double_tap_hints_summary">Отображать символы дабл-тапа в левом верхнем углу</string>
     <string name="prefs_resize_keyboard">"Включить изменение размера клавиатуры"</string>
     <string name="prefs_keyboard_height_scale">"Масштабирование по высоте"</string>
     <string name="delete_swipe">"Удаление жестом"</string>

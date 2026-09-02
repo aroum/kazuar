@@ -18,6 +18,7 @@ public class CustomThemeHelper {
         public int functionalKeyBackgroundPressed;
         public int functionalKeyTextColor;
         public int keyHintColor;
+        public int keyDoubleTapHintColor;
         public int keyBorderColor;
     }
 
@@ -43,6 +44,11 @@ public class CustomThemeHelper {
             colors.functionalKeyBackgroundPressed = Color.parseColor(modeObj.getString("functional_key_background_pressed"));
             colors.functionalKeyTextColor = Color.parseColor(modeObj.getString("functional_key_text_color"));
             colors.keyHintColor = Color.parseColor(modeObj.getString("key_hint_color"));
+            if (modeObj.has("key_double_tap_hint_color")) {
+                colors.keyDoubleTapHintColor = Color.parseColor(modeObj.getString("key_double_tap_hint_color"));
+            } else {
+                colors.keyDoubleTapHintColor = colors.keyHintColor;
+            }
             colors.keyBorderColor = Color.parseColor(modeObj.getString("key_border_color"));
             return colors;
         } catch (Exception e) {

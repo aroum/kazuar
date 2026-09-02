@@ -39,9 +39,12 @@ import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyDrawParams;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.KeyVisualAttributes;
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
+import io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapRule;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
+import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.utils.TypefaceUtils;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import javax.annotation.Nonnull;
@@ -121,8 +124,14 @@ public class KeyboardView extends View {
     private final Rect mClipRect = new Rect();
     /** The keyboard bitmap buffer for faster updates */
     private Bitmap mOffscreenBuffer;
+    /** Flag for whether the main key labels should be displayed */
+    private boolean mShowsMainLabels = true;
     /** Flag for whether the key hints should be displayed */
-    private boolean mShowsHints;
+    private boolean mShowsHints = true;
+    /** Flag for whether the double-tap hints should be displayed */
+    private boolean mShowsDoubleTapHints = true;
+    private boolean mEnableDoubleTapReplacements = false;
+    private ArrayList<DoubleTapRule> mCustomDoubleTapRules = null;
     /** The canvas for the above mutable keyboard bitmap */
     @Nonnull
     private final Canvas mOffscreenCanvas = new Canvas();
@@ -300,7 +309,12 @@ public class KeyboardView extends View {
             return;
         }
 
-        mShowsHints = Settings.getInstance().getCurrent().mShowsHints;
+        final SettingsValues currentSettings = Settings.getInstance().getCurrent();
+        mShowsMainLabels = currentSettings.mShowsMainLabels;
+        mShowsHints = currentSettings.mShowsHints;
+        mShowsDoubleTapHints = currentSettings.mShowsDoubleTapHints;
+        mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
+        mCustomDoubleTapRules = currentSettings.mCustomDoubleTapRules;
         final Paint paint = mPaint;
         final Drawable background = getBackground();
         // Calculate clip region and set.
@@ -475,7 +489,7 @@ public class KeyboardView extends View {
                 }
             }
 
-            if (key.isEnabled()) {
+            if (key.isEnabled() && mShowsMainLabels) {
                 if (mIsCustomTheme) {
                     boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL);
                     paint.setColor(isFunctional ? mCustomColors.functionalKeyTextColor : mCustomColors.keyTextColor);
@@ -498,6 +512,38 @@ public class KeyboardView extends View {
             // Turn off drop shadow and reset x-scale.
             paint.clearShadowLayer();
             paint.setTextScaleX(1.0f);
+        }
+
+        // Draw double-tap hint label in top-left corner.
+        if (mShowsDoubleTapHints && mEnableDoubleTapReplacements && mCustomDoubleTapRules != null && label != null) {
+            String doubleTapReplacement = null;
+            for (int i = 0; i < mCustomDoubleTapRules.size(); i++) {
+                final DoubleTapRule rule = mCustomDoubleTapRules.get(i);
+                if (rule.isEnabled && label.equalsIgnoreCase(rule.triggerKey)) {
+                    doubleTapReplacement = rule.replacement;
+                    break;
+                }
+            }
+            if (doubleTapReplacement != null && !doubleTapReplacement.isEmpty()) {
+                paint.setTextSize(key.selectHintTextSize(params));
+                if (mIsCustomTheme) {
+                    paint.setColor(mCustomColors.keyDoubleTapHintColor != 0 ? mCustomColors.keyDoubleTapHintColor : mCustomColors.keyHintColor);
+                } else if (params.mDoubleTapHintColor != 0) {
+                    paint.setColor(params.mDoubleTapHintColor);
+                } else {
+                    paint.setColor(key.selectHintTextColor(params));
+                }
+                paint.setTypeface(Typeface.DEFAULT_BOLD);
+                blendAlpha(paint, params.mAnimAlpha);
+                final float labelCharHeight = TypefaceUtils.getReferenceCharHeight(paint);
+                final float hintDigitWidth = TypefaceUtils.getReferenceDigitWidth(paint);
+                final float hintLabelWidth = TypefaceUtils.getStringWidth(doubleTapReplacement, paint);
+                final float dtHintX = mKeyHintLetterPadding + Math.max(hintDigitWidth, hintLabelWidth) / 2.0f;
+                final float dtHintBaseline = -paint.ascent();
+                paint.setTextAlign(Align.CENTER);
+                final float adjustmentY = params.mHintLabelVerticalAdjustment * labelCharHeight;
+                canvas.drawText(doubleTapReplacement, 0, doubleTapReplacement.length(), dtHintX, dtHintBaseline + adjustmentY, paint);
+            }
         }
 
         // Draw hint label.

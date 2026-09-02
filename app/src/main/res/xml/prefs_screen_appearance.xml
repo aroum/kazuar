@@ -43,6 +43,32 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:title="@string/settings_category_key_legends">
+
+        <CheckBoxPreference
+            android:key="pref_show_main_labels"
+            android:title="@string/show_main_labels"
+            android:summary="@string/show_main_labels_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
+
+        <CheckBoxPreference
+            android:key="pref_show_hints"
+            android:title="@string/show_long_press_hints"
+            android:summary="@string/show_long_press_hints_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
+
+        <CheckBoxPreference
+            android:key="pref_show_double_tap_hints"
+            android:title="@string/show_double_tap_hints"
+            android:summary="@string/show_double_tap_hints_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/settings_category_miscellaneous">
 
         <CheckBoxPreference

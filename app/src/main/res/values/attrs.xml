@@ -440,6 +440,8 @@
         <attr name="functionalTextColor" format="color" />
         <!-- Key hint letter (= one character hint label) color -->
         <attr name="keyHintLetterColor" format="color" />
+        <!-- Key double-tap hint letter color -->
+        <attr name="keyDoubleTapHintColor" format="color" />
         <!-- Key hint label color -->
         <attr name="keyHintLabelColor" format="color" />
         <!-- Shifted letter hint colors -->

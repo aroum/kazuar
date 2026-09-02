@@ -123,7 +123,9 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_SHOW_NUMBER_ROW =
             "pref_show_number_row";
 
+    public static final String PREF_SHOW_MAIN_LABELS = "pref_show_main_labels";
     public static final String PREF_SHOW_HINTS = "pref_show_hints";
+    public static final String PREF_SHOW_DOUBLE_TAP_HINTS = "pref_show_double_tap_hints";
 
     public static final String PREF_SPACE_TO_CHANGE_LANG = "prefs_long_press_keyboard_to_change_lang";
 

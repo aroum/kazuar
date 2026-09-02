@@ -47,6 +47,7 @@
     <color name="key_functional_text_color_lxx_light">#3c3836</color>
     <color name="key_text_inactive_color_lxx_light">#458588</color>
     <color name="key_hint_letter_color_lxx_light">#458588</color>
+    <color name="key_double_tap_hint_color_lxx_light">#b57614</color>
     <color name="language_on_spacebar_text_color_lxx_light">#B3282828</color>
     <color name="highlight_color_lxx_light">#af3a03</color>
     <color name="auto_correct_color_lxx_light">#79740e</color>
@@ -77,6 +78,7 @@
     <color name="key_functional_text_color_lxx_dark">#d5c4a1</color>
     <color name="key_text_inactive_color_lxx_dark">#458588</color>
     <color name="key_hint_letter_color_lxx_dark">#458588</color>
+    <color name="key_double_tap_hint_color_lxx_dark">#fabd2f</color>
     <color name="language_on_spacebar_text_color_lxx_dark">#B3ebdbb2</color>
     <color name="highlight_color_lxx_dark">#fe8019</color>
     <color name="auto_correct_color_lxx_dark">#ebdbb2</color>
