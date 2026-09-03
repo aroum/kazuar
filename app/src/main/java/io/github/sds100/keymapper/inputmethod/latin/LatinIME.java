@@ -1239,11 +1239,10 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
 
         final SettingsValues settingsValues = mSettings.getCurrent();
-        if (mInputLogic.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
-                settingsValues)) {
-            mKeyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState(),
-                    getCurrentRecapitalizeState());
-        }
+        mInputLogic.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
+                settingsValues);
+        mKeyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState(),
+                getCurrentRecapitalizeState());
     }
 
     public CharSequence getSelection() {

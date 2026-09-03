@@ -390,12 +390,19 @@ public final class RichInputConnection {
                         + "Setting caps mode without knowing text.");
             }
         }
-        // This never calls InputConnection#getCapsMode - in fact, it's a static method that
-        // never blocks or initiates IPC.
-        // TODO: don't call #toString() here. Instead, all accesses to
-        // mCommittedTextBeforeComposingText should be done on the main thread.
-        return CapsModeUtils.getCapsMode(mCommittedTextBeforeComposingText.toString(), inputType,
+        if (TextUtils.isEmpty(mCommittedTextBeforeComposingText) && mIC != null) {
+            return mIC.getCursorCapsMode(inputType);
+        }
+        int capsMode = CapsModeUtils.getCapsMode(mCommittedTextBeforeComposingText.toString(), inputType,
                 spacingAndPunctuations, hasSpaceBefore);
+        if (!hasSpaceBefore && (capsMode & TextUtils.CAP_MODE_SENTENCES) != 0
+                && !spacingAndPunctuations.mUsesGermanRules && mIC != null) {
+            final int icCaps = mIC.getCursorCapsMode(inputType);
+            if ((icCaps & TextUtils.CAP_MODE_SENTENCES) == 0) {
+                capsMode &= ~TextUtils.CAP_MODE_SENTENCES;
+            }
+        }
+        return capsMode;
     }
 
     public int getCodePointBeforeCursor() {
