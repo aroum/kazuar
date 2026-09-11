@@ -77,6 +77,7 @@ public class SettingsValues {
     public final boolean mShowsMainLabels;
     public final boolean mShowsHints;
     public final boolean mShowsDoubleTapHints;
+    public final boolean mThemeKeyBorders;
     public final boolean mSpaceForLangChange;
     public final boolean mShowsLanguageSwitchKey;
     public final boolean mShowsEmojiKey;
@@ -178,6 +179,7 @@ public class SettingsValues {
         mShowsMainLabels = prefs.getBoolean(Settings.PREF_SHOW_MAIN_LABELS, true);
         mShowsHints = prefs.getBoolean(Settings.PREF_SHOW_HINTS, true);
         mShowsDoubleTapHints = prefs.getBoolean(Settings.PREF_SHOW_DOUBLE_TAP_HINTS, true);
+        mThemeKeyBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, true);
         mSpaceForLangChange = prefs.getBoolean(Settings.PREF_SPACE_TO_CHANGE_LANG, true);
         mShowsLanguageSwitchKey = prefs.getBoolean(Settings.PREF_SHOW_LANGUAGE_SWITCH_KEY, false);
         mShowsEmojiKey = prefs.getBoolean(Settings.PREF_SHOW_EMOJI_KEY, false);

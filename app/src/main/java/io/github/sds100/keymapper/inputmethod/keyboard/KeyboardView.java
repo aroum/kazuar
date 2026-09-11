@@ -317,8 +317,7 @@ public class KeyboardView extends View {
         mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
         mCustomDoubleTapRulesMap = currentSettings.mCustomDoubleTapRulesMap;
         if (mIsCustomTheme) {
-            final SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(getContext());
-            mCustomThemeHasBorders = prefs.getBoolean("theme_key_borders", true);
+            mCustomThemeHasBorders = currentSettings.mThemeKeyBorders;
         }
         final Paint paint = mPaint;
         final Drawable background = getBackground();
