@@ -38,11 +38,17 @@
         <item name="iconZwjKey">@drawable/sym_keyboard_zwj_holo_dark</item>
         <item name="iconEmojiActionKey">@drawable/sym_keyboard_smiley_holo_dark</item>
         <item name="iconEmojiNormalKey">@drawable/sym_keyboard_smiley_holo_dark</item>
-        <item name="iconClipboardActionKey">@drawable/sym_keyboard_clipboard_holo_dark</item>
-        <item name="iconClipboardNormalKey">@drawable/sym_keyboard_clipboard_holo_dark</item>
+        <item name="iconClipboardActionKey">@drawable/sym_keyboard_clipboard_dark</item>
+        <item name="iconClipboardNormalKey">@drawable/sym_keyboard_clipboard_dark</item>
         <item name="iconClearClipboardKey">@drawable/sym_keyboard_clear_clipboard_holo_dark</item>
         <item name="iconStartOneHandedMode">@drawable/sym_keyboard_start_onehanded_holo_dark</item>
         <item name="iconStopOneHandedMode">@drawable/sym_keyboard_stop_onehanded_holo_dark</item>
         <item name="iconSwitchOneHandedMode">@drawable/sym_keyboard_switch_onehanded_holo_dark</item>
+    </style>
+
+    <style name="KeyboardIcons.Holo.Light" parent="KeyboardIcons.Holo">
+        <item name="iconIncognitoKey">@drawable/sym_keyboard_incognito_light</item>
+        <item name="iconClipboardActionKey">@drawable/sym_keyboard_clipboard_light</item>
+        <item name="iconClipboardNormalKey">@drawable/sym_keyboard_clipboard_light</item>
     </style>
 </resources>

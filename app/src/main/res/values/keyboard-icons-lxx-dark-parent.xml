@@ -43,8 +43,8 @@
         <item name="iconZwjKey">@drawable/sym_keyboard_zwj_lxx_dark</item>
         <item name="iconEmojiActionKey">@drawable/sym_keyboard_smiley_lxx_dark</item>
         <item name="iconEmojiNormalKey">@drawable/sym_keyboard_smiley_lxx_dark</item>
-        <item name="iconClipboardActionKey">@drawable/sym_keyboard_clipboard_lxx_dark</item>
-        <item name="iconClipboardNormalKey">@drawable/sym_keyboard_clipboard_lxx_dark</item>
+        <item name="iconClipboardActionKey">@drawable/sym_keyboard_clipboard_dark</item>
+        <item name="iconClipboardNormalKey">@drawable/sym_keyboard_clipboard_dark</item>
         <item name="iconClearClipboardKey">@drawable/sym_keyboard_clear_clipboard_lxx_dark</item>
         <item name="iconStartOneHandedMode">@drawable/sym_keyboard_start_onehanded_lxx_dark</item>
         <item name="iconStopOneHandedMode">@drawable/sym_keyboard_stop_onehanded_lxx_dark</item>
