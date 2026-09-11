@@ -77,7 +77,7 @@
     <style
         name="MoreKeysKeyboardView.LXX_Dark_Border"
         parent="MoreKeysKeyboardView.LXX_Dark">
-        <item name="android:background">@drawable/keyboard_popup_panel_background_lxx_dark_border</item>
+        <item name="android:background">@drawable/keyboard_popup_panel_background_lxx_dark</item>
         <item name="keyBackground">@drawable/btn_keyboard_key_popup_lxx_dark</item>
     </style>
 
