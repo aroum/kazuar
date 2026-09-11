@@ -67,6 +67,8 @@ public final class InputAttributes {
         mInputType = inputType;
         mIsPasswordField = InputTypeUtils.isPasswordInputType(inputType)
                 || InputTypeUtils.isVisiblePasswordInputType(inputType);
+        final boolean hasNoPersonalizedLearning = editorInfo != null
+                && (editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0;
         if (inputClass != InputType.TYPE_CLASS_TEXT) {
             // If we are not looking at a TYPE_CLASS_TEXT field, the following strange
             // cases may arise, so we do a couple sanity checks for them. If it's a
@@ -89,7 +91,7 @@ public final class InputAttributes {
             mShouldShowVoiceInputKey = false;
             mDisableGestureFloatingPreviewText = false;
             mIsGeneralTextInput = false;
-            mNoLearning = false;
+            mNoLearning = hasNoPersonalizedLearning;
             return;
         }
         // inputClass == InputType.TYPE_CLASS_TEXT
@@ -140,7 +142,7 @@ public final class InputAttributes {
                 && InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != variation;
 
 
-        mNoLearning = flagNoSuggestions || (editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0;
+        mNoLearning = hasNoPersonalizedLearning || flagNoSuggestions;
     }
 
     public boolean isTypeNull() {
