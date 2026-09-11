@@ -36,6 +36,7 @@ import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.Constants;
 import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
 import io.github.sds100.keymapper.inputmethod.latin.settings.Settings;
+import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils.ParseException;
@@ -584,7 +585,7 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
                         }
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to resolve layout version for keyboardLayout=" + keyboardLayout, e);
+                    Log.w(BUILDER_TAG, "Failed to resolve layout version for keyboardLayout=" + keyboardLayout, e);
                 }
             }
             if (row != null) {
