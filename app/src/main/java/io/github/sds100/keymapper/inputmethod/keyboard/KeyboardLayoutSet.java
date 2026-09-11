@@ -429,7 +429,12 @@ public final class KeyboardLayoutSet {
         public KeyboardLayoutSet build() {
             if (mParams.mSubtype == null)
                 throw new RuntimeException("KeyboardLayoutSet subtype is not specified");
-            final int xmlId = getXmlId(mResources, mParams.mKeyboardLayoutSetName);
+            int xmlId = getXmlId(mResources, mParams.mKeyboardLayoutSetName);
+            if (xmlId == 0) {
+                Log.w(TAG, "KeyboardLayoutSet XML not found for " + mParams.mKeyboardLayoutSetName + ", falling back to qwerty");
+                mParams.mKeyboardLayoutSetName = KEYBOARD_LAYOUT_SET_RESOURCE_PREFIX + "qwerty";
+                xmlId = getXmlId(mResources, mParams.mKeyboardLayoutSetName);
+            }
             try {
                 parseKeyboardLayoutSet(mResources, xmlId);
             } catch (final IOException | XmlPullParserException e) {

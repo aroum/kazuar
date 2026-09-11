@@ -311,13 +311,15 @@ public class KeyboardView extends View {
         }
 
         final SettingsValues currentSettings = Settings.getInstance().getCurrent();
-        mShowsMainLabels = currentSettings.mShowsMainLabels;
-        mShowsHints = currentSettings.mShowsHints;
-        mShowsDoubleTapHints = currentSettings.mShowsDoubleTapHints;
-        mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
-        mCustomDoubleTapRulesMap = currentSettings.mCustomDoubleTapRulesMap;
-        if (mIsCustomTheme) {
-            mCustomThemeHasBorders = currentSettings.mThemeKeyBorders;
+        if (currentSettings != null) {
+            mShowsMainLabels = currentSettings.mShowsMainLabels;
+            mShowsHints = currentSettings.mShowsHints;
+            mShowsDoubleTapHints = currentSettings.mShowsDoubleTapHints;
+            mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
+            mCustomDoubleTapRulesMap = currentSettings.mCustomDoubleTapRulesMap;
+            if (mIsCustomTheme) {
+                mCustomThemeHasBorders = currentSettings.mThemeKeyBorders;
+            }
         }
         final Paint paint = mPaint;
         final Drawable background = getBackground();

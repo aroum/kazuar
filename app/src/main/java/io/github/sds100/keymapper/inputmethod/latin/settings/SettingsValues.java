@@ -157,7 +157,8 @@ public class SettingsValues {
 
     public SettingsValues(final Context context, final SharedPreferences prefs, final Resources res,
                           @Nonnull final InputAttributes inputAttributes) {
-        mLocale = res.getConfiguration().locale;
+        final Locale configLocale = res.getConfiguration().locale;
+        mLocale = configLocale != null ? configLocale : Locale.getDefault();
         // Get the resources
         mDelayInMillisecondsToUpdateOldSuggestions =
                 res.getInteger(R.integer.config_delay_in_milliseconds_to_update_old_suggestions);
@@ -167,7 +168,8 @@ public class SettingsValues {
         mInputAttributes = inputAttributes;
 
         // Get the settings preferences
-        mAutoCap = prefs.getBoolean(Settings.PREF_AUTO_CAP, true) && ScriptUtils.scriptSupportsUppercase(mLocale.getLanguage());
+        mAutoCap = prefs.getBoolean(Settings.PREF_AUTO_CAP, true)
+                && ScriptUtils.scriptSupportsUppercase(mLocale != null ? mLocale.getLanguage() : "");
         mVibrateOn = Settings.readVibrationEnabled(prefs, res);
         mSoundOn = Settings.readKeypressSoundEnabled(prefs, res);
         mKeyPreviewPopupOn = Settings.readKeyPreviewPopupEnabled(prefs, res);
@@ -279,22 +281,24 @@ public class SettingsValues {
         mEnableMacroReplacements = prefs.getBoolean("pref_enable_macro_replacements", true);
         mKeyboardLayoutRu = prefs.getString("pref_keyboard_layout_ru", "v3");
         mKeyboardLayoutEn = prefs.getString("pref_keyboard_layout_en", "v3");
-        final String lang = res.getConfiguration().locale.getLanguage();
+        final String lang = mLocale != null && mLocale.getLanguage() != null ? mLocale.getLanguage() : "";
         final String layoutVersion = "ru".equals(lang) ? mKeyboardLayoutRu : mKeyboardLayoutEn;
         final String rulesJson = prefs.getString("pref_custom_double_tap_rules_" + lang + "_" + layoutVersion, "ru".equals(lang) ? DEFAULT_RULES_JSON : "[]");
         mCustomDoubleTapRules = parseDoubleTapRules(rulesJson);
         mCustomDoubleTapRulesMap = new HashMap<>();
-        for (DoubleTapRule rule : mCustomDoubleTapRules) {
-            if (rule.enabled && rule.key != null && rule.replacement != null) {
-                mCustomDoubleTapRulesMap.put(rule.key.toLowerCase(Locale.ROOT), rule.replacement);
+        if (mCustomDoubleTapRules != null) {
+            for (DoubleTapRule rule : mCustomDoubleTapRules) {
+                if (rule != null && rule.enabled && rule.key != null && rule.replacement != null) {
+                    mCustomDoubleTapRulesMap.put(rule.key.toLowerCase(Locale.ROOT), rule.replacement);
+                }
             }
         }
 
-        mSwipeThreshold = prefs.getInt("pref_swipe_threshold", 40) / 100.0f;
-        mSwipeUpAction = Integer.parseInt(prefs.getString("pref_swipe_up_action", "-21"));
-        mSwipeDownAction = Integer.parseInt(prefs.getString("pref_swipe_down_action", "10"));
-        mSwipeLeftAction = Integer.parseInt(prefs.getString("pref_swipe_left_action", "-10"));
-        mSwipeRightAction = Integer.parseInt(prefs.getString("pref_swipe_right_action", "-341"));
+        mSwipeThreshold = parseIntPref(prefs, "pref_swipe_threshold", 40) / 100.0f;
+        mSwipeUpAction = parseIntPref(prefs, "pref_swipe_up_action", -21);
+        mSwipeDownAction = parseIntPref(prefs, "pref_swipe_down_action", 10);
+        mSwipeLeftAction = parseIntPref(prefs, "pref_swipe_left_action", -10);
+        mSwipeRightAction = parseIntPref(prefs, "pref_swipe_right_action", -341);
     }
 
     public boolean isMetricsLoggingEnabled() {
@@ -549,16 +553,40 @@ public class SettingsValues {
         DEFAULT_RULES_JSON = array.toString();
     }
 
+    private static int parseIntPref(final SharedPreferences prefs, final String key, final int defaultValue) {
+        try {
+            if (!prefs.contains(key)) {
+                return defaultValue;
+            }
+            final Object val = prefs.getAll().get(key);
+            if (val instanceof Integer) {
+                return (Integer) val;
+            } else if (val instanceof String) {
+                return Integer.parseInt((String) val);
+            } else if (val instanceof Number) {
+                return ((Number) val).intValue();
+            }
+        } catch (final Exception e) {
+            Log.e(TAG, "Failed to parse int pref for " + key, e);
+        }
+        return defaultValue;
+    }
+
     private static ArrayList<DoubleTapRule> parseDoubleTapRules(String jsonStr) {
         ArrayList<DoubleTapRule> list = new ArrayList<>();
+        if (jsonStr == null || jsonStr.isEmpty()) {
+            return list;
+        }
         try {
             org.json.JSONArray array = new org.json.JSONArray(jsonStr);
             for (int i = 0; i < array.length(); i++) {
                 org.json.JSONObject obj = array.getJSONObject(i);
-                String key = obj.getString("key");
-                String replacement = obj.getString("replacement");
-                boolean enabled = obj.getBoolean("enabled");
-                list.add(new DoubleTapRule(key, replacement, enabled));
+                String key = obj.optString("key", null);
+                String replacement = obj.optString("replacement", null);
+                boolean enabled = obj.optBoolean("enabled", false);
+                if (key != null && replacement != null) {
+                    list.add(new DoubleTapRule(key, replacement, enabled));
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse double tap rules", e);

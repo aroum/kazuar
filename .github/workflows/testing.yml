@@ -102,6 +102,20 @@ jobs:
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_ENV
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
 
+      - name: Prepare legacy APK artifact names
+        run: |
+          cd app/build/outputs/apk/ci
+          UNIVERSAL_APK=$(ls *universal*.apk 2>/dev/null | head -n 1 || true)
+          if [ -n "$UNIVERSAL_APK" ] && [ -f "$UNIVERSAL_APK" ]; then
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              TAG_NAME="${{ github.ref_name }}"
+              cp -f "$UNIVERSAL_APK" "kazuar-keyboard-${TAG_NAME}.apk" || true
+            else
+              BUILD_DATE=$(date -u +'%y.%m.%d')
+              cp -f "$UNIVERSAL_APK" "kazuar-keyboard-${BUILD_DATE}-nightly.apk" || true
+            fi
+          fi
+
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:

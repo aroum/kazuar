@@ -50,6 +50,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodSubtype;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -802,13 +803,15 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // Has to be package-visible for unit tests
     @UsedForTesting
     void loadSettings() {
-        final Locale locale = mRichImm.getCurrentSubtypeLocale();
+        final Locale locale = mRichImm != null ? mRichImm.getCurrentSubtypeLocale() : Locale.getDefault();
         final EditorInfo editorInfo = getCurrentInputEditorInfo();
         final InputAttributes inputAttributes = new InputAttributes(
                 editorInfo, isFullscreenMode(), getPackageName());
         mSettings.loadSettings(this, locale, inputAttributes);
         final SettingsValues currentSettingsValues = mSettings.getCurrent();
-        AudioAndHapticFeedbackManager.getInstance().onSettingsChanged(currentSettingsValues);
+        if (currentSettingsValues != null) {
+            AudioAndHapticFeedbackManager.getInstance().onSettingsChanged(currentSettingsValues);
+        }
         // This method is called on startup and language switch, before the new layout has
         // been displayed. Opening dictionaries never affects responsivity as dictionaries are
         // asynchronously loaded.
@@ -821,6 +824,9 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     private void refreshPersonalizationDictionarySession(
             final SettingsValues currentSettingsValues) {
+        if (currentSettingsValues == null) {
+            return;
+        }
         if (!currentSettingsValues.mUsePersonalizedDicts) {
             // Remove user history dictionaries.
             PersonalizationHelper.removeAllUserHistoryDictionaries(this);
@@ -1037,6 +1043,10 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         // If we are starting input in a different text field from before, we'll have to reload
         // settings, so currentSettingsValues can't be final.
         SettingsValues currentSettingsValues = mSettings.getCurrent();
+        if (currentSettingsValues == null) {
+            loadSettings();
+            currentSettingsValues = mSettings.getCurrent();
+        }
 
         if (editorInfo == null) {
             Log.e(TAG, "Null EditorInfo in onStartInputView()");
@@ -1079,7 +1089,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             accessUtils.onStartInputViewInternal(mainKeyboardView, editorInfo, restarting);
         }
 
-        final boolean inputTypeChanged = !currentSettingsValues.isSameInputType(editorInfo);
+        final boolean inputTypeChanged = currentSettingsValues != null && !currentSettingsValues.isSameInputType(editorInfo);
         final boolean isDifferentTextField = !restarting || inputTypeChanged;
 
         // The EditorInfo might have a flag that affects fullscreen mode.
@@ -1131,18 +1141,20 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
 
         if (isDifferentTextField ||
-                !currentSettingsValues.hasSameOrientation(getResources().getConfiguration())) {
+                (currentSettingsValues != null && !currentSettingsValues.hasSameOrientation(getResources().getConfiguration()))) {
             loadSettings();
         }
         if (isDifferentTextField) {
             mainKeyboardView.closing();
             currentSettingsValues = mSettings.getCurrent();
 
-            if (currentSettingsValues.mAutoCorrectionEnabledPerUserSettings) {
+            if (currentSettingsValues != null && currentSettingsValues.mAutoCorrectionEnabledPerUserSettings) {
                 suggest.setAutoCorrectionThreshold(
                         currentSettingsValues.mAutoCorrectionThreshold);
             }
-            suggest.setPlausibilityThreshold(currentSettingsValues.mPlausibilityThreshold);
+            if (currentSettingsValues != null) {
+                suggest.setPlausibilityThreshold(currentSettingsValues.mPlausibilityThreshold);
+            }
 
             switcher.loadKeyboard(editorInfo, currentSettingsValues, getCurrentAutoCapsState(),
                     getCurrentRecapitalizeState());
@@ -2168,7 +2180,9 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         final int keyboardMode = keyboard != null ? keyboard.mId.mMode : -1;
         p.println("  Keyboard mode = " + keyboardMode);
         final SettingsValues settingsValues = mSettings.getCurrent();
-        p.println(settingsValues.dump());
+        if (settingsValues != null) {
+            p.println(settingsValues.dump());
+        }
         p.println(mDictionaryFacilitator.dump(this /* context */));
         // TODO: Dump all settings values
     }
@@ -2177,7 +2191,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         // TODO: Revisit here to reorganize the settings. Probably we can/should use different
         // strategy once the implementation of
         // {@link InputMethodManager#shouldOfferSwitchingToNextInputMethod} is defined well.
-        final boolean fallbackValue = mSettings.getCurrent().mIncludesOtherImesInLanguageSwitchList;
+        final SettingsValues currentSettings = mSettings.getCurrent();
+        final boolean fallbackValue = currentSettings != null && currentSettings.mIncludesOtherImesInLanguageSwitchList;
         final IBinder token = getWindow().getWindow().getAttributes().token;
         if (token == null) {
             return fallbackValue;
@@ -2189,7 +2204,11 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         // TODO: Revisit here to reorganize the settings. Probably we can/should use different
         // strategy once the implementation of
         // {@link InputMethodManager#shouldOfferSwitchingToNextInputMethod} is defined well.
-        return mSettings.getCurrent().isLanguageSwitchKeyEnabled();
+        final SettingsValues currentSettings = mSettings.getCurrent();
+        if (currentSettings == null) {
+            return false;
+        }
+        return currentSettings.isLanguageSwitchKeyEnabled();
     }
 
     private void setNavigationBarVisibility(final boolean visible) {

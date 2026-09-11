@@ -215,7 +215,12 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                     return new SettingsValues(context, prefs, res, inputAttributes);
                 }
             };
-            mSettingsValues = job.runInLocale(mRes, locale);
+            final SettingsValues newValues = job.runInLocale(mRes, locale);
+            if (newValues != null) {
+                mSettingsValues = newValues;
+            }
+        } catch (final Throwable t) {
+            Log.e(TAG, "Failed to loadSettings", t);
         } finally {
             mSettingsValuesLock.unlock();
         }

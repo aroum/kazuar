@@ -558,27 +558,33 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
             keyboardLayout = keyboardAttr.getResourceId(
                     R.styleable.Keyboard_Include_keyboardLayout, 0);
             if (keyboardLayout != 0) {
-                final String entryName = mResources.getResourceEntryName(keyboardLayout);
-                final String language = mParams.mId.getLocale().getLanguage();
-                final String layoutVersion = "ru".equals(language) ?
-                        Settings.getInstance().getCurrent().mKeyboardLayoutRu :
-                        Settings.getInstance().getCurrent().mKeyboardLayoutEn;
-                if ("v2".equals(layoutVersion)) {
-                    if ("rows_qwerty".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_qwerty_v2;
-                    } else if ("rows_east_slavic".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_east_slavic_v2;
-                    } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_symbols_v2;
+                try {
+                    final String entryName = mResources.getResourceEntryName(keyboardLayout);
+                    final String language = (mParams != null && mParams.mId != null && mParams.mId.getLocale() != null)
+                            ? mParams.mId.getLocale().getLanguage() : "";
+                    final SettingsValues settingsValues = Settings.getInstance().getCurrent();
+                    final String layoutVersion = "ru".equals(language) ?
+                            (settingsValues != null && settingsValues.mKeyboardLayoutRu != null ? settingsValues.mKeyboardLayoutRu : "v3") :
+                            (settingsValues != null && settingsValues.mKeyboardLayoutEn != null ? settingsValues.mKeyboardLayoutEn : "v3");
+                    if ("v2".equals(layoutVersion)) {
+                        if ("rows_qwerty".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_qwerty_v2;
+                        } else if ("rows_east_slavic".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_east_slavic_v2;
+                        } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_symbols_v2;
+                        }
+                    } else if ("v3".equals(layoutVersion)) {
+                        if ("rows_qwerty".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_qwerty_v3;
+                        } else if ("rows_east_slavic".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_east_slavic_v3;
+                        } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
+                            keyboardLayout = R.xml.rows_symbols_v3;
+                        }
                     }
-                } else if ("v3".equals(layoutVersion)) {
-                    if ("rows_qwerty".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_qwerty_v3;
-                    } else if ("rows_east_slavic".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_east_slavic_v3;
-                    } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
-                        keyboardLayout = R.xml.rows_symbols_v3;
-                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to resolve layout version for keyboardLayout=" + keyboardLayout, e);
                 }
             }
             if (row != null) {
