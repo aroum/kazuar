@@ -1,9 +1,3 @@
-# Keep classes and methods that have the @UsedForTesting annotation
--keep @io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting class *
--keepclassmembers class * {
-    @io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting *;
-}
-
 # Keep classes and methods that have the @ExternallyReferenced annotation
 -keep @io.github.sds100.keymapper.inputmethod.annotations.ExternallyReferenced class *
 -keepclassmembers class * {
@@ -22,9 +16,6 @@
 -keep class io.github.sds100.keymapper.inputmethod.latin.NgramContext
 -keep class io.github.sds100.keymapper.inputmethod.latin.makedict.ProbabilityInfo
 -keep class io.github.sds100.keymapper.inputmethod.latin.utils.LanguageModelParam
-
-# TODO: remove once used in code.
--keep class io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayout { *; }
 
 # Keep InputMethodService and Activity components
 -keep public class * extends android.inputmethodservice.InputMethodService

@@ -564,40 +564,20 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
                         Settings.getInstance().getCurrent().mKeyboardLayoutRu :
                         Settings.getInstance().getCurrent().mKeyboardLayoutEn;
                 if ("v2".equals(layoutVersion)) {
-                    final String packageName = mContext.getPackageName();
                     if ("rows_qwerty".equals(entryName)) {
-                        int v2Id = mResources.getIdentifier("rows_qwerty_v2", "xml", packageName);
-                        if (v2Id != 0) {
-                            keyboardLayout = v2Id;
-                        }
+                        keyboardLayout = R.xml.rows_qwerty_v2;
                     } else if ("rows_east_slavic".equals(entryName)) {
-                        int v2Id = mResources.getIdentifier("rows_east_slavic_v2", "xml", packageName);
-                        if (v2Id != 0) {
-                            keyboardLayout = v2Id;
-                        }
+                        keyboardLayout = R.xml.rows_east_slavic_v2;
                     } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
-                        int v2Id = mResources.getIdentifier("rows_symbols_v2", "xml", packageName);
-                        if (v2Id != 0) {
-                            keyboardLayout = v2Id;
-                        }
+                        keyboardLayout = R.xml.rows_symbols_v2;
                     }
                 } else if ("v3".equals(layoutVersion)) {
-                    final String packageName = mContext.getPackageName();
                     if ("rows_qwerty".equals(entryName)) {
-                        int v3Id = mResources.getIdentifier("rows_qwerty_v3", "xml", packageName);
-                        if (v3Id != 0) {
-                            keyboardLayout = v3Id;
-                        }
+                        keyboardLayout = R.xml.rows_qwerty_v3;
                     } else if ("rows_east_slavic".equals(entryName)) {
-                        int v3Id = mResources.getIdentifier("rows_east_slavic_v3", "xml", packageName);
-                        if (v3Id != 0) {
-                            keyboardLayout = v3Id;
-                        }
+                        keyboardLayout = R.xml.rows_east_slavic_v3;
                     } else if ("rows_symbols".equals(entryName) || "rows_symbols_shift".equals(entryName)) {
-                        int v3Id = mResources.getIdentifier("rows_symbols_v3", "xml", packageName);
-                        if (v3Id != 0) {
-                            keyboardLayout = v3Id;
-                        }
+                        keyboardLayout = R.xml.rows_symbols_v3;
                     }
                 }
             }

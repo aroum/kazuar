@@ -12,3 +12,5 @@ fastlane/Appfile
 /logs_*
 
 /log
+ICON_COMPARISON.md
+/icon_preview/
