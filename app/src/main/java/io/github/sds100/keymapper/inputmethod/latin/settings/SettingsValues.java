@@ -36,7 +36,9 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.TargetPackageInfoGette
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -115,6 +117,7 @@ public class SettingsValues {
     public final String mKeyboardLayoutRu;
     public final String mKeyboardLayoutEn;
     public final ArrayList<DoubleTapRule> mCustomDoubleTapRules;
+    public final Map<String, String> mCustomDoubleTapRulesMap;
     public final float mSwipeThreshold;
     public final int mSwipeUpAction;
     public final int mSwipeDownAction;
@@ -278,6 +281,12 @@ public class SettingsValues {
         final String layoutVersion = "ru".equals(lang) ? mKeyboardLayoutRu : mKeyboardLayoutEn;
         final String rulesJson = prefs.getString("pref_custom_double_tap_rules_" + lang + "_" + layoutVersion, "ru".equals(lang) ? DEFAULT_RULES_JSON : "[]");
         mCustomDoubleTapRules = parseDoubleTapRules(rulesJson);
+        mCustomDoubleTapRulesMap = new HashMap<>();
+        for (DoubleTapRule rule : mCustomDoubleTapRules) {
+            if (rule.enabled && rule.key != null && rule.replacement != null) {
+                mCustomDoubleTapRulesMap.put(rule.key.toLowerCase(Locale.ROOT), rule.replacement);
+            }
+        }
 
         mSwipeThreshold = prefs.getInt("pref_swipe_threshold", 40) / 100.0f;
         mSwipeUpAction = Integer.parseInt(prefs.getString("pref_swipe_up_action", "-21"));

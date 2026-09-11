@@ -11,8 +11,8 @@ android {
         applicationId "io.github.sds100.keymapper.inputmethod.latin"
         minSdkVersion 19
         targetSdkVersion 34
-        versionCode 26
-        versionName '26.09.04'
+        versionCode 27
+        versionName '26.09.11'
     }
 
     signingConfigs {
@@ -41,6 +41,15 @@ android {
         }
     }
 
+    splits {
+        abi {
+            enable true
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            universalApk true
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
@@ -49,7 +58,7 @@ android {
             jniDebuggable false
             renderscriptDebuggable false
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
         }
         debug {
             versionNameSuffix "-debug"
@@ -59,7 +68,7 @@ android {
             shrinkResources true
             debuggable = false
 
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
             signingConfig signingConfigs.release
         }
     }
@@ -96,19 +105,18 @@ android {
 }
 
 android.applicationVariants.all { variant ->
-    variant.outputs.all {
-        outputFileName = "kazuar-keyboard-${variant.versionName}.apk"
+    variant.outputs.all { output ->
+        def abi = output.getFilter(com.android.build.OutputFile.ABI)
+        def suffix = abi != null ? "-${abi}" : "-universal"
+        outputFileName = "kazuar-keyboard-${variant.versionName}${suffix}.apk"
     }
 }
 
 dependencies {
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    // Replaces recyclerview:1.0.0 included by above dependency
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'androidx.core:core-ktx:1.13.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'androidx.collection:collection:1.4.0'
 }
 
 repositories {

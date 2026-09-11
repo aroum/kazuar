@@ -128,7 +128,10 @@ public class KeyboardView extends View {
     /** Flag for whether the double-tap hints should be displayed */
     private boolean mShowsDoubleTapHints = true;
     private boolean mEnableDoubleTapReplacements = false;
-    private ArrayList<DoubleTapRule> mCustomDoubleTapRules = null;
+    private java.util.Map<String, String> mCustomDoubleTapRulesMap = null;
+    private final Paint mCustomThemeKeyPaint = new Paint();
+    private final RectF mCustomThemeKeyRect = new RectF();
+    private boolean mCustomThemeHasBorders = true;
     /** The canvas for the above mutable keyboard bitmap */
     @Nonnull
     private final Canvas mOffscreenCanvas = new Canvas();
@@ -142,6 +145,7 @@ public class KeyboardView extends View {
 
     public KeyboardView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs, defStyle);
+        mCustomThemeKeyPaint.setAntiAlias(true);
 
         final TypedArray keyboardViewAttr = context.obtainStyledAttributes(attrs,
                 R.styleable.KeyboardView, defStyle, R.style.KeyboardView);
@@ -311,7 +315,11 @@ public class KeyboardView extends View {
         mShowsHints = currentSettings.mShowsHints;
         mShowsDoubleTapHints = currentSettings.mShowsDoubleTapHints;
         mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
-        mCustomDoubleTapRules = currentSettings.mCustomDoubleTapRules;
+        mCustomDoubleTapRulesMap = currentSettings.mCustomDoubleTapRulesMap;
+        if (mIsCustomTheme) {
+            final SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(getContext());
+            mCustomThemeHasBorders = prefs.getBoolean("theme_key_borders", true);
+        }
         final Paint paint = mPaint;
         final Drawable background = getBackground();
         // Calculate clip region and set.
@@ -392,8 +400,7 @@ public class KeyboardView extends View {
         if (mIsCustomTheme) {
             final int keyWidth = key.getDrawWidth();
             final int keyHeight = key.getHeight();
-            final Paint paint = new Paint();
-            paint.setAntiAlias(true);
+            final Paint paint = mCustomThemeKeyPaint;
             paint.setStyle(Paint.Style.FILL);
             boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL);
             int bgColor;
@@ -404,17 +411,14 @@ public class KeyboardView extends View {
             }
             paint.setColor(bgColor);
             float radius = 8f; // rounded corner radius in pixels
-            RectF rect = new RectF(0, 0, keyWidth, keyHeight);
-            canvas.drawRoundRect(rect, radius, radius, paint);
+            mCustomThemeKeyRect.set(0, 0, keyWidth, keyHeight);
+            canvas.drawRoundRect(mCustomThemeKeyRect, radius, radius, paint);
 
-            final SharedPreferences prefs = getContext().getSharedPreferences(
-                    getContext().getPackageName() + "_preferences", Context.MODE_PRIVATE);
-            boolean hasBorders = prefs.getBoolean("theme_key_borders", true);
-            if (hasBorders) {
+            if (mCustomThemeHasBorders) {
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(2.0f);
                 paint.setColor(mCustomColors.keyBorderColor);
-                canvas.drawRoundRect(rect, radius, radius, paint);
+                canvas.drawRoundRect(mCustomThemeKeyRect, radius, radius, paint);
             }
             return;
         }
@@ -512,15 +516,8 @@ public class KeyboardView extends View {
         }
 
         // Draw double-tap hint label in top-left corner.
-        if (mShowsDoubleTapHints && mEnableDoubleTapReplacements && mCustomDoubleTapRules != null && label != null) {
-            String doubleTapReplacement = null;
-            for (int i = 0; i < mCustomDoubleTapRules.size(); i++) {
-                final DoubleTapRule rule = mCustomDoubleTapRules.get(i);
-                if (rule.enabled && label.equalsIgnoreCase(rule.key)) {
-                    doubleTapReplacement = rule.replacement;
-                    break;
-                }
-            }
+        if (mShowsDoubleTapHints && mEnableDoubleTapReplacements && mCustomDoubleTapRulesMap != null && label != null) {
+            final String doubleTapReplacement = mCustomDoubleTapRulesMap.get(label.toLowerCase(java.util.Locale.ROOT));
             if (doubleTapReplacement != null && !doubleTapReplacement.isEmpty()) {
                 paint.setTextSize(key.selectHintTextSize(params));
                 if (mIsCustomTheme) {

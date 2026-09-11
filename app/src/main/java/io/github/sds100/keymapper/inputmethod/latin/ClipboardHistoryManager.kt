@@ -10,6 +10,7 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.JsonUtils
 import java.io.File
 import java.lang.Exception
 import java.util.*
+import java.util.concurrent.Executors
 
 class ClipboardHistoryManager(
         private val latinIME: LatinIME
@@ -19,6 +20,9 @@ class ClipboardHistoryManager(
     private lateinit var clipboardManager: ClipboardManager
     private val historyEntries: MutableList<ClipboardHistoryEntry>
     private var onHistoryChangeListener: OnHistoryChangeListener? = null
+    private val diskExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "$TAG-disk-io").apply { isDaemon = true }
+    }
 
     fun onCreate() {
         pinnedHistoryClipsFile = File(latinIME.filesDir, PINNED_CLIPS_DATA_FILE_NAME)
@@ -40,6 +44,7 @@ class ClipboardHistoryManager(
 
     fun onDestroy() {
         clipboardManager.removePrimaryClipChangedListener(this)
+        diskExecutor.shutdown()
     }
 
     override fun onPrimaryClipChanged() {
@@ -142,11 +147,9 @@ class ClipboardHistoryManager(
     }
 
     private fun startLoadPinnedClipsFromDisk() {
-        object : Thread("$TAG-load") {
-            override fun run() {
-                loadFromDisk()
-            }
-        }.start()
+        diskExecutor.execute {
+            loadFromDisk()
+        }
     }
 
     private fun loadFromDisk() {
@@ -168,11 +171,9 @@ class ClipboardHistoryManager(
 
     private fun startSavePinnedClipsToDisk() {
         val localCopy = historyEntries.filter { it.isPinned }.map { it.copy() }
-        object : Thread("$TAG-save") {
-            override fun run() {
-                saveToDisk(localCopy)
-            }
-        }.start()
+        diskExecutor.execute {
+            saveToDisk(localCopy)
+        }
     }
 
     private fun saveToDisk(list: List<ClipboardHistoryEntry>) {

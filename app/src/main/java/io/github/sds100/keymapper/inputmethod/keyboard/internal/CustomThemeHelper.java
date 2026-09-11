@@ -4,10 +4,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.util.Log;
+import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
 import org.json.JSONObject;
 
 public class CustomThemeHelper {
     private static final String TAG = "CustomThemeHelper";
+
+    private static String sCachedThemeJson = null;
+    private static Boolean sCachedIsDark = null;
+    private static ThemeColors sCachedColors = null;
 
     public static class ThemeColors {
         public int keyboardBackground;
@@ -22,16 +27,31 @@ public class CustomThemeHelper {
         public int keyBorderColor;
     }
 
-    public static ThemeColors getCustomThemeColors(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(
-                context.getPackageName() + "_preferences", Context.MODE_PRIVATE);
+    public static synchronized void clearCache() {
+        sCachedThemeJson = null;
+        sCachedIsDark = null;
+        sCachedColors = null;
+    }
+
+    public static synchronized ThemeColors getCustomThemeColors(Context context) {
+        int currentNightMode = context.getResources().getConfiguration().uiMode 
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+        boolean isDark = (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES);
+
+        SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(context);
         String themeJson = prefs.getString("pref_custom_theme_json", null);
-        if (themeJson == null) return null;
+        if (themeJson == null) {
+            clearCache();
+            return null;
+        }
+
+        if (sCachedColors != null && themeJson.equals(sCachedThemeJson) 
+                && sCachedIsDark != null && sCachedIsDark == isDark) {
+            return sCachedColors;
+        }
+
         try {
             JSONObject obj = new JSONObject(themeJson);
-            int currentNightMode = context.getResources().getConfiguration().uiMode 
-                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
-            boolean isDark = (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES);
             String modeKey = isDark ? "dark" : "light";
             if (!obj.has(modeKey)) return null;
             JSONObject modeObj = obj.getJSONObject(modeKey);
@@ -50,6 +70,10 @@ public class CustomThemeHelper {
                 colors.keyDoubleTapHintColor = colors.keyHintColor;
             }
             colors.keyBorderColor = Color.parseColor(modeObj.getString("key_border_color"));
+
+            sCachedThemeJson = themeJson;
+            sCachedIsDark = isDark;
+            sCachedColors = colors;
             return colors;
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse custom theme JSON", e);

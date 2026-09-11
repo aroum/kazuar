@@ -142,61 +142,30 @@ public final class InputLogic {
     };
 
     private static boolean isDoubleTapTriggerCandidate(final int codePoint, final SettingsValues settingsValues) {
-        if (codePoint < 0) return false;
-        if (settingsValues.mCustomDoubleTapRules != null) {
-            for (SettingsValues.DoubleTapRule rule : settingsValues.mCustomDoubleTapRules) {
-                if (rule.enabled && rule.key != null && !rule.key.isEmpty()) {
-                    int ruleKeyCp = rule.key.codePointAt(0);
-                    if (codePoint == ruleKeyCp || 
-                        (Character.isLetter(ruleKeyCp) && (
-                            codePoint == Character.toUpperCase(ruleKeyCp) || 
-                            codePoint == Character.toLowerCase(ruleKeyCp)
-                        ))
-                    ) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        if (codePoint < 0 || settingsValues.mCustomDoubleTapRulesMap == null) return false;
+        final String key = String.valueOf(Character.toChars(Character.toLowerCase(codePoint)));
+        return settingsValues.mCustomDoubleTapRulesMap.containsKey(key);
     }
 
     private static String getDoubleTapReplacement(final int prevCodePoint, final int currentCodePoint, final SettingsValues settingsValues) {
-        if (prevCodePoint < 0 || currentCodePoint < 0) return null;
-        if (settingsValues.mCustomDoubleTapRules != null) {
-            for (SettingsValues.DoubleTapRule rule : settingsValues.mCustomDoubleTapRules) {
-                if (rule.enabled && rule.key != null && !rule.key.isEmpty() && rule.replacement != null) {
-                    int ruleKeyCp = rule.key.codePointAt(0);
-                    boolean match = false;
-                    if (Character.isLetter(ruleKeyCp)) {
-                        int upperKey = Character.toUpperCase(ruleKeyCp);
-                        int lowerKey = Character.toLowerCase(ruleKeyCp);
-                        if ((prevCodePoint == upperKey || prevCodePoint == lowerKey) &&
-                            (currentCodePoint == upperKey || currentCodePoint == lowerKey)) {
-                            match = true;
-                        }
-                    } else {
-                        if (prevCodePoint == ruleKeyCp && currentCodePoint == ruleKeyCp) {
-                            match = true;
-                        }
-                    }
+        if (prevCodePoint < 0 || currentCodePoint < 0 || settingsValues.mCustomDoubleTapRulesMap == null) return null;
+        final int lowerPrev = Character.toLowerCase(prevCodePoint);
+        final int lowerCurrent = Character.toLowerCase(currentCodePoint);
+        if (lowerPrev != lowerCurrent) return null;
 
-                    if (match) {
-                        if (Character.isLetter(ruleKeyCp) && (Character.isUpperCase(prevCodePoint) || Character.isUpperCase(currentCodePoint))) {
-                            StringBuilder sb = new StringBuilder();
-                            for (int i = 0; i < rule.replacement.length(); i = rule.replacement.offsetByCodePoints(i, 1)) {
-                                int cp = rule.replacement.codePointAt(i);
-                                sb.appendCodePoint(Character.toUpperCase(cp));
-                            }
-                            return sb.toString();
-                        } else {
-                            return rule.replacement;
-                        }
-                    }
+        final String key = String.valueOf(Character.toChars(lowerCurrent));
+        final String replacement = settingsValues.mCustomDoubleTapRulesMap.get(key);
+        if (replacement != null) {
+            if (Character.isLetter(currentCodePoint) && (Character.isUpperCase(prevCodePoint) || Character.isUpperCase(currentCodePoint))) {
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < replacement.length(); i = replacement.offsetByCodePoints(i, 1)) {
+                    final int cp = replacement.codePointAt(i);
+                    sb.appendCodePoint(Character.toUpperCase(cp));
                 }
+                return sb.toString();
             }
+            return replacement;
         }
-
         return null;
     }
 

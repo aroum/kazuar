@@ -88,39 +88,32 @@ jobs:
       - name: Prepare build metadata and artifact names
         run: |
           BUILD_DATE=$(date -u +'%y.%m.%d')
-          RAW_APK_NAME=$(basename app/build/outputs/apk/ci/*.apk .apk)
           
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG_NAME="${{ github.ref_name }}"
-            FINAL_NAME="kazuar-keyboard-${TAG_NAME}"
             RELEASE_TITLE="Kazuar Keyboard ${TAG_NAME}"
-            IS_PRERELEASE="false"
+            ARTIFACT_NAME="kazuar-keyboard-${TAG_NAME}"
           else
-            FINAL_NAME="kazuar-keyboard-${BUILD_DATE}-nightly"
             RELEASE_TITLE="Kazuar Keyboard ${BUILD_DATE} (Nightly)"
-            IS_PRERELEASE="true"
+            ARTIFACT_NAME="kazuar-keyboard-${BUILD_DATE}-nightly"
           fi
           
-          if [ "${RAW_APK_NAME}" != "${FINAL_NAME}" ]; then
-            cp "app/build/outputs/apk/ci/${RAW_APK_NAME}.apk" "app/build/outputs/apk/ci/${FINAL_NAME}.apk"
-          fi
-          
-          echo "FINAL_APK_NAME=${FINAL_NAME}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_ENV
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
 
-      - name: Upload APK Artifact
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.FINAL_APK_NAME }}
-          path: app/build/outputs/apk/ci/${{ env.FINAL_APK_NAME }}.apk
+          name: ${{ env.ARTIFACT_NAME }}
+          path: app/build/outputs/apk/ci/*.apk
 
       - name: Create GitHub Release (Tag Release)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ env.RELEASE_TITLE }}
-          files: app/build/outputs/apk/ci/${{ env.FINAL_APK_NAME }}.apk
+          files: app/build/outputs/apk/ci/*.apk
           generate_release_notes: true
           prerelease: false
 
@@ -131,7 +124,7 @@ jobs:
           tag_name: nightly
           name: ${{ env.RELEASE_TITLE }}
           body: "Automated nightly build (${{ env.BUILD_DATE }}) from master branch."
-          files: app/build/outputs/apk/ci/${{ env.FINAL_APK_NAME }}.apk
+          files: app/build/outputs/apk/ci/*.apk
           prerelease: true
           make_latest: false
 

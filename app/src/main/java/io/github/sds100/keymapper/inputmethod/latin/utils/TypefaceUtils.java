@@ -96,13 +96,10 @@ public final class TypefaceUtils {
         return getCharWidth(KEY_NUMERIC_HINT_LABEL_REFERENCE_CHAR, paint);
     }
 
-    // Working variable for the following method.
-    private static final Rect sStringWidthBounds = new Rect();
-
     public static float getStringWidth(final String string, final Paint paint) {
-        synchronized (sStringWidthBounds) {
-            paint.getTextBounds(string, 0, string.length(), sStringWidthBounds);
-            return sStringWidthBounds.width();
+        if (string == null || string.isEmpty()) {
+            return 0.0f;
         }
+        return paint.measureText(string);
     }
 }
