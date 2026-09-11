@@ -19,7 +19,7 @@
 -->
 
 <resources>
-    <style name="KeyboardIcons.LXX_Light">
+    <style name="KeyboardIconsBase.LXX_Light" parent="">
         <!-- Keyboard icons -->
         <item name="iconShiftKey">@drawable/sym_keyboard_shift_lxx_light</item>
         <item name="iconShiftKeyShifted">@drawable/sym_keyboard_shift_locked_lxx_light</item>
@@ -50,4 +50,6 @@
         <item name="iconStopOneHandedMode">@drawable/sym_keyboard_stop_onehanded_lxx_light</item>
         <item name="iconSwitchOneHandedMode">@drawable/sym_keyboard_switch_onehanded_lxx_light</item>
     </style>
+
+    <style name="KeyboardIcons.LXX_Light" parent="KeyboardIconsBase.LXX_Light" />
 </resources>

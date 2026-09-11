@@ -58,7 +58,7 @@ android {
             jniDebuggable false
             renderscriptDebuggable false
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
         }
         debug {
             versionNameSuffix "-debug"
@@ -68,7 +68,7 @@ android {
             shrinkResources true
             debuggable = false
 
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
             signingConfig signingConfigs.release
         }
     }

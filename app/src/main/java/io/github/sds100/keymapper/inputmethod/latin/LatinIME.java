@@ -1716,6 +1716,10 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             return;
         }
 
+        if (currentSettingsValues == null || currentSettingsValues.mInputAttributes == null) {
+            return;
+        }
+
         final boolean shouldShowSuggestionCandidates =
                 currentSettingsValues.mInputAttributes.mShouldShowSuggestions
                         && currentSettingsValues.isSuggestionsEnabledPerUserSettings();
