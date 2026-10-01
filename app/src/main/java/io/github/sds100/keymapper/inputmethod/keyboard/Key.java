@@ -244,10 +244,11 @@ public class Key implements Comparable<Key> {
     }
 
     /**
-     * Constructor for a key in a <GridRows/>.
+     * Constructor for a key in a <GridRows/> or custom layout with icon and moreKeys.
      */
-    public Key(@Nullable final String label, final int code, @Nullable final String outputText,
-               @Nullable final String hintLabel, @Nullable final String moreKeySpecs,
+    public Key(@Nullable final String label, final int iconId, final int code,
+               @Nullable final String outputText, @Nullable final String hintLabel,
+               @Nullable final String moreKeySpecs,
                final int labelFlags, final int backgroundType, final int x, final int y,
                final int width, final int height, final KeyboardParams params) {
         mWidth = width - params.mHorizontalGap;
@@ -309,7 +310,7 @@ public class Key implements Comparable<Key> {
                 ICON_UNDEFINED, 0 /* visualInsetsLeft */, 0 /* visualInsetsRight */);
         mCode = code;
         mEnabled = (code != CODE_UNSPECIFIED);
-        mIconId = KeyboardIconsSet.ICON_UNDEFINED;
+        mIconId = iconId;
         // Horizontal gap is divided equally to both sides of the key.
         mX = x + mHorizontalGap / 2;
         mY = y;
@@ -317,6 +318,17 @@ public class Key implements Comparable<Key> {
         mKeyVisualAttributes = null;
 
         mHashCode = computeHashCode(this);
+    }
+
+    /**
+     * Constructor for a key in a <GridRows/>.
+     */
+    public Key(@Nullable final String label, final int code, @Nullable final String outputText,
+               @Nullable final String hintLabel, @Nullable final String moreKeySpecs,
+               final int labelFlags, final int backgroundType, final int x, final int y,
+               final int width, final int height, final KeyboardParams params) {
+        this(label, KeyboardIconsSet.ICON_UNDEFINED, code, outputText, hintLabel, moreKeySpecs,
+                labelFlags, backgroundType, x, y, width, height, params);
     }
 
     /**

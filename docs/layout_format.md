@@ -33,24 +33,27 @@ Defines a row of keys on the keyboard.
 
 Defines a single key within a `<Row>`.
 
-- **`keyLabel`**: The text or label displayed on the key cap.
+- **`keyLabel`** (or **`label`**, **`keySpec`**): The text or label displayed on the key cap.
   - *Standard Character*: `<Key keyLabel="a" />`
   - *Hint and Label*: If the label contains the literal sequence `\n`, the characters before `\n` serve as a long-press visual hint (usually rendered at the top-right of the key), and the characters after `\n` are drawn as the primary key label.
     Example: `keyLabel="? \n /"` displays `/` with `?` in the corner.
-- **`codes`**: The Unicode code point or functional keycode triggered by a tap.
+  - *Composite Spec*: Standard AOSP specs like `keySpec="!icon/language_switch_key|!code/key_language_switch"` are also supported.
+- **`codes`** (or **`code`**): The Unicode code point or functional keycode triggered by a tap.
   - If omitted, the keyboard defaults to the UTF-32 code point of the first character in `keyLabel`.
-  - For special, navigation, or functional keys, you **must** specify a custom integer value here (e.g., `codes="-5"` for Backspace).
-- **`keyIcon`**: A predefined keyboard icon drawn on the key cap instead of text labels. Supported values are:
+  - Can be specified as a numeric integer (e.g. `codes="-10"`, `codes="-11"`, `codes="-5"`) or as a symbolic name (e.g. `codes="language"`, `codes="emoji"`, `codes="clipboard"`, `codes="delete"`).
+- **`keyIcon`** (or **`icon`**): A predefined keyboard icon drawn on the key cap instead of text labels. Supported values are:
+  - `globe` / `language`: The language switcher globe icon (auto-assigns code `-10`).
+  - `emoji`: The emoji palette smiley icon (auto-assigns code `-11`).
+  - `clipboard`: The clipboard history toggle icon (auto-assigns code `-12`).
   - `shift`: The shift arrow icon.
   - `delete` / `backspace`: The delete/backspace icon.
   - `space`: The spacebar indicator.
   - `return` / `enter`: The action return/enter arrow.
   - `settings`: The gear settings icon.
-  - `globe` / `language`: The language switcher globe icon.
-  - `emoji`: The emoji palette smiley icon.
-  - `clipboard`: The clipboard history toggle icon.
-- **`keyWidth`**: Overrides the default key width. Specified as a percentage of the total keyboard width (e.g., `keyWidth="15%"`).
-- **`longCode`**: The code point or keycode triggered when the key is long-pressed (e.g., `longCode="-6"` to launch settings).
+- **`keyWidth`** (or **`width`**): Overrides the default key width. Specified as a percentage of the total keyboard width (e.g., `keyWidth="15%"` or `keyWidth="10%p"`).
+- **`longCode`**: The code point or keycode triggered when the key is long-pressed without opening a panel (e.g., `longCode="-6"` to launch settings, or `longCode="-10"` to switch language).
+- **`moreKeys`**: Comma-separated list of more keys specs or popup characters.
+- **`backgroundType`**: Style of the key background (`functional`, `normal`, `spacebar`). Functional keys (Language switch, Emoji, Clipboard, Backspace, Enter, Shift, Settings) automatically receive the functional background.
 
 ---
 
@@ -87,22 +90,64 @@ Below is the list of functional keycodes. To use them, assign the code to the `c
 
 ### Examples of Usage
 
+- **Language Switcher Key with globe icon**:
+
+  ```xml
+  <Key keyIcon="language" keyWidth="10%" />
+  ```
+
+  *Alternative ways to define:*
+  ```xml
+  <!-- Using numeric code: standard globe icon is used automatically -->
+  <Key codes="-10" keyWidth="10%" />
+
+  <!-- Using code name -->
+  <Key codes="language" keyWidth="10%" />
+
+  <!-- With a custom text or Unicode label -->
+  <Key keyLabel="🌐" codes="-10" keyWidth="10%" />
+  ```
+
+- **Emoji Key with smiley icon**:
+
+  ```xml
+  <Key keyIcon="emoji" keyWidth="10%" />
+  ```
+
+  *Alternative ways to define:*
+  ```xml
+  <!-- Using numeric code: standard emoji icon is used automatically -->
+  <Key codes="-11" keyWidth="10%" />
+
+  <!-- Using code name -->
+  <Key codes="emoji" keyWidth="10%" />
+
+  <!-- With a custom text or Unicode label -->
+  <Key keyLabel="😀" codes="-11" keyWidth="10%" />
+  ```
+
+- **Clipboard Key with clipboard icon**:
+
+  ```xml
+  <Key keyIcon="clipboard" keyWidth="10%" />
+  ```
+
+  *Alternative ways to define:*
+  ```xml
+  <Key codes="-12" keyWidth="10%" />
+  <Key keyLabel="📋" codes="-12" keyWidth="10%" />
+  ```
+
 - **Backspace Key with custom size and icon**:
 
   ```xml
-  <Key keyLabel="⌫" codes="-5" keyIcon="delete" keyWidth="15%" />
+  <Key keyIcon="delete" keyWidth="15%" />
   ```
 
 - **Spacebar with Space icon and custom width**:
 
   ```xml
-  <Key keyLabel="spc" codes="32" keyIcon="space" keyWidth="55%" />
-  ```
-
-- **Language switcher key with globe icon**:
-
-  ```xml
-  <Key keyLabel="lang" codes="-10" keyIcon="language" keyWidth="10%" />
+  <Key codes="32" keyIcon="space" keyWidth="55%" />
   ```
 
 - **Letter key that opens Settings on long press**:
@@ -244,7 +289,24 @@ Example of defining a key for ampersand:
         <Key keyLabel="j" />
         <Key keyLabel="k" />
         <Key keyLabel="l" />
-        <Key keyLabel="⌫" keyIcon="return" keyWidth="15%" />
+        <Key keyIcon="delete" keyWidth="10%" />
+    </Row>
+    <Row>
+        <Key keyIcon="shift" keyWidth="15%" />
+        <Key keyLabel="z" />
+        <Key keyLabel="x" />
+        <Key keyLabel="c" />
+        <Key keyLabel="v" />
+        <Key keyLabel="b" />
+        <Key keyLabel="n" />
+        <Key keyLabel="m" />
+        <Key keyIcon="return" keyWidth="15%" />
+    </Row>
+    <Row>
+        <Key keyIcon="language" keyWidth="15%" />
+        <Key keyIcon="emoji" keyWidth="15%" />
+        <Key keyIcon="space" keyWidth="55%" />
+        <Key keyIcon="clipboard" keyWidth="15%" />
     </Row>
     <Replace from="--" to="—" />
 </Keyboard>

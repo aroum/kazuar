@@ -206,11 +206,10 @@ public final class SuggestionStripView extends RelativeLayout implements OnClick
             mVoiceKey.setVisibility(currentSettingsValues.mShowsVoiceInputKey ? VISIBLE : GONE);
         }
         if (mClipboardKey != null) {
-            final boolean voiceGone = mVoiceKey == null || mVoiceKey.getVisibility() == GONE;
-            mClipboardKey.setVisibility(currentSettingsValues.mShowsClipboardKey ? VISIBLE : (voiceGone ? INVISIBLE : GONE));
+            mClipboardKey.setVisibility(currentSettingsValues.mShowsClipboardKey ? VISIBLE : GONE);
         }
         if (mOtherKey != null) {
-            mOtherKey.setVisibility(currentSettingsValues.mIncognitoModeEnabled ? VISIBLE : INVISIBLE);
+            mOtherKey.setVisibility(currentSettingsValues.mIncognitoModeEnabled ? VISIBLE : GONE);
         }
     }
 

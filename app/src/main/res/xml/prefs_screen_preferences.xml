@@ -47,12 +47,6 @@
     <PreferenceCategory
         android:title="@string/settings_category_additional_keys">
 
-        <CheckBoxPreference
-            android:key="pref_show_language_switch_key"
-            android:title="@string/show_language_switch_key"
-            android:defaultValue="false"
-            android:persistent="true" />
-
 
 
         <CheckBoxPreference

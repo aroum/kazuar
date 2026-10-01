@@ -14,7 +14,6 @@
 
 ### Additional keys
 
-* Language switch key
 * Clipboard key
 
 ### Clipboard history
