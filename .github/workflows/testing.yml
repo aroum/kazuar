@@ -123,6 +123,7 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: app/build/outputs/apk/ci/*.apk
+          retention-days: 3
 
       - name: Create GitHub Release (Tag Release)
         if: startsWith(github.ref, 'refs/tags/')
