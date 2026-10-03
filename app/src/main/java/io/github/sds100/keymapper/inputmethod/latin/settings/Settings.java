@@ -91,6 +91,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
             "pref_include_other_imes_in_language_switch_list";
     public static final String PREF_CUSTOM_INPUT_STYLES = "custom_input_styles";
     public static final String PREF_ENABLE_SPLIT_KEYBOARD = "pref_split_keyboard";
+    public static final String PREF_ENABLE_SPLIT_KEYBOARD_PORTRAIT = "pref_split_keyboard_portrait";
+    public static final String PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE = "pref_split_keyboard_landscape";
     public static final String PREF_KEYBOARD_HEIGHT_SCALE = "pref_keyboard_height_scale";
     public static final String PREF_SPACE_TRACKPAD = "pref_space_trackpad";
     public static final String PREF_DELETE_SWIPE = "pref_delete_swipe";

@@ -559,6 +559,35 @@ public class Key implements Comparable<Key> {
         mIsChecked = key.mIsChecked;
     }
 
+    /**
+     * Create a copy of the key with a new horizontal position and width for split keyboard layout.
+     */
+    public Key(@Nonnull final Key key, final int x, final int width) {
+        mHorizontalGap = key.mHorizontalGap;
+        mVerticalGap = key.mVerticalGap;
+        mWidth = Math.max(0, width - mHorizontalGap);
+        mHeight = key.mHeight;
+        mX = x + mHorizontalGap / 2;
+        mY = key.mY;
+        mHitBox.set(x, key.mHitBox.top, x + width + 1, key.mHitBox.bottom);
+
+        mCode = key.mCode;
+        mLabel = key.mLabel;
+        mHintLabel = key.mHintLabel;
+        mLabelFlags = key.mLabelFlags;
+        mIconId = key.mIconId;
+        mMoreKeys = key.mMoreKeys;
+        mMoreKeysColumnAndFlags = key.mMoreKeysColumnAndFlags;
+        mBackgroundType = key.mBackgroundType;
+        mActionFlags = key.mActionFlags;
+        mKeyVisualAttributes = key.mKeyVisualAttributes;
+        mOptionalAttributes = key.mOptionalAttributes;
+        mHashCode = computeHashCode(this);
+        mPressed = key.mPressed;
+        mEnabled = key.mEnabled;
+        mIsChecked = key.mIsChecked;
+    }
+
     @Nonnull
     public static Key removeRedundantMoreKeys(@Nonnull final Key key,
             @Nonnull final MoreKeySpec.LettersOnBaseLayout lettersOnBaseLayout) {

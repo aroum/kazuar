@@ -128,7 +128,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         builder.setLanguageSwitchKeyEnabled(mLatinIME.shouldShowLanguageSwitchKey());
         builder.setEmojiKeyEnabled(settingsValues.mShowsEmojiKey);
         builder.setSplitLayoutEnabledByUser(ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED
-                && settingsValues.mIsSplitKeyboardEnabled);
+                && settingsValues.mIsSplitKeyboardEnabled
+                && !settingsValues.mOneHandedModeEnabled);
         final boolean oneHandedModeEnabled = settingsValues.mOneHandedModeEnabled;
         builder.setOneHandedModeEnabled(oneHandedModeEnabled);
         mKeyboardLayoutSet = builder.build();

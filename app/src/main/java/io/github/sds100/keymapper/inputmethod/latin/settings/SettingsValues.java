@@ -108,6 +108,8 @@ public class SettingsValues {
     public final boolean mEnableMetricsLogging;
     public final boolean mShouldShowLxxSuggestionUi;
     // Use split layout for keyboard.
+    public final boolean mIsSplitKeyboardPortraitEnabled;
+    public final boolean mIsSplitKeyboardLandscapeEnabled;
     public final boolean mIsSplitKeyboardEnabled;
     public final int mScreenMetrics;
 
@@ -199,7 +201,16 @@ public class SettingsValues {
         mDoubleSpacePeriodTimeout = res.getInteger(R.integer.config_double_space_period_timeout);
         mHasHardwareKeyboard = Settings.readHasHardwareKeyboard(res.getConfiguration());
         mEnableMetricsLogging = prefs.getBoolean(Settings.PREF_ENABLE_METRICS_LOGGING, true);
-        mIsSplitKeyboardEnabled = prefs.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, false);
+        final boolean legacySplit = prefs.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, false);
+        mIsSplitKeyboardPortraitEnabled = prefs.getBoolean(
+                Settings.PREF_ENABLE_SPLIT_KEYBOARD_PORTRAIT, legacySplit);
+        mIsSplitKeyboardLandscapeEnabled = prefs.getBoolean(
+                Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, legacySplit);
+        final boolean isLandscape = res.getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+        mIsSplitKeyboardEnabled = isLandscape
+                ? mIsSplitKeyboardLandscapeEnabled
+                : mIsSplitKeyboardPortraitEnabled;
         mScreenMetrics = Settings.readScreenMetrics(res);
 
         mShouldShowLxxSuggestionUi = Settings.SHOULD_SHOW_LXX_SUGGESTION_UI

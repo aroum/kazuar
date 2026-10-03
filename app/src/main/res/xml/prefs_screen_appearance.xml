@@ -72,12 +72,6 @@
         android:title="@string/settings_category_miscellaneous">
 
         <CheckBoxPreference
-            android:key="pref_split_keyboard"
-            android:title="@string/enable_split_keyboard"
-            android:persistent="true"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
             android:key="pref_resize_keyboard"
             android:title="@string/prefs_resize_keyboard"
             android:defaultValue="false"
@@ -111,6 +105,18 @@
 
     <PreferenceCategory
         android:title="Layouts">
+
+        <CheckBoxPreference
+            android:key="pref_split_keyboard_portrait"
+            android:title="@string/enable_split_keyboard_portrait"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="pref_split_keyboard_landscape"
+            android:title="@string/enable_split_keyboard_landscape"
+            android:persistent="true"
+            android:defaultValue="false" />
 
         <ListPreference
             android:key="pref_keyboard_layout_ru"

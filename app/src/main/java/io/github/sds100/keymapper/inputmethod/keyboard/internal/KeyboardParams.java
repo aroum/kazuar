@@ -110,9 +110,11 @@ public class KeyboardParams {
         mUniqueKeysCache = keysCache;
     }
 
-    protected void clearKeys() {
+    public void clearKeys() {
         mSortedKeys.clear();
         mShiftKeys.clear();
+        mAltCodeKeysWhileTyping.clear();
+        mUniqueKeysCache.clear();
         clearHistogram();
     }
 

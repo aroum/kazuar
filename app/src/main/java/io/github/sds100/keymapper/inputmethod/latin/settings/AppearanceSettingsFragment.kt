@@ -53,9 +53,9 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
         setupTheme()
         setupLayoutsAndIcon()
 
-        if (!ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED ||
-                Constants.isPhone(Settings.readScreenMetrics(resources))) {
-            removePreference(Settings.PREF_ENABLE_SPLIT_KEYBOARD)
+        if (!ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED) {
+            removePreference(Settings.PREF_ENABLE_SPLIT_KEYBOARD_PORTRAIT)
+            removePreference(Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE)
         }
         setupKeyboardHeight(
                 Settings.PREF_KEYBOARD_HEIGHT_SCALE, SettingsValues.DEFAULT_SIZE_SCALE)

@@ -73,6 +73,8 @@
     <string name="settings_category_miscellaneous">Miscellaneous</string>
     <!--  Option for enabling or disabling the split keyboard layout. [CHAR LIMIT=65]-->
     <string name="enable_split_keyboard">Enable split keyboard</string>
+    <string name="enable_split_keyboard_portrait">Split keyboard (portrait)</string>
+    <string name="enable_split_keyboard_landscape">Split keyboard (landscape)</string>
     <!-- Option title for enabling cloud sync feature [CHAR LIMIT=33]-->
     <!-- Option summary when cloud sync feature is enabled  [CHAR LIMIT=65] -->
     <!-- Option summary when cloud sync feature is disabled  [CHAR LIMIT=65] -->

@@ -198,6 +198,9 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
 
     @Nonnull
     public Keyboard build() {
+        if (mParams.mId.mIsSplitLayout) {
+            SplitLayoutHelper.applySplitLayout(mParams);
+        }
         return new Keyboard(mParams);
     }
 
@@ -734,8 +737,10 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
             final boolean localeCodeMatched = matchLocaleCodes(caseAttr, locale);
             final boolean languageCodeMatched = matchLanguageCodes(caseAttr, locale);
             final boolean countryCodeMatched = matchCountryCodes(caseAttr, locale);
+            // Always match default non-split XML layout so our programmatic split layout
+            // can split any full keyboard layout (including V3, Russian, Custom, etc.) consistently.
             final boolean splitLayoutMatched = matchBoolean(caseAttr,
-                    R.styleable.Keyboard_Case_isSplitLayout, id.mIsSplitLayout);
+                    R.styleable.Keyboard_Case_isSplitLayout, false);
             final boolean oneHandedModeEnabledMatched = matchBoolean(caseAttr,
                     R.styleable.Keyboard_Case_oneHandedModeEnabled,
                     id.mOneHandedModeEnabled);

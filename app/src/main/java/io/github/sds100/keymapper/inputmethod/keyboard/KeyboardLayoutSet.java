@@ -205,8 +205,15 @@ public final class KeyboardLayoutSet {
         // specified as an elementKeyboard attribute in the file.
         // The KeyboardId is an internal key for a Keyboard object.
 
+        final boolean isSplittableElement = keyboardLayoutSetElementId == KeyboardId.ELEMENT_ALPHABET
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_ALPHABET_MANUAL_SHIFTED
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_ALPHABET_AUTOMATIC_SHIFTED
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCKED
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCK_SHIFTED
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_SYMBOLS
+                || keyboardLayoutSetElementId == KeyboardId.ELEMENT_SYMBOLS_SHIFTED;
         mParams.mIsSplitLayoutEnabled = mParams.mIsSplitLayoutEnabledByUser
-                && elementParams.mSupportsSplitLayout;
+                && (elementParams.mSupportsSplitLayout || isSplittableElement);
 
         final KeyboardId id = new KeyboardId(keyboardLayoutSetElementId, mParams);
         try {
@@ -264,7 +271,7 @@ public final class KeyboardLayoutSet {
             final int keyboardXmlId = elementParams.mKeyboardXmlId;
             builder.load(keyboardXmlId, id);
         }
-        if (mParams.mDisableTouchPositionCorrectionDataForTest) {
+        if (mParams.mDisableTouchPositionCorrectionDataForTest || id.mIsSplitLayout) {
             builder.disableTouchPositionCorrectionDataForTest();
         }
         builder.setProximityCharsCorrectionEnabled(elementParams.mProximityCharsCorrectionEnabled);
