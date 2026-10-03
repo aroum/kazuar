@@ -166,6 +166,8 @@ public interface DictionaryFacilitator {
 
     boolean isValidSuggestionWord(final String word);
 
+    int getFrequency(final String word);
+
     boolean clearUserHistoryDictionary(final Context context);
 
     String dump(final Context context);

@@ -26,7 +26,9 @@ import io.github.sds100.keymapper.inputmethod.latin.common.CoordinateUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -151,6 +153,7 @@ public class Keyboard {
         mProximityInfo = keyboard.mProximityInfo;
         mProximityCharsCorrectionEnabled = keyboard.mProximityCharsCorrectionEnabled;
         mKeyboardLayout = keyboard.mKeyboardLayout;
+        mSpaceNeighborLetters = keyboard.mSpaceNeighborLetters;
     }
 
     public boolean hasProximityCharsCorrection(final int code) {
@@ -257,5 +260,74 @@ public class Keyboard {
             }
         }
         return coordinates;
+    }
+
+    private Set<Character> mSpaceNeighborLetters;
+
+    @Nonnull
+    public Set<Character> getSpaceNeighborLetters() {
+        if (mSpaceNeighborLetters != null) {
+            return mSpaceNeighborLetters;
+        }
+        final Set<Character> neighbors = new HashSet<>();
+        final List<Key> sortedKeys = mSortedKeys;
+        if (sortedKeys == null || sortedKeys.isEmpty()) {
+            mSpaceNeighborLetters = Collections.emptySet();
+            return mSpaceNeighborLetters;
+        }
+
+        final List<Key> spaceKeys = new ArrayList<>();
+        for (final Key key : sortedKeys) {
+            if (key.getCode() == Constants.CODE_SPACE) {
+                spaceKeys.add(key);
+            }
+        }
+
+        for (final Key spaceKey : spaceKeys) {
+            final int spaceY = spaceKey.getY();
+            final int spaceHeight = spaceKey.getHeight();
+            final int spaceX = spaceKey.getX();
+            final int spaceRight = spaceX + spaceKey.getWidth();
+
+            Key leftNeighbor = null;
+            Key rightNeighbor = null;
+
+            for (final Key key : sortedKeys) {
+                if (key == spaceKey || key.getCode() == Constants.CODE_SPACE || key.getCode() <= 0) {
+                    continue;
+                }
+                final int keyY = key.getY();
+                final int keyHeight = key.getHeight();
+                final int overlap = Math.min(keyY + keyHeight, spaceY + spaceHeight) - Math.max(keyY, spaceY);
+                if (overlap <= spaceHeight / 3) {
+                    continue;
+                }
+
+                final int keyX = key.getX();
+                final int keyRight = keyX + key.getWidth();
+
+                if (keyRight <= spaceX + 10 || keyX < spaceX) {
+                    if (leftNeighbor == null || keyX > leftNeighbor.getX()) {
+                        leftNeighbor = key;
+                    }
+                }
+
+                if (keyX >= spaceRight - 10 || keyRight > spaceRight) {
+                    if (rightNeighbor == null || keyX < rightNeighbor.getX()) {
+                        rightNeighbor = key;
+                    }
+                }
+            }
+
+            if (leftNeighbor != null && Character.isLetter(leftNeighbor.getCode())) {
+                neighbors.add(Character.toLowerCase((char) leftNeighbor.getCode()));
+            }
+            if (rightNeighbor != null && Character.isLetter(rightNeighbor.getCode())) {
+                neighbors.add(Character.toLowerCase((char) rightNeighbor.getCode()));
+            }
+        }
+
+        mSpaceNeighborLetters = Collections.unmodifiableSet(neighbors);
+        return mSpaceNeighborLetters;
     }
 }

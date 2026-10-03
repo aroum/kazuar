@@ -31,8 +31,11 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.BinaryDictionaryUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.SuggestionResults;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.annotation.Nonnull;
 
@@ -149,6 +152,103 @@ public final class Suggest {
         return firstSuggestedWordInfo;
     }
 
+    private static final Set<String> VALID_SINGLE_LETTER_WORDS_RU = new HashSet<>(
+            Arrays.asList("а", "в", "и", "к", "о", "с", "у", "я"));
+    private static final Set<String> VALID_SINGLE_LETTER_WORDS_EN = new HashSet<>(
+            Arrays.asList("a", "i"));
+
+    private boolean isValidWordForSplit(final String part, final Locale locale) {
+        if (TextUtils.isEmpty(part)) {
+            return false;
+        }
+        if (part.length() == 1) {
+            final String lang = locale == null ? "" : locale.getLanguage();
+            if ("ru".equalsIgnoreCase(lang)) {
+                if (!VALID_SINGLE_LETTER_WORDS_RU.contains(part)) {
+                    return false;
+                }
+            } else if ("en".equalsIgnoreCase(lang)) {
+                if (!VALID_SINGLE_LETTER_WORDS_EN.contains(part)) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return mDictionaryFacilitator.isValidSuggestionWord(part);
+    }
+
+    private SuggestedWordInfo getSpaceNeighborSplitSuggestion(final WordComposer wordComposer,
+            final Keyboard keyboard, final Locale locale) {
+        if (wordComposer == null || wordComposer.hasDigits()) {
+            return null;
+        }
+        final String typedWordString = wordComposer.getTypedWord();
+        if (TextUtils.isEmpty(typedWordString) || typedWordString.length() < 3) {
+            return null;
+        }
+        if (keyboard == null) {
+            return null;
+        }
+        final Set<Character> neighborChars = keyboard.getSpaceNeighborLetters();
+        if (neighborChars == null || neighborChars.isEmpty()) {
+            return null;
+        }
+
+        final Locale activeLocale = locale == null ? Locale.getDefault() : locale;
+        final String lowerTyped = typedWordString.toLowerCase(activeLocale);
+        final int len = lowerTyped.length();
+
+        String bestCandidate = null;
+        int bestScore = -1;
+        int bestSplitIndex = -1;
+
+        for (int i = 1; i < len - 1; i++) {
+            final char c = lowerTyped.charAt(i);
+            if (!neighborChars.contains(c)) {
+                continue;
+            }
+            final String part1 = lowerTyped.substring(0, i);
+            final String part2 = lowerTyped.substring(i + 1);
+
+            if (isValidWordForSplit(part1, activeLocale) && isValidWordForSplit(part2, activeLocale)) {
+                int freq1 = mDictionaryFacilitator.getFrequency(part1);
+                int freq2 = mDictionaryFacilitator.getFrequency(part2);
+                if (freq1 < 0) freq1 = 0;
+                if (freq2 < 0) freq2 = 0;
+                final int totalScore = freq1 + freq2;
+                if (totalScore > bestScore) {
+                    bestScore = totalScore;
+                    bestSplitIndex = i;
+
+                    final String originalPart1 = typedWordString.substring(0, i);
+                    final String originalPart2 = typedWordString.substring(i + 1);
+                    if (wordComposer.isAllUpperCase()) {
+                        bestCandidate = originalPart1.toUpperCase(activeLocale) + " "
+                                + originalPart2.toUpperCase(activeLocale);
+                    } else if (wordComposer.isOrWillBeOnlyFirstCharCapitalized()) {
+                        bestCandidate = StringUtils.capitalizeFirstCodePoint(originalPart1, activeLocale)
+                                + " " + originalPart2.toLowerCase(activeLocale);
+                    } else {
+                        bestCandidate = originalPart1 + " " + originalPart2;
+                    }
+                }
+            }
+        }
+
+        if (bestCandidate != null) {
+            return new SuggestedWordInfo(
+                    bestCandidate,
+                    "" /* prevWordsContext */,
+                    SuggestedWordInfo.MAX_SCORE - 1,
+                    SuggestedWordInfo.KIND_CORRECTION,
+                    Dictionary.DICTIONARY_USER_TYPED,
+                    bestSplitIndex + 1 /* indexOfTouchPointOfSecondWord */,
+                    SuggestedWordInfo.NOT_A_CONFIDENCE);
+        }
+        return null;
+    }
+
     // Retrieves suggestions for non-batch input (typing, recorrection, predictions...)
     // and calls the callback function with the suggestions.
     private void getSuggestedWordsForNonBatchInput(final WordComposer wordComposer,
@@ -184,6 +284,16 @@ public final class Suggest {
             }
         }
 
+        final SuggestedWordInfo splitSuggestion;
+        if (!foundInDictionary && !mDictionaryFacilitator.isValidSuggestionWord(typedWordString)) {
+            splitSuggestion = getSpaceNeighborSplitSuggestion(wordComposer, keyboard, locale);
+            if (splitSuggestion != null) {
+                suggestionsContainer.add(0, splitSuggestion);
+            }
+        } else {
+            splitSuggestion = null;
+        }
+
         final int firstOcurrenceOfTypedWordInSuggestions =
                 SuggestedWordInfo.removeDups(typedWordString, suggestionsContainer);
 
@@ -209,7 +319,7 @@ public final class Suggest {
                 || resultsArePredictions
                 // If we don't have suggestion results, we can't evaluate the first suggestion
                 // for auto-correction
-                || suggestionResults.isEmpty()
+                || (suggestionResults.isEmpty() && splitSuggestion == null)
                 // If the word has digits, we never auto-correct because it's likely the word
                 // was type with a lot of care
                 || wordComposer.hasDigits()
@@ -233,8 +343,11 @@ public final class Suggest {
                 // If the first suggestion is a shortcut we never auto-correct to it, regardless
                 // of how strong it is (whitelist entries are not KIND_SHORTCUT but KIND_WHITELIST).
                 // TODO: we may want to have shortcut-only entries auto-correct in the future.
-                || suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT)) {
+                || (splitSuggestion == null && !suggestionResults.isEmpty()
+                        && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT))) {
             hasAutoCorrection = false;
+        } else if (splitSuggestion != null) {
+            hasAutoCorrection = true;
         } else {
             final SuggestedWordInfo firstSuggestion = suggestionResults.first();
             if (suggestionResults.mFirstSuggestionExceedsConfidenceThreshold

@@ -11,8 +11,8 @@ android {
         applicationId "io.github.sds100.keymapper.inputmethod.latin"
         minSdkVersion 19
         targetSdkVersion 34
-        versionCode 28
-        versionName '26.10.01'
+        versionCode 29
+        versionName '26.10.03'
     }
 
     signingConfigs {
