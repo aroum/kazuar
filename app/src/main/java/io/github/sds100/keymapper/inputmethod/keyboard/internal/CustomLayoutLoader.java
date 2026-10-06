@@ -59,8 +59,6 @@ public class CustomLayoutLoader {
 
     private static boolean loadCustomLayout(Context context, KeyboardParams params, XmlPullParser parser) {
         try {
-            params.clearKeys();
-
             int eventType = parser.getEventType();
             int currentRow = -1;
 
@@ -110,6 +108,8 @@ public class CustomLayoutLoader {
             }
 
             if (rows.isEmpty()) return false;
+
+            params.clearKeys();
 
             totalRows = rows.size();
             rowHeight = baseHeight / totalRows;

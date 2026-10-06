@@ -197,8 +197,9 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                 return;
             }
             loadSettings(mContext, mSettingsValues.mLocale, mSettingsValues.mInputAttributes);
-            if (PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)) {
-                KeyboardLayoutSet.onKeyboardThemeChanged();
+            if (PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)
+                    || "pref_custom_layout_ru".equals(key) || "pref_custom_layout_en".equals(key)) {
+                KeyboardLayoutSet.clearKeyboardCache();
             }
         } finally {
             mSettingsValuesLock.unlock();

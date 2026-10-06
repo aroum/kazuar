@@ -251,11 +251,13 @@ public class Key implements Comparable<Key> {
                @Nullable final String moreKeySpecs,
                final int labelFlags, final int backgroundType, final int x, final int y,
                final int width, final int height, final KeyboardParams params) {
+        final boolean needsToUpcase = needsToUpcase(labelFlags, params.mId.mElementId);
+        final Locale localeForUpcasing = params.mId.getLocale();
         mWidth = width - params.mHorizontalGap;
         mHeight = height - params.mVerticalGap;
         mHorizontalGap = params.mHorizontalGap;
         mVerticalGap = params.mVerticalGap;
-        mHintLabel = hintLabel;
+        mHintLabel = (needsToUpcase && hintLabel != null) ? StringUtils.toTitleCaseOfKeyLabel(hintLabel, localeForUpcasing) : hintLabel;
         mLabelFlags = labelFlags;
         mBackgroundType = backgroundType;
 
@@ -292,7 +294,7 @@ public class Key implements Comparable<Key> {
                 actionFlags |= ACTION_FLAGS_ENABLE_LONG_PRESS;
                 mMoreKeys = new MoreKeySpec[moreKeys.length];
                 for (int i = 0; i < moreKeys.length; i++) {
-                    mMoreKeys[i] = new MoreKeySpec(moreKeys[i], false, Locale.getDefault());
+                    mMoreKeys[i] = new MoreKeySpec(moreKeys[i], needsToUpcase, localeForUpcasing);
                 }
             } else {
                 mMoreKeys = null;
@@ -305,10 +307,10 @@ public class Key implements Comparable<Key> {
             mMoreKeysColumnAndFlags = 0;
         }
 
-        mLabel = label;
+        mLabel = needsToUpcase ? StringUtils.toTitleCaseOfKeyLabel(label, localeForUpcasing) : label;
         mOptionalAttributes = OptionalAttributes.newInstance(outputText, CODE_UNSPECIFIED,
                 ICON_UNDEFINED, 0 /* visualInsetsLeft */, 0 /* visualInsetsRight */);
-        mCode = code;
+        mCode = needsToUpcase ? StringUtils.toTitleCaseOfKeyCode(code, localeForUpcasing) : code;
         mEnabled = (code != CODE_UNSPECIFIED);
         mIconId = iconId;
         // Horizontal gap is divided equally to both sides of the key.

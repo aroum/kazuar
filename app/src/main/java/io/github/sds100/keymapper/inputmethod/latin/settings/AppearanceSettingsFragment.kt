@@ -184,6 +184,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 val strVal = value as String
                 ruPref.value = strVal
                 ruPref.summary = ruPref.entries[ruPref.entryValues.indexOfFirst { it == strVal }]
+                io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet.clearKeyboardCache()
                 true
             }
         }
@@ -196,6 +197,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 val strVal = value as String
                 enPref.value = strVal
                 enPref.summary = enPref.entries[enPref.entryValues.indexOfFirst { it == strVal }]
+                io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet.clearKeyboardCache()
                 true
             }
         }
@@ -352,6 +354,8 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                     .putString("pref_keyboard_layout_$language", "custom")
                     .putString(rulesKey, rulesArray.toString())
                     .apply()
+
+                io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet.clearKeyboardCache()
 
                 android.widget.Toast.makeText(context, getString(R.string.toast_custom_layout_loaded, language), android.widget.Toast.LENGTH_SHORT).show()
 

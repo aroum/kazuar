@@ -44,7 +44,9 @@ import io.github.sds100.keymapper.inputmethod.latin.utils.XmlParseUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import java.io.File;
+import java.util.Arrays;
 import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomLayoutLoader;
+import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -149,9 +151,10 @@ public final class KeyboardLayoutSet {
         clearKeyboardCache();
     }
 
-    private static void clearKeyboardCache() {
+    public static void clearKeyboardCache() {
         sKeyboardCache.clear();
         sUniqueKeysCache.clear();
+        Arrays.fill(sForcibleKeyboardCache, null);
     }
 
     public static int getScriptId(final Resources resources,
@@ -240,8 +243,7 @@ public final class KeyboardLayoutSet {
         sUniqueKeysCache.setEnabled(id.isAlphabetKeyboard());
         builder.setAllowRedundantMoreKes(elementParams.mAllowRedundantMoreKeys);
         
-        final android.content.SharedPreferences prefs = mContext.getSharedPreferences(
-                mContext.getPackageName() + "_preferences", Context.MODE_PRIVATE);
+        final android.content.SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(mContext);
         final String language = id.getLocale().getLanguage();
         final String layoutVersion = "ru".equals(language) ?
                 prefs.getString("pref_keyboard_layout_ru", "v3") :
@@ -251,23 +253,21 @@ public final class KeyboardLayoutSet {
         if (id.mElementId == KeyboardId.ELEMENT_EDITING) {
             builder.load(R.xml.kbd_editing, id);
             loadedCustom = true;
-        } else if ("custom".equals(layoutVersion)) {
+        } else if ("custom".equals(layoutVersion) && id.isAlphabetKeyboard()) {
             final String customXml = prefs.getString("pref_custom_layout_" + language, null);
             if (customXml != null && !customXml.trim().isEmpty()) {
+                builder.load(elementParams.mKeyboardXmlId, id);
                 final KeyboardParams kbParams = builder.getParams();
-                kbParams.mId = id;
-                kbParams.mOccupiedHeight = mParams.mKeyboardHeight;
-                kbParams.mOccupiedWidth = mParams.mKeyboardWidth;
-                kbParams.mBaseWidth = mParams.mKeyboardWidth - kbParams.mLeftPadding - kbParams.mRightPadding;
-                kbParams.mBaseHeight = mParams.mKeyboardHeight - kbParams.mTopPadding - kbParams.mBottomPadding;
-
                 if (io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomLayoutLoader.tryLoadCustomLayoutFromString(mContext, kbParams, customXml)) {
                     loadedCustom = true;
+                } else {
+                    kbParams.clearKeys();
+                    builder.load(elementParams.mKeyboardXmlId, id);
                 }
             }
         }
         
-        if (!loadedCustom) {
+        if (!loadedCustom && id.mElementId != KeyboardId.ELEMENT_EDITING) {
             final int keyboardXmlId = elementParams.mKeyboardXmlId;
             builder.load(keyboardXmlId, id);
         }
