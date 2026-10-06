@@ -248,7 +248,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
             inputStream.bufferedReader(Charsets.UTF_8).readText()
         } ?: throw Exception("Cannot open file stream")
 
-        val trimmed = content.trim()
+        val trimmed = content.trim().removePrefix("\uFEFF").trim()
         if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
             try {
                 org.json.JSONObject(trimmed) // validate JSON
@@ -266,112 +266,148 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 throw Exception("Invalid theme JSON format: ${e.message}")
             }
         } else if (trimmed.startsWith("<")) {
+            var language: String? = null
             try {
-                var language: String? = null
-
-                // Fast XML parse to get root tag attributes
+                // Fast XML parse to check attributes for language/locale
                 val factory = org.xmlpull.v1.XmlPullParserFactory.newInstance()
                 val parser = factory.newPullParser()
                 parser.setInput(java.io.StringReader(trimmed))
                 var eventType = parser.eventType
                 while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
                     if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG) {
-                        val tagName = parser.name
-                        if ("Keyboard".equals(tagName, ignoreCase = true) || "merge".equals(tagName, ignoreCase = true)) {
-                            language = parser.getAttributeValue(null, "language")
-                                ?: parser.getAttributeValue(null, "locale")
-                        }
-                        break
-                    }
-                    eventType = parser.next()
-                }
-
-                if (language == null) {
-                    val fileName = getFileName(context, uri)?.lowercase(Locale.ROOT) ?: ""
-                    language = when {
-                        fileName.contains("ru") || fileName.contains("slavic") -> "ru"
-                        fileName.contains("en") || fileName.contains("qwerty") -> "en"
-                        trimmed.any { it in '\u0400'..'\u04FF' } -> "ru"
-                        else -> null
-                    }
-                }
-
-                if (language != "ru" && language != "en") {
-                    throw Exception("Could not determine layout language (ru/en) from file name or 'language' tag attribute")
-                }
-
-                // Parse Replace rules from layout XML to import them into double-tap preferences
-                val replaceRules = mutableListOf<Pair<String, String>>()
-                parser.setInput(java.io.StringReader(trimmed))
-                eventType = parser.eventType
-                while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
-                    if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG) {
-                        val tagName = parser.name
-                        if ("Replace".equals(tagName, ignoreCase = true)) {
-                            val from = parser.getAttributeValue(null, "from")
-                            val to = parser.getAttributeValue(null, "to")
-                            if (from != null && to != null) {
-                                replaceRules.add(Pair(from, to))
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "language" || attrName == "locale") {
+                                val attrVal = parser.getAttributeValue(i)?.lowercase(Locale.ROOT) ?: ""
+                                if (attrVal.contains("ru") || attrVal.contains("rus") || attrVal.contains("slavic")) {
+                                    language = "ru"
+                                } else if (attrVal.contains("en") || attrVal.contains("eng") || attrVal.contains("qwerty")) {
+                                    language = "en"
+                                }
+                                break
                             }
                         }
+                        if (language != null) break
                     }
                     eventType = parser.next()
                 }
-
-                val rulesKey = "pref_custom_double_tap_rules_${language}_custom"
-                val existingRulesJson = sharedPreferences.getString(rulesKey, "[]") ?: "[]"
-                val rulesArray = org.json.JSONArray(existingRulesJson)
-                val existingKeys = mutableMapOf<String, org.json.JSONObject>()
-                for (i in 0 until rulesArray.length()) {
-                    val obj = rulesArray.getJSONObject(i)
-                    val key = obj.optString("key")
-                    if (key.isNotEmpty()) {
-                        existingKeys[key] = obj
-                    }
-                }
-
-                for (rule in replaceRules) {
-                    val fromStr = rule.first
-                    val toStr = rule.second
-                    if (fromStr.isNotEmpty()) {
-                        val keyChar = fromStr.substring(0, 1)
-                        if (existingKeys.containsKey(keyChar)) {
-                            val obj = existingKeys[keyChar]!!
-                            obj.put("replacement", toStr)
-                            obj.put("enabled", true)
-                        } else {
-                            val obj = org.json.JSONObject()
-                            obj.put("key", keyChar)
-                            obj.put("replacement", toStr)
-                            obj.put("enabled", true)
-                            rulesArray.put(obj)
-                            existingKeys[keyChar] = obj
-                        }
-                    }
-                }
-
-                sharedPreferences.edit()
-                    .putString("pref_custom_layout_$language", trimmed)
-                    .putString("pref_keyboard_layout_$language", "custom")
-                    .putString(rulesKey, rulesArray.toString())
-                    .apply()
-
-                io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet.clearKeyboardCache()
-
-                android.widget.Toast.makeText(context, getString(R.string.toast_custom_layout_loaded, language), android.widget.Toast.LENGTH_SHORT).show()
-
-                val ruPref = findPreference("pref_keyboard_layout_ru") as? ListPreference
-                ruPref?.value = sharedPreferences.getString("pref_keyboard_layout_ru", "v3")
-                ruPref?.summary = ruPref?.entry
-
-                val enPref = findPreference("pref_keyboard_layout_en") as? ListPreference
-                enPref?.value = sharedPreferences.getString("pref_keyboard_layout_en", "v3")
-                enPref?.summary = enPref?.entry
             } catch (e: Exception) {
                 throw Exception("Invalid layout XML format: ${e.message}")
             }
+
+            if (language == null) {
+                val fileName = getFileName(context, uri)?.lowercase(Locale.ROOT) ?: ""
+                language = when {
+                    fileName.contains("ru") || fileName.contains("rus") || fileName.contains("slavic") -> "ru"
+                    fileName.contains("en") || fileName.contains("eng") || fileName.contains("qwerty") -> "en"
+                    trimmed.any { it in '\u0400'..'\u04FF' } -> "ru"
+                    else -> null
+                }
+            }
+
+            if (language == "ru" || language == "en") {
+                applyCustomLayout(context, trimmed, language)
+            } else {
+                val options = arrayOf(
+                    getString(R.string.language_russian),
+                    getString(R.string.language_english)
+                )
+                android.app.AlertDialog.Builder(context)
+                    .setTitle(R.string.dialog_select_layout_language)
+                    .setItems(options) { _, which ->
+                        val selectedLang = if (which == 0) "ru" else "en"
+                        try {
+                            applyCustomLayout(context, trimmed, selectedLang)
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, getString(R.string.toast_file_load_failed, e.message), android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
         } else {
             throw Exception("Unknown file format. Layout must start with '<' and Theme must start with '{'.")
+        }
+    }
+
+    private fun applyCustomLayout(context: android.content.Context, xmlContent: String, language: String) {
+        try {
+            // Parse Replace rules from layout XML to import them into double-tap preferences
+            val replaceRules = mutableListOf<Pair<String, String>>()
+            val factory = org.xmlpull.v1.XmlPullParserFactory.newInstance()
+            val parser = factory.newPullParser()
+            parser.setInput(java.io.StringReader(xmlContent))
+            var eventType = parser.eventType
+            while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG) {
+                    val tagName = parser.name
+                    if ("Replace".equals(tagName, ignoreCase = true)) {
+                        var from: String? = null
+                        var to: String? = null
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "from") from = parser.getAttributeValue(i)
+                            else if (attrName == "to") to = parser.getAttributeValue(i)
+                        }
+                        if (from != null && to != null) {
+                            replaceRules.add(Pair(from, to))
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+
+            val rulesKey = "pref_custom_double_tap_rules_${language}_custom"
+            val existingRulesJson = sharedPreferences.getString(rulesKey, "[]") ?: "[]"
+            val rulesArray = org.json.JSONArray(existingRulesJson)
+            val existingKeys = mutableMapOf<String, org.json.JSONObject>()
+            for (i in 0 until rulesArray.length()) {
+                val obj = rulesArray.getJSONObject(i)
+                val key = obj.optString("key")
+                if (key.isNotEmpty()) {
+                    existingKeys[key] = obj
+                }
+            }
+
+            for (rule in replaceRules) {
+                val fromStr = rule.first
+                val toStr = rule.second
+                if (fromStr.isNotEmpty()) {
+                    val keyChar = fromStr.substring(0, 1)
+                    if (existingKeys.containsKey(keyChar)) {
+                        val obj = existingKeys[keyChar]!!
+                        obj.put("replacement", toStr)
+                        obj.put("enabled", true)
+                    } else {
+                        val obj = org.json.JSONObject()
+                        obj.put("key", keyChar)
+                        obj.put("replacement", toStr)
+                        obj.put("enabled", true)
+                        rulesArray.put(obj)
+                        existingKeys[keyChar] = obj
+                    }
+                }
+            }
+
+            sharedPreferences.edit()
+                .putString("pref_custom_layout_$language", xmlContent)
+                .putString("pref_keyboard_layout_$language", "custom")
+                .putString(rulesKey, rulesArray.toString())
+                .apply()
+
+            io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet.clearKeyboardCache()
+
+            android.widget.Toast.makeText(context, getString(R.string.toast_custom_layout_loaded, language), android.widget.Toast.LENGTH_SHORT).show()
+
+            val ruPref = findPreference("pref_keyboard_layout_ru") as? ListPreference
+            ruPref?.value = sharedPreferences.getString("pref_keyboard_layout_ru", "v3")
+            ruPref?.summary = ruPref?.entry
+
+            val enPref = findPreference("pref_keyboard_layout_en") as? ListPreference
+            enPref?.value = sharedPreferences.getString("pref_keyboard_layout_en", "v3")
+            enPref?.summary = enPref?.entry
+        } catch (e: Exception) {
+            throw Exception("Invalid layout XML format: ${e.message}")
         }
     }
 

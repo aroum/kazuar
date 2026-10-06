@@ -597,6 +597,9 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="toast_custom_theme_loaded">Custom theme loaded successfully!</string>
     <string name="toast_custom_layout_loaded">Layout for %s loaded successfully!</string>
     <string name="toast_file_load_failed">Failed to load file: %s</string>
+    <string name="dialog_select_layout_language">Select layout language</string>
+    <string name="language_russian">Russian (ru)</string>
+    <string name="language_english">English (en)</string>
     <string name="search_title">Search</string>
 
     <string-array name="layout_version_names">

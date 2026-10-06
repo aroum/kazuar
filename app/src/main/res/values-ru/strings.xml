@@ -279,6 +279,9 @@
     <string name="toast_custom_theme_loaded">Пользовательская тема успешно загружена!</string>
     <string name="toast_custom_layout_loaded">Раскладка для %s успешно загружена!</string>
     <string name="toast_file_load_failed">Не удалось загрузить файл: %s</string>
+    <string name="dialog_select_layout_language">Выберите язык раскладки</string>
+    <string name="language_russian">Русский (ru)</string>
+    <string name="language_english">Английский (en)</string>
     <string name="search_title">Поиск</string>
 
     <string-array name="layout_version_names">
