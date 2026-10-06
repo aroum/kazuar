@@ -313,5 +313,5 @@
         <item>Буфер обмена</item>
     </string-array>
 
-    <string name="prefs_debug_mode">Режим отладки</string>
+    <string name="prefs_debug_settings_title">Режим отладки</string>
 </resources>

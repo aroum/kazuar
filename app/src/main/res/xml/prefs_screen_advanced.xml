@@ -133,7 +133,7 @@
         <PreferenceScreen
             android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment"
             android:key="screen_debug"
-            android:title="@string/prefs_debug_mode"
+            android:title="@string/prefs_debug_settings_title"
             android:defaultValue="false"
             android:persistent="true" />
 

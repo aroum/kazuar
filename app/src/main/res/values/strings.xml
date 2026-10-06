@@ -576,6 +576,7 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="pref_double_swipe_timeout_title">Double-swipe-up timeout (ms)</string>
     <string name="pref_key_repeat_delay_title">Key repeat delay (ms)</string>
     <string name="prefs_debug_settings_category">Debug Settings</string>
+    <string name="prefs_debug_settings_title">Debug settings</string>
     <string name="settings_category_replacements">Replacements</string>
     <string name="pref_enable_macro_replacements_title">Enable Macro Replacements</string>
     <string name="pref_enable_macro_replacements_summary">Automatically replace shortcut words (e.g. AOSP -> Android Open Source Project) when typing separators</string>
