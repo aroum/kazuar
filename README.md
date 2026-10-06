@@ -36,6 +36,7 @@ For instructions on customizing and configuring the keyboard, please refer to th
 * [Custom Layout XML Format](docs/layout_format.md) — How to define and load custom keyboard layouts.
 * [Custom Theme JSON Format](docs/theme_format.md) — How to load and customize theme colors.
 * [Layout Reference](docs/default_layouts.md) — Reference documentation on the default layout versions (V1, V2, V3) and edit mode.
+* [Default Layout Sources](app/src/main/res/xml/) — Built-in XML layout definitions in the source tree (templates for custom layouts).
 * [Color Palette Reference](docs/gruvbox_colors.md) — Reference for theme colors (e.g., Gruvbox palette).
 * [Icon Reference](docs/utf8_icons.md) — List of unicode characters used for functional keys.
 * [Settings Menu Outline](docs/app_menu.md) — Overview of available menu options and settings.

@@ -1,3 +1,16 @@
+# Default Layout Reference
+
+> [!TIP]
+> The source XML definitions for all default layouts are located in the repository under [`app/src/main/res/xml/`](../app/src/main/res/xml/). You can use these XML files directly as templates for creating custom layouts:
+> - **Russian V3**: [`rows_east_slavic_v3.xml`](../app/src/main/res/xml/rows_east_slavic_v3.xml)
+> - **Russian V2**: [`rows_east_slavic_v2.xml`](../app/src/main/res/xml/rows_east_slavic_v2.xml)
+> - **Russian V1**: [`rows_east_slavic.xml`](../app/src/main/res/xml/rows_east_slavic.xml)
+> - **English V3**: [`rows_qwerty_v3.xml`](../app/src/main/res/xml/rows_qwerty_v3.xml)
+> - **English V2**: [`rows_qwerty_v2.xml`](../app/src/main/res/xml/rows_qwerty_v2.xml)
+> - **English V1**: [`rows_qwerty.xml`](../app/src/main/res/xml/rows_qwerty.xml)
+> - **Symbols V3**: [`rows_symbols_v3.xml`](../app/src/main/res/xml/rows_symbols_v3.xml)
+> - **Edit Mode**: [`rows_editing.xml`](../app/src/main/res/xml/rows_editing.xml)
+
 # V1
 
 Languages:

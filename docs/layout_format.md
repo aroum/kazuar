@@ -2,21 +2,38 @@
 
 Custom keyboard layouts use the XML format parsed by [CustomLayoutLoader.java](../app/src/main/java/io/github/sds100/keymapper/inputmethod/keyboard/internal/CustomLayoutLoader.java).
 
+> [!TIP]
+> **Using Built-in Layouts as Templates**:
+> You can take any default layout directly from the sources in [`app/src/main/res/xml/`](../app/src/main/res/xml/), modify its keys, widths, or shortcuts, and load it as a custom layout:
+> - **Russian V3**: [`rows_east_slavic_v3.xml`](../app/src/main/res/xml/rows_east_slavic_v3.xml)
+> - **Russian V2**: [`rows_east_slavic_v2.xml`](../app/src/main/res/xml/rows_east_slavic_v2.xml)
+> - **Russian V1**: [`rows_east_slavic.xml`](../app/src/main/res/xml/rows_east_slavic.xml)
+> - **English V3**: [`rows_qwerty_v3.xml`](../app/src/main/res/xml/rows_qwerty_v3.xml)
+> - **English V2**: [`rows_qwerty_v2.xml`](../app/src/main/res/xml/rows_qwerty_v2.xml)
+> - **English V1**: [`rows_qwerty.xml`](../app/src/main/res/xml/rows_qwerty.xml)
+> - **Symbols V3**: [`rows_symbols_v3.xml`](../app/src/main/res/xml/rows_symbols_v3.xml)
+
 ## Root Attributes
 
-- **`language` / `locale`**: Defines the target language of the layout (e.g. `ru` or `en`). If not specified inside the root element, it is deduced from the filename.
-- **`keyWidth`**: Default width of keys in percentage of keyboard width (e.g. `10%`).
+- **`language` / `locale`**: Defines the target language of the layout (e.g. `ru` or `en`). If not specified inside the root element, it is deduced from the filename or Cyrillic content.
+- **`keyWidth`**: Default width of keys in percentage of keyboard width (e.g. `10%` or `10%p`).
 
 ## Elements
 
-### `<Keyboard>`
+### `<Keyboard>` or `<merge>`
 
-The root container element.
+The root container element can be `<Keyboard>` or `<merge>` (using `xmlns:latin="http://schemas.android.com/apk/res-auto"`).
 
 ```xml
 <Keyboard language="ru" keyWidth="10%">
     ...
 </Keyboard>
+```
+or
+```xml
+<merge xmlns:latin="http://schemas.android.com/apk/res-auto">
+    ...
+</merge>
 ```
 
 ### `<Row>`
@@ -24,20 +41,38 @@ The root container element.
 Defines a row of keys on the keyboard.
 
 ```xml
-<Row>
+<Row latin:keyWidth="10%p">
     ...
 </Row>
 ```
+
+- **`keyWidth`**: Sets the default key width for all keys in this row (e.g. `latin:keyWidth="10%p"`). Overrides root-level `keyWidth`.
+
+### `<Spacer>`
+
+Defines an empty space or gap between keys within a `<Row>`.
+
+```xml
+<Spacer latin:keyWidth="10%p" />
+```
+
+- **`keyWidth`** (or **`width`**): Width of the empty spacer.
 
 ### `<Key>`
 
 Defines a single key within a `<Row>`.
 
 - **`keyLabel`** (or **`label`**, **`keySpec`**): The text or label displayed on the key cap.
-  - *Standard Character*: `<Key keyLabel="a" />`
+  - *Standard Character*: `<Key keyLabel="a" />` or `latin:keySpec="a"`
   - *Hint and Label*: If the label contains the literal sequence `\n`, the characters before `\n` serve as a long-press visual hint (usually rendered at the top-right of the key), and the characters after `\n` are drawn as the primary key label.
     Example: `keyLabel="? \n /"` displays `/` with `?` in the corner.
-  - *Composite Spec*: Standard AOSP specs like `keySpec="!icon/language_switch_key|!code/key_language_switch"` are also supported.
+  - *Composite Spec*: Standard AOSP specs like `keySpec="!icon/language_switch_key|!code/key_language_switch"`, `keySpec="[{«|["` or `keySpec="↷|!code/key_redo"` are supported.
+- **`keyHintLabel`** (or **`hintLabel`**, **`hint`**): The secondary symbol or character displayed in the corner of the keycap and activated on long-press (e.g., `latin:keyHintLabel="!"`).
+- **`keyStyle`**: References standard built-in key styles:
+  - `spaceKeyStyle`: Automatically configures spacebar icon, code, and styling.
+  - `deleteKeyStyle`: Automatically configures backspace icon, delete code, repeatable action, and functional background.
+  - `enterKeyStyle`: Automatically configures return/action key.
+  - `shiftKeyStyle`: Configures shift key.
 - **`codes`** (or **`code`**): The Unicode code point or functional keycode triggered by a tap.
   - If omitted, the keyboard defaults to the UTF-32 code point of the first character in `keyLabel`.
   - Can be specified as a numeric integer (e.g. `codes="-10"`, `codes="-11"`, `codes="-5"`) or as a symbolic name (e.g. `codes="language"`, `codes="emoji"`, `codes="clipboard"`, `codes="delete"`).
@@ -50,9 +85,10 @@ Defines a single key within a `<Row>`.
   - `space`: The spacebar indicator.
   - `return` / `enter`: The action return/enter arrow.
   - `settings`: The gear settings icon.
-- **`keyWidth`** (or **`width`**): Overrides the default key width. Specified as a percentage of the total keyboard width (e.g., `keyWidth="15%"` or `keyWidth="10%p"`).
+- **`keyWidth`** (or **`width`**): Overrides the default key width. Specified as a percentage of the total keyboard width (e.g., `keyWidth="15%"` or `keyWidth="20%p"`).
 - **`longCode`**: The code point or keycode triggered when the key is long-pressed without opening a panel (e.g., `longCode="-6"` to launch settings, or `longCode="-10"` to switch language).
-- **`moreKeys`**: Comma-separated list of more keys specs or popup characters.
+- **`moreKeys`**: Comma-separated list of more keys specs or popup characters (e.g. `latin:moreKeys="!,&#x00B2;"`).
+- **`keyLabelFlags`**: Label flags such as `latin:keyLabelFlags="preserveCase"` to prevent uppercase conversion when Shift is active (recommended for shortcut symbols like `↷`, `✂`, `❐`).
 - **`backgroundType`**: Style of the key background (`functional`, `normal`, `spacebar`). Functional keys (Language switch, Emoji, Clipboard, Backspace, Enter, Shift, Settings) automatically receive the functional background.
 
 ---
