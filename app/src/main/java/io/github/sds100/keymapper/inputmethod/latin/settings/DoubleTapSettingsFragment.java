@@ -46,7 +46,6 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                 final Context context,
                 final int index,
                 final DoubleTapRule rule,
-                final boolean isRuLocale,
                 final Listener listener) {
             super(context);
             mIndex = index;
@@ -54,7 +53,7 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
             mListener = listener;
             setKey("double_tap_rule_" + index);
             setTitle(rule.key + rule.key + " → " + rule.replacement);
-            setSummary(isRuLocale ? "Нажмите для редактирования/удаления" : "Tap to edit/delete");
+            setSummary(R.string.pref_double_tap_rule_summary);
             setPersistent(false);
             setWidgetLayoutResource(R.layout.preference_double_tap_rule_widget);
         }
@@ -124,10 +123,7 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         setPreferenceScreen(screen);
         
         String layoutVersion = getSharedPreferences().getString("pref_keyboard_layout_" + mLang, "v3");
-        boolean isRu = isRussianLocale();
-        screen.setTitle(mLang.equals("ru") 
-                ? (isRu ? "Настройка двойных тапов для ru (" + layoutVersion + ")" : "Setup Double-Taps for ru (" + layoutVersion + ")")
-                : (isRu ? "Настройка двойных тапов для en (" + layoutVersion + ")" : "Setup Double-Taps for en (" + layoutVersion + ")"));
+        screen.setTitle(getString(R.string.pref_setup_double_taps_screen_title, mLang, layoutVersion));
         
         setHasOptionsMenu(true);
         loadRules();
@@ -163,10 +159,6 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                 });
             }
         }
-    }
-
-    private boolean isRussianLocale() {
-        return Locale.getDefault().getLanguage().equals("ru");
     }
 
     private void loadRules() {
@@ -229,8 +221,6 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         if (screen == null) return;
         screen.removeAll();
 
-        boolean isRu = isRussianLocale();
-
         for (int i = 0; i < mRules.size(); i++) {
             final int index = i;
             final DoubleTapRule rule = mRules.get(i);
@@ -239,7 +229,6 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                     getActivity(),
                     index,
                     rule,
-                    isRu,
                     new DoubleTapRulePreference.Listener() {
                         @Override
                         public void onRuleClick(int idx) {
@@ -264,11 +253,10 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         final Context context = getActivity();
         if (context == null) return;
 
-        final boolean isRu = isRussianLocale();
         final AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(index == -1 
-            ? (isRu ? "Добавить правило" : "Add Double-Tap Rule")
-            : (isRu ? "Редактировать правило" : "Edit Double-Tap Rule"));
+            ? R.string.pref_double_tap_rule_add_dialog_title
+            : R.string.pref_double_tap_rule_edit_dialog_title);
 
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -276,18 +264,14 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
 
         final EditText keyInput = new EditText(context);
         keyInput.setFilters(new InputFilter[] { new InputFilter.LengthFilter(1) });
-        keyInput.setHint(isRu 
-            ? ("ru".equals(mLang) ? "Клавиша (напр. ы)" : "Клавиша (напр. q)")
-            : ("ru".equals(mLang) ? "Key (e.g. ы)" : "Key (e.g. q)"));
+        keyInput.setHint(getString(R.string.pref_double_tap_rule_key_hint, "ru".equals(mLang) ? "ы" : "q"));
         if (index >= 0 && index < mRules.size()) {
             keyInput.setText(mRules.get(index).key);
         }
         layout.addView(keyInput);
 
         final EditText replacementInput = new EditText(context);
-        replacementInput.setHint(isRu
-            ? ("ru".equals(mLang) ? "Замена (напр. ю)" : "Замена (напр. w)")
-            : ("ru".equals(mLang) ? "Replacement (e.g. ю)" : "Replacement (e.g. w)"));
+        replacementInput.setHint(getString(R.string.pref_double_tap_rule_replacement_hint, "ru".equals(mLang) ? "ю" : "w"));
         if (index >= 0 && index < mRules.size()) {
             replacementInput.setText(mRules.get(index).replacement);
         }
@@ -295,13 +279,13 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
 
         builder.setView(layout);
 
-        builder.setPositiveButton(isRu ? "Сохранить" : "Save", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String key = keyInput.getText().toString().trim();
                 String replacement = replacementInput.getText().toString().trim();
                 if (key.isEmpty() || replacement.isEmpty()) {
-                    Toast.makeText(context, isRu ? "Поля не должны быть пустыми" : "Fields must not be empty", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, R.string.pref_double_tap_rule_empty_fields_toast, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (key.length() > 1) {
@@ -316,10 +300,10 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                 rebuildPreferenceScreen();
             }
         });
-        builder.setNegativeButton(isRu ? "Отмена" : "Cancel", null);
+        builder.setNegativeButton(R.string.cancel, null);
 
         if (index >= 0 && index < mRules.size()) {
-            builder.setNeutralButton(isRu ? "Удалить" : "Delete", new DialogInterface.OnClickListener() {
+            builder.setNeutralButton(R.string.delete, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     if (index >= 0 && index < mRules.size()) {
@@ -339,7 +323,7 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         inflater.inflate(R.menu.add_style, menu);
         MenuItem addStyleItem = menu.findItem(R.id.action_add_style);
         if (addStyleItem != null) {
-            addStyleItem.setTitle(isRussianLocale() ? "Добавить правило" : "Add rule");
+            addStyleItem.setTitle(R.string.pref_double_tap_rule_add_menu);
         }
     }
 

@@ -67,7 +67,7 @@ public final class IncognitoModeRulesFragment extends SubScreenFragment implemen
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         
-        MenuItem searchItem = menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Search");
+        MenuItem searchItem = menu.add(Menu.NONE, Menu.NONE, Menu.NONE, R.string.search_title);
         searchItem.setIcon(android.R.drawable.ic_menu_search);
         searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
         

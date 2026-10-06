@@ -556,4 +556,77 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
 
     <string name="use_multi_space_punctuation">Multi-space punctuation</string>
     <string name="use_multi_space_punctuation_summary">2 space -> ., 3 space -> ,, 4 space -> ?, 5 space -> !</string>
+
+    <string name="delete">Delete</string>
+    <string name="select_icon_style">Select icon style</string>
+    <string name="settings_category_customization">Customization</string>
+    <string name="pref_load_custom_file_title">Load theme or layout from file</string>
+    <string name="pref_load_custom_file_summary">Choose an XML layout file or JSON theme file</string>
+    <string name="settings_category_layouts">Layouts</string>
+    <string name="pref_keyboard_layout_ru_title">Keyboard layout for ru</string>
+    <string name="pref_keyboard_layout_en_title">Keyboard layout for en</string>
+    <string name="settings_category_actions">Actions</string>
+    <string name="pref_enable_double_taps_title">Enable Double-Taps</string>
+    <string name="pref_enable_double_taps_summary">Double tap a key to replace it (e.g. ыы -> ю) without deleting</string>
+    <string name="pref_setup_double_taps_ru">Setup double-taps for ru</string>
+    <string name="pref_setup_double_taps_en">Setup double-taps for en</string>
+    <string name="pref_setup_swipe_controls">Setup swipe controls</string>
+    <string name="settings_category_timings">Timings</string>
+    <string name="pref_double_tap_timeout_title">Double-tap timeout (ms)</string>
+    <string name="pref_double_swipe_timeout_title">Double-swipe-up timeout (ms)</string>
+    <string name="pref_key_repeat_delay_title">Key repeat delay (ms)</string>
+    <string name="prefs_debug_settings_category">Debug Settings</string>
+    <string name="settings_category_replacements">Replacements</string>
+    <string name="pref_enable_macro_replacements_title">Enable Macro Replacements</string>
+    <string name="pref_enable_macro_replacements_summary">Automatically replace shortcut words (e.g. AOSP -> Android Open Source Project) when typing separators</string>
+    <string name="pref_swipe_threshold_title">Swipe length / threshold (%)</string>
+    <string name="pref_swipe_threshold_summary">Adjust the minimum length required to trigger a swipe</string>
+    <string name="pref_swipe_up_action_title">Swipe Up Action</string>
+    <string name="pref_swipe_down_action_title">Swipe Down Action</string>
+    <string name="pref_swipe_left_action_title">Swipe Left Action</string>
+    <string name="pref_swipe_right_action_title">Swipe Right Action</string>
+    <string name="pref_setup_double_taps_screen_title">Setup Double-Taps for %1$s (%2$s)</string>
+    <string name="pref_double_tap_rule_summary">Tap to edit/delete</string>
+    <string name="pref_double_tap_rule_add_dialog_title">Add Double-Tap Rule</string>
+    <string name="pref_double_tap_rule_edit_dialog_title">Edit Double-Tap Rule</string>
+    <string name="pref_double_tap_rule_key_hint">Key (e.g. %s)</string>
+    <string name="pref_double_tap_rule_replacement_hint">Replacement (e.g. %s)</string>
+    <string name="pref_double_tap_rule_empty_fields_toast">Fields must not be empty</string>
+    <string name="pref_double_tap_rule_add_menu">Add rule</string>
+    <string name="toast_custom_theme_loaded">Custom theme loaded successfully!</string>
+    <string name="toast_custom_layout_loaded">Layout for %s loaded successfully!</string>
+    <string name="toast_file_load_failed">Failed to load file: %s</string>
+    <string name="search_title">Search</string>
+
+    <string-array name="layout_version_names">
+        <item>V1 (Default)</item>
+        <item>V2 (Experimental)</item>
+        <item>V3 (Experimental)</item>
+    </string-array>
+
+    <string-array name="layout_choices_names">
+        <item>V1 (Default)</item>
+        <item>V2 (Experimental)</item>
+        <item>V3 (Experimental)</item>
+        <item>Custom (from file)</item>
+    </string-array>
+
+    <string-array name="icon_style_names">
+        <item>Hide</item>
+        <item>Aroum</item>
+        <item>Vrifmus</item>
+        <item>Pavel</item>
+    </string-array>
+
+    <string-array name="swipe_action_names">
+        <item>No Action</item>
+        <item>Shift / Caps Lock</item>
+        <item>Enter</item>
+        <item>Switch Language</item>
+        <item>Switch to Editing Mode</item>
+        <item>Backspace</item>
+        <item>Settings</item>
+        <item>Emoji</item>
+        <item>Clipboard</item>
+    </string-array>
 </resources>

@@ -38,19 +38,38 @@ abstract class InputMethodSettingsFragment : PreferenceFragment() {
     private fun initSettings(context: Context, prefScreen: android.preference.PreferenceScreen): Boolean {
         mImm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         mImi = getMyImi(context, mImm)
+        val existingPref = prefScreen.findPreference(PREF_KEY_SUBTYPE_ENABLER)
         if (mImi == null || mImi!!.subtypeCount <= 1) {
+            if (existingPref != null) {
+                prefScreen.removePreference(existingPref)
+            }
+            mSubtypeEnablerPreference = null
             return false
         }
-        val intent = Intent(Settings.ACTION_INPUT_METHOD_SUBTYPE_SETTINGS)
-        intent.putExtra(Settings.EXTRA_INPUT_METHOD_ID, mImi!!.id)
-        intent.flags = (Intent.FLAG_ACTIVITY_NEW_TASK
-                or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
-                or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pref = Preference(context)
-        pref.intent = intent
-        pref.order = 0
+        val pref = if (existingPref != null) {
+            existingPref
+        } else {
+            val intent = Intent(Settings.ACTION_INPUT_METHOD_SUBTYPE_SETTINGS)
+            intent.putExtra(Settings.EXTRA_INPUT_METHOD_ID, mImi!!.id)
+            intent.flags = (Intent.FLAG_ACTIVITY_NEW_TASK
+                    or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                    or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            val newPref = Preference(context)
+            newPref.key = PREF_KEY_SUBTYPE_ENABLER
+            newPref.intent = intent
+            newPref.order = 0
+            prefScreen.addPreference(newPref)
+            newPref
+        }
+        if (pref.intent == null) {
+            val intent = Intent(Settings.ACTION_INPUT_METHOD_SUBTYPE_SETTINGS)
+            intent.putExtra(Settings.EXTRA_INPUT_METHOD_ID, mImi!!.id)
+            intent.flags = (Intent.FLAG_ACTIVITY_NEW_TASK
+                    or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                    or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            pref.intent = intent
+        }
         mSubtypeEnablerPreference = pref
-        prefScreen.addPreference(pref)
         updateSubtypeEnabler()
         return true
     }
@@ -115,6 +134,8 @@ abstract class InputMethodSettingsFragment : PreferenceFragment() {
     }
 
     companion object {
+        const val PREF_KEY_SUBTYPE_ENABLER = "subtype_enabler"
+
         private fun getMyImi(context: Context, imm: InputMethodManager?): InputMethodInfo? {
             val imis = imm?.inputMethodList ?: return null
             for (i in imis.indices) {

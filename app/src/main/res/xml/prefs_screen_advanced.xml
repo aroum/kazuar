@@ -47,7 +47,7 @@
         android:defaultValue="false" />
 
     <PreferenceCategory
-        android:title="Actions">
+        android:title="@string/settings_category_actions">
 
         <CheckBoxPreference
             android:key="pref_space_trackpad"
@@ -63,14 +63,14 @@
 
         <CheckBoxPreference
             android:key="pref_enable_double_tap_replacements"
-            android:title="Enable Double-Taps"
-            android:summary="Double tap a key to replace it (e.g. ыы -> ю) without deleting"
+            android:title="@string/pref_enable_double_taps_title"
+            android:summary="@string/pref_enable_double_taps_summary"
             android:defaultValue="true" />
 
         <PreferenceScreen
             android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
             android:key="screen_double_tap_editor_ru"
-            android:title="Setup Double-Taps for ru"
+            android:title="@string/pref_setup_double_taps_ru"
             android:dependency="pref_enable_double_tap_replacements">
             <extra android:name="lang" android:value="ru" />
         </PreferenceScreen>
@@ -78,7 +78,7 @@
         <PreferenceScreen
             android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
             android:key="screen_double_tap_editor_en"
-            android:title="Setup Double-Taps for en"
+            android:title="@string/pref_setup_double_taps_en"
             android:dependency="pref_enable_double_tap_replacements">
             <extra android:name="lang" android:value="en" />
         </PreferenceScreen>
@@ -86,12 +86,12 @@
         <PreferenceScreen
             android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment"
             android:key="screen_swipe_controls"
-            android:title="Setup swipe controls" />
+            android:title="@string/pref_setup_swipe_controls" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Timings">
+        android:title="@string/settings_category_timings">
 
         <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_key_longpress_timeout"
@@ -102,7 +102,7 @@
 
         <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_double_tap_timeout"
-            android:title="Double-tap timeout (ms)"
+            android:title="@string/pref_double_tap_timeout_title"
             latin:minValue="100"
             latin:maxValue="1000"
             latin:stepValue="50"
@@ -111,7 +111,7 @@
 
         <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_double_swipe_timeout"
-            android:title="Double-swipe-up timeout (ms)"
+            android:title="@string/pref_double_swipe_timeout_title"
             latin:minValue="100"
             latin:maxValue="1500"
             latin:stepValue="50"
@@ -119,7 +119,7 @@
 
         <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_key_repeat_interval"
-            android:title="Key repeat delay (ms)"
+            android:title="@string/pref_key_repeat_delay_title"
             latin:minValue="10"
             latin:maxValue="500"
             latin:stepValue="5"
@@ -128,12 +128,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Debug Settings">
+        android:title="@string/prefs_debug_settings_category">
 
         <PreferenceScreen
             android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment"
             android:key="screen_debug"
-            android:title="Debug settings"
+            android:title="@string/prefs_debug_mode"
             android:defaultValue="false"
             android:persistent="true" />
 

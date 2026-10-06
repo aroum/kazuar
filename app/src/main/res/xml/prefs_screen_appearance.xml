@@ -86,7 +86,7 @@
 
         <ListPreference
             android:key="pref_icon_style"
-            android:title="Select icon style"
+            android:title="@string/select_icon_style"
             android:entries="@array/icon_style_names"
             android:entryValues="@array/icon_style_values"
             android:defaultValue="aroum" />
@@ -94,17 +94,17 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Customization">
+        android:title="@string/settings_category_customization">
 
         <Preference
             android:key="pref_load_custom_file"
-            android:title="Load theme or layout from file"
-            android:summary="Choose an XML layout file or JSON theme file" />
+            android:title="@string/pref_load_custom_file_title"
+            android:summary="@string/pref_load_custom_file_summary" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Layouts">
+        android:title="@string/settings_category_layouts">
 
         <CheckBoxPreference
             android:key="pref_split_keyboard_portrait"
@@ -120,14 +120,14 @@
 
         <ListPreference
             android:key="pref_keyboard_layout_ru"
-            android:title="Keyboard Layout for ru"
+            android:title="@string/pref_keyboard_layout_ru_title"
             android:entries="@array/layout_choices_names"
             android:entryValues="@array/layout_choices_values"
             android:defaultValue="v3" />
 
         <ListPreference
             android:key="pref_keyboard_layout_en"
-            android:title="Keyboard Layout for en"
+            android:title="@string/pref_keyboard_layout_en_title"
             android:entries="@array/layout_choices_names"
             android:entryValues="@array/layout_choices_values"
             android:defaultValue="v3" />

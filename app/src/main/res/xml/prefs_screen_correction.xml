@@ -25,12 +25,12 @@
     </PreferenceScreen>
 
     <PreferenceCategory
-        android:title="Replacements">
+        android:title="@string/settings_category_replacements">
 
         <CheckBoxPreference
             android:key="pref_enable_macro_replacements"
-            android:title="Enable Macro Replacements"
-            android:summary="Automatically replace shortcut words (e.g. AOSP -> Android Open Source Project) when typing separators"
+            android:title="@string/pref_enable_macro_replacements_title"
+            android:summary="@string/pref_enable_macro_replacements_summary"
             android:defaultValue="true" />
 
     </PreferenceCategory>

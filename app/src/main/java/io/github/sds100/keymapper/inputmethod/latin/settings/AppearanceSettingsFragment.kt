@@ -236,7 +236,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
             try {
                 handleLoadedFile(context, uri)
             } catch (e: Exception) {
-                android.widget.Toast.makeText(context, "Failed to load file: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                android.widget.Toast.makeText(context, getString(R.string.toast_file_load_failed, e.message), android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -258,7 +258,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 selectedThemeId = KeyboardTheme.THEME_ID_CUSTOM
                 KeyboardTheme.saveKeyboardThemeId(selectedThemeId, sharedPreferences)
 
-                android.widget.Toast.makeText(context, "Custom theme loaded successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, R.string.toast_custom_theme_loaded, android.widget.Toast.LENGTH_SHORT).show()
                 updateThemePreferencesState()
             } catch (e: Exception) {
                 throw Exception("Invalid theme JSON format: ${e.message}")
@@ -353,7 +353,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                     .putString(rulesKey, rulesArray.toString())
                     .apply()
 
-                android.widget.Toast.makeText(context, "Layout for $language loaded successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, getString(R.string.toast_custom_layout_loaded, language), android.widget.Toast.LENGTH_SHORT).show()
 
                 val ruPref = findPreference("pref_keyboard_layout_ru") as? ListPreference
                 ruPref?.value = sharedPreferences.getString("pref_keyboard_layout_ru", "v3")
