@@ -36,15 +36,16 @@
 ### Miscellaneous
 
 * Select icon style [hide, aroum, vrifmus, pavel]
-* Split keyboard [tablet only]
+* Split layout (portrait)
+* Split layout (landscape)
 * Enable keyboard resizing
 * Keyboard height scale
 
-## Layouts
+### Layouts
 
-* Load layout from file
-* Keyboard Layout for ru  [default v3]
-* Keyboard Layout for en  [default v3]
+* Load layout from XML file
+* Keyboard Layout for ru  [v1, v2, default v3, custom]
+* Keyboard Layout for en  [v1, v2, default v3, custom]
 
 ---
 

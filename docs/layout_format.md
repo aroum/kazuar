@@ -299,7 +299,9 @@ Example of defining a key for ampersand:
   <Key keyLabel="? \n /" />  <!-- '?' is hint, '/' is main label -->
   ```
 
-## Example XML Layout File
+## Examples
+
+### 1. Simple Standalone `<Keyboard>` Example
 
 ```xml
 <Keyboard language="en" keyWidth="10%">
@@ -346,4 +348,70 @@ Example of defining a key for ampersand:
     </Row>
     <Replace from="--" to="—" />
 </Keyboard>
+```
+
+### 2. V3 Template Style (`<merge>`, `<Spacer>`, `keyStyle`, `keyHintLabel`)
+
+This format matches the built-in layouts directly from [`app/src/main/res/xml/`](../app/src/main/res/xml/):
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:latin="http://schemas.android.com/apk/res-auto">
+    <!-- Row 1: Numbers with hint symbols on hold -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="1" latin:keyHintLabel="!" latin:moreKeys="!" />
+        <Key latin:keySpec="2" latin:keyHintLabel="@" latin:moreKeys="@,&#x00B2;" />
+        <Key latin:keySpec="3" latin:keyHintLabel="&#x2116;" latin:moreKeys="&#x2116;,&#x00B3;" />
+        <Key latin:keySpec="4" latin:keyHintLabel="$" latin:moreKeys="$" />
+        <Key latin:keySpec="5" latin:keyHintLabel="%" latin:moreKeys="\\%,&#x00B0;" />
+        <Key latin:keySpec="6" latin:keyHintLabel="^" latin:moreKeys="^" />
+        <Key latin:keySpec="7" latin:keyHintLabel="?" latin:moreKeys="?" />
+        <Key latin:keySpec="8" latin:keyHintLabel="*" latin:moreKeys="*,&#x2022;,&#x00D7;" />
+        <Key latin:keySpec="9" latin:keyHintLabel="(" latin:moreKeys="(" />
+        <Key latin:keySpec="0" latin:keyHintLabel=")" latin:moreKeys=")" />
+    </Row>
+
+    <!-- Row 2: Letters with shortcuts and hints -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="й" latin:keyHintLabel="~" latin:moreKeys="~,\`" />
+        <Key latin:keySpec="ц" latin:keyHintLabel="&quot;" latin:moreKeys="&quot;" />
+        <Key latin:keySpec="у" latin:keyHintLabel="#" latin:moreKeys="#" />
+        <Key latin:keySpec="к" latin:keyHintLabel=":" latin:moreKeys=":" />
+        <Key latin:keySpec="е" latin:keyHintLabel="ё" latin:moreKeys="ё,\\\\,|" />
+        <Key latin:keySpec="н" latin:keyHintLabel="↷" latin:moreKeys="↷|!code/key_redo" />
+        <Key latin:keySpec="г" latin:keyHintLabel="&amp;" latin:moreKeys="&amp;" />
+        <Key latin:keySpec="ш" latin:keyHintLabel="+" latin:moreKeys="+,&#x00B1;" />
+        <Key latin:keySpec="з" latin:keyHintLabel="[" latin:moreKeys="[,{,«" />
+        <Key latin:keySpec="х" latin:keyHintLabel="]" latin:moreKeys="],},»" />
+    </Row>
+
+    <!-- Row 3: Letters and Backspace (deleteKeyStyle) -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="ж" latin:keyHintLabel="⛶" latin:moreKeys="⛶|!code/key_select_all" />
+        <Key latin:keySpec="ы" latin:keyHintLabel="'" latin:moreKeys="\'" />
+        <Key latin:keySpec="в" />
+        <Key latin:keySpec="а" latin:keyHintLabel=";" latin:moreKeys=";" />
+        <Key latin:keySpec="п" latin:keyHintLabel="/" latin:moreKeys="/,&#x00F7;" />
+        <Key latin:keySpec="р" latin:keyHintLabel="," latin:moreKeys="\\," />
+        <Key latin:keySpec="о" latin:keyHintLabel="." latin:moreKeys="." />
+        <Key latin:keySpec="л" latin:keyHintLabel="-" latin:moreKeys="-,&#x2014;,_" />
+        <Key latin:keySpec="д" latin:keyHintLabel="=" latin:moreKeys="=,&#x2248;,&#x2260;" />
+        <Key latin:keyStyle="deleteKeyStyle" latin:keyHintLabel="⬅" latin:moreKeys="⬅|!code/key_delete_word" />
+    </Row>
+
+    <!-- Row 4: Shortcuts, Spacers, and Spacebar (spaceKeyStyle) -->
+    <Row latin:keyWidth="10%p">
+        <Key latin:keySpec="я" latin:keyHintLabel="↶" latin:moreKeys="↶|!code/key_undo" />
+        <Key latin:keySpec="ч" latin:keyHintLabel="✂" latin:moreKeys="✂|!code/key_cut" />
+        <Key latin:keySpec="с" latin:keyHintLabel="❐" latin:moreKeys="❐|!code/key_copy" />
+        <Key latin:keySpec="м" latin:keyHintLabel="⎘" latin:moreKeys="⎘|!code/key_paste" />
+        <Key latin:keyStyle="spaceKeyStyle" latin:keyWidth="20%p" />
+        <Key latin:keySpec="и" latin:keyHintLabel="&lt;" latin:moreKeys="&lt;" />
+        <Key latin:keySpec="т" latin:keyHintLabel="&gt;" latin:moreKeys="&gt;" />
+        <!-- Spacer example: empty 10% slot -->
+        <!-- <Spacer latin:keyWidth="10%p" /> -->
+        <Key latin:keySpec="ь" />
+        <Key latin:keySpec="б" />
+    </Row>
+</merge>
 ```
