@@ -87,7 +87,7 @@ public class Key implements Comparable<Key> {
     private static final int LABEL_FLAGS_AUTO_Y_SCALE = 0x8000;
     private static final int LABEL_FLAGS_AUTO_SCALE = LABEL_FLAGS_AUTO_X_SCALE
             | LABEL_FLAGS_AUTO_Y_SCALE;
-    private static final int LABEL_FLAGS_PRESERVE_CASE = 0x10000;
+    public static final int LABEL_FLAGS_PRESERVE_CASE = 0x10000;
     private static final int LABEL_FLAGS_SHIFTED_LETTER_ACTIVATED = 0x20000;
     private static final int LABEL_FLAGS_FROM_CUSTOM_ACTION_LABEL = 0x40000;
     private static final int LABEL_FLAGS_FOLLOW_FUNCTIONAL_TEXT_COLOR = 0x80000;
@@ -299,10 +299,22 @@ public class Key implements Comparable<Key> {
             } else {
                 mMoreKeys = null;
             }
+            if (code == Constants.CODE_DELETE) {
+                actionFlags |= ACTION_FLAGS_IS_REPEATABLE;
+            }
+            if (isFunctionalKey(code, iconId, backgroundType)) {
+                actionFlags |= ACTION_FLAGS_NO_KEY_PREVIEW;
+            }
             mActionFlags = actionFlags;
         } else {
-            // TODO: Pass keyActionFlags as an argument.
-            mActionFlags = ACTION_FLAGS_NO_KEY_PREVIEW;
+            int actionFlags = 0;
+            if (code == Constants.CODE_DELETE) {
+                actionFlags |= ACTION_FLAGS_IS_REPEATABLE;
+            }
+            if (isFunctionalKey(code, iconId, backgroundType)) {
+                actionFlags |= ACTION_FLAGS_NO_KEY_PREVIEW;
+            }
+            mActionFlags = actionFlags;
             mMoreKeys = null;
             mMoreKeysColumnAndFlags = 0;
         }
@@ -759,6 +771,22 @@ public class Key implements Comparable<Key> {
         return mCode == CODE_SHIFT || mCode == CODE_SWITCH_ALPHA_SYMBOL;
     }
 
+    private static boolean isFunctionalKey(final int code, final int iconId, final int backgroundType) {
+        return backgroundType == BACKGROUND_TYPE_FUNCTIONAL
+                || backgroundType == BACKGROUND_TYPE_SPACEBAR
+                || code == Constants.CODE_DELETE
+                || code == Constants.CODE_SPACE
+                || code == Constants.CODE_SHIFT
+                || code == Constants.CODE_ENTER
+                || code == Constants.CODE_LANGUAGE_SWITCH
+                || code == Constants.CODE_EMOJI
+                || code == Constants.CODE_CLIPBOARD
+                || code == Constants.CODE_SETTINGS
+                || code == Constants.CODE_SWITCH_ALPHA_SYMBOL
+                || code == Constants.CODE_CAPSLOCK
+                || (iconId != KeyboardIconsSet.ICON_UNDEFINED && code == Constants.CODE_UNSPECIFIED);
+    }
+
     public final boolean isRepeatable() {
         return (mActionFlags & ACTION_FLAGS_IS_REPEATABLE) != 0;
     }
@@ -1198,7 +1226,7 @@ public class Key implements Comparable<Key> {
         /**
          * This constructor is being used only for divider in more keys keyboard.
          */
-        protected Spacer(final KeyboardParams params, final int x, final int y, final int width,
+        public Spacer(final KeyboardParams params, final int x, final int y, final int width,
                 final int height) {
             super(null /* label */, ICON_UNDEFINED, CODE_UNSPECIFIED, null /* outputText */,
                     null /* hintLabel */, 0 /* labelFlags */, BACKGROUND_TYPE_EMPTY, x, y, width,

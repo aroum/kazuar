@@ -71,6 +71,7 @@ public class CustomLayoutLoader {
             float defaultKeyWidthPercent = 0.10f;
 
             ArrayList<ArrayList<CustomKeySpec>> rows = new ArrayList<>();
+            ArrayList<Float> rowDefaultWidths = new ArrayList<>();
             ArrayList<CustomReplaceRule> replaceRules = new ArrayList<>();
 
             while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -84,6 +85,12 @@ public class CustomLayoutLoader {
                     } else if ("Row".equalsIgnoreCase(tagName)) {
                         currentRow++;
                         rows.add(new ArrayList<CustomKeySpec>());
+                        float rowWidth = defaultKeyWidthPercent;
+                        String rowKeyWidthAttr = getAttributeValue(parser, "keyWidth");
+                        if (rowKeyWidthAttr != null) {
+                            rowWidth = parsePercent(rowKeyWidthAttr, defaultKeyWidthPercent);
+                        }
+                        rowDefaultWidths.add(rowWidth);
                     } else if ("Key".equalsIgnoreCase(tagName)) {
                         if (currentRow >= 0 && currentRow < rows.size()) {
                             CustomKeySpec spec = new CustomKeySpec();
@@ -94,6 +101,16 @@ public class CustomLayoutLoader {
                             spec.longCode = getAttributeValue(parser, "longCode");
                             spec.moreKeys = getAttributeValue(parser, "moreKeys");
                             spec.backgroundType = getAttributeValue(parser, "backgroundType");
+                            spec.hint = getAttributeValue(parser, "keyHintLabel", "hintLabel", "hint");
+                            spec.keyStyle = getAttributeValue(parser, "keyStyle", "style");
+                            spec.keyLabelFlags = getAttributeValue(parser, "keyLabelFlags", "labelFlags");
+                            rows.get(currentRow).add(spec);
+                        }
+                    } else if ("Spacer".equalsIgnoreCase(tagName)) {
+                        if (currentRow >= 0 && currentRow < rows.size()) {
+                            CustomKeySpec spec = new CustomKeySpec();
+                            spec.isSpacer = true;
+                            spec.keyWidth = getAttributeValue(parser, "keyWidth", "width");
                             rows.get(currentRow).add(spec);
                         }
                     } else if ("Replace".equalsIgnoreCase(tagName)) {
@@ -116,33 +133,84 @@ public class CustomLayoutLoader {
 
             for (int r = 0; r < totalRows; r++) {
                 ArrayList<CustomKeySpec> rowKeys = rows.get(r);
+                float rowDefaultW = (r < rowDefaultWidths.size()) ? rowDefaultWidths.get(r) : defaultKeyWidthPercent;
                 int y = params.mTopPadding + r * rowHeight;
                 int x = params.mLeftPadding;
 
                 for (int i = 0; i < rowKeys.size(); i++) {
                     CustomKeySpec spec = rowKeys.get(i);
-                    float wPercent = defaultKeyWidthPercent;
+                    float wPercent = rowDefaultW;
                     if (spec.keyWidth != null) {
-                        wPercent = parsePercent(spec.keyWidth, defaultKeyWidthPercent);
+                        wPercent = parsePercent(spec.keyWidth, rowDefaultW);
                     }
                     int w = Math.round(wPercent * baseWidth);
 
+                    if (spec.isSpacer) {
+                        Key spacer = new Key.Spacer(params, x, y, w, rowHeight);
+                        params.onAddKey(spacer);
+                        x += w;
+                        continue;
+                    }
+
                     String label = spec.label;
-                    String hint = null;
+                    String hint = (spec.hint != null && !spec.hint.trim().isEmpty()) ? spec.hint.trim() : null;
                     String specCodeStr = spec.codes;
                     String specIconStr = spec.keyIcon;
 
-                    // Support composite specs like "!icon/language_switch_key|!code/key_language_switch"
-                    if (label != null && label.contains("|")) {
+                    if (spec.keyStyle != null) {
+                        String ks = spec.keyStyle.toLowerCase(java.util.Locale.ROOT);
+                        if (ks.contains("delete")) {
+                            if (specCodeStr == null) specCodeStr = "delete";
+                            if (specIconStr == null) specIconStr = "delete";
+                        } else if (ks.contains("space")) {
+                            if (specCodeStr == null) specCodeStr = "space";
+                            if (specIconStr == null) specIconStr = "space";
+                        } else if (ks.contains("shift")) {
+                            if (specCodeStr == null) specCodeStr = "shift";
+                            if (specIconStr == null) specIconStr = "shift";
+                        } else if (ks.contains("enter") || ks.contains("return")) {
+                            if (specCodeStr == null) specCodeStr = "enter";
+                            if (specIconStr == null) specIconStr = "enter";
+                        } else if (ks.contains("toalpha") || ks.contains("tomoresymbol") || ks.contains("tosymbol")) {
+                            if (specCodeStr == null) specCodeStr = "switch_alpha_symbol";
+                        }
+                    }
+
+                    int code = resolveCode(specCodeStr);
+                    int iconId = resolveIcon(specIconStr);
+                    String outputText = null;
+
+                    if (label != null) {
+                        try {
+                            int parsedIcon = KeySpecParser.getIconId(label);
+                            if (parsedIcon != KeyboardIconsSet.ICON_UNDEFINED && iconId == KeyboardIconsSet.ICON_UNDEFINED) {
+                                iconId = parsedIcon;
+                            }
+                            int parsedCode = KeySpecParser.getCode(label);
+                            if (code == Constants.CODE_UNSPECIFIED && parsedCode != Constants.CODE_UNSPECIFIED) {
+                                code = parsedCode;
+                            }
+                            String parsedOutputText = KeySpecParser.getOutputText(label);
+                            if (parsedOutputText != null) {
+                                outputText = parsedOutputText;
+                            }
+                            String parsedLabel = KeySpecParser.getLabel(label);
+                            if (parsedLabel != null) {
+                                label = parsedLabel;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+
+                    // Support composite specs like "!icon/language_switch_key|!code/key_language_switch" if still unresolved
+                    if (label != null && label.contains("|") && (code == Constants.CODE_UNSPECIFIED || iconId == KeyboardIconsSet.ICON_UNDEFINED)) {
                         String[] parts = label.split("\\|");
                         for (String part : parts) {
                             String p = part.trim();
                             if (p.startsWith(KeyboardIconsSet.PREFIX_ICON) || p.contains("icon")) {
-                                if (specIconStr == null) specIconStr = p;
+                                if (iconId == KeyboardIconsSet.ICON_UNDEFINED) iconId = resolveIcon(p);
                             } else if (p.startsWith(KeyboardCodesSet.PREFIX_CODE) || p.contains("code")) {
-                                if (specCodeStr == null) specCodeStr = p;
-                            } else if (label.equals(spec.label)) {
-                                label = p;
+                                if (code == Constants.CODE_UNSPECIFIED) code = resolveCode(p);
                             }
                         }
                     }
@@ -160,9 +228,6 @@ public class CustomLayoutLoader {
                             }
                         }
                     }
-
-                    int code = resolveCode(specCodeStr);
-                    int iconId = resolveIcon(specIconStr);
 
                     // Derive code from icon if not explicitly set
                     if (code == Constants.CODE_UNSPECIFIED && iconId != KeyboardIconsSet.ICON_UNDEFINED) {
@@ -218,6 +283,10 @@ public class CustomLayoutLoader {
                     }
 
                     int labelFlags = 0;
+                    if (spec.keyLabelFlags != null && spec.keyLabelFlags.contains("preserveCase")) {
+                        labelFlags |= Key.LABEL_FLAGS_PRESERVE_CASE;
+                    }
+
                     int backgroundType = Key.BACKGROUND_TYPE_NORMAL;
                     if (spec.backgroundType != null) {
                         String bg = spec.backgroundType.trim().toLowerCase(java.util.Locale.ROOT);
@@ -255,7 +324,7 @@ public class CustomLayoutLoader {
                         moreKeySpecs = "!noPanelAutoMoreKey!," + hint.trim();
                     }
 
-                    Key key = new Key(label, iconId, code, null, hint, moreKeySpecs, labelFlags, backgroundType, x, y, w, rowHeight, params);
+                    Key key = new Key(label, iconId, code, outputText, hint, moreKeySpecs, labelFlags, backgroundType, x, y, w, rowHeight, params);
                     params.onAddKey(key);
 
                     x += w;
@@ -483,5 +552,9 @@ public class CustomLayoutLoader {
         String longCode;
         String moreKeys;
         String backgroundType;
+        String hint;
+        String keyStyle;
+        String keyLabelFlags;
+        boolean isSpacer;
     }
 }

@@ -277,7 +277,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
                     if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG) {
                         val tagName = parser.name
-                        if ("Keyboard".equals(tagName, ignoreCase = true)) {
+                        if ("Keyboard".equals(tagName, ignoreCase = true) || "merge".equals(tagName, ignoreCase = true)) {
                             language = parser.getAttributeValue(null, "language")
                                 ?: parser.getAttributeValue(null, "locale")
                         }
@@ -289,8 +289,9 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
                 if (language == null) {
                     val fileName = getFileName(context, uri)?.lowercase(Locale.ROOT) ?: ""
                     language = when {
-                        fileName.contains("ru") -> "ru"
-                        fileName.contains("en") -> "en"
+                        fileName.contains("ru") || fileName.contains("slavic") -> "ru"
+                        fileName.contains("en") || fileName.contains("qwerty") -> "en"
+                        trimmed.any { it in '\u0400'..'\u04FF' } -> "ru"
                         else -> null
                     }
                 }
