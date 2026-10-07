@@ -120,16 +120,41 @@ public class UserDictionaryList extends PreferenceFragment {
         final TreeSet<String> localeSet =
                 UserDictionaryList.getUserDictionaryLocalesSet(activity);
 
-        if (localeSet.size() > 1) {
-            // Have an "All languages" entry in the languages list if there are two or more active
-            // languages
-            localeSet.add("");
+        if (localeSet == null) {
+            return;
         }
 
-        if (localeSet.isEmpty()) {
+        final TreeSet<String> normalizedLocaleSet = new TreeSet<>();
+        for (final String loc : localeSet) {
+            if (TextUtils.isEmpty(loc)) {
+                normalizedLocaleSet.add("");
+                continue;
+            }
+            final String baseLang;
+            if (loc.contains("_")) {
+                baseLang = loc.substring(0, loc.indexOf('_'));
+            } else if (loc.contains("-")) {
+                baseLang = loc.substring(0, loc.indexOf('-'));
+            } else {
+                baseLang = loc;
+            }
+            if (localeSet.contains(baseLang)) {
+                normalizedLocaleSet.add(baseLang);
+            } else {
+                normalizedLocaleSet.add(loc);
+            }
+        }
+
+        if (normalizedLocaleSet.size() > 1) {
+            // Have an "All languages" entry in the languages list if there are two or more active
+            // languages
+            normalizedLocaleSet.add("");
+        }
+
+        if (normalizedLocaleSet.isEmpty()) {
             userDictGroup.addPreference(createUserDictionaryPreference(null));
         } else {
-            for (String locale : localeSet) {
+            for (String locale : normalizedLocaleSet) {
                 userDictGroup.addPreference(createUserDictionaryPreference(locale));
             }
         }

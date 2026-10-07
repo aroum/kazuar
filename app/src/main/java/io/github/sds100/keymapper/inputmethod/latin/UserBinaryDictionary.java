@@ -130,10 +130,10 @@ public class UserBinaryDictionary extends ExpandableBinaryDictionary {
                 TextUtils.isEmpty(mLocaleString) ? new String[] {} : mLocaleString.split("_", 3);
         final int length = localeElements.length;
 
-        final StringBuilder request = new StringBuilder("(locale is NULL)");
+        final StringBuilder request = new StringBuilder("(locale is NULL or locale='')");
         String localeSoFar = "";
         // At start, localeElements = ["en", "US", "POSIX"] ; localeSoFar = "" ;
-        // and request = "(locale is NULL)"
+        // and request = "(locale is NULL or locale='')"
         for (int i = 0; i < length; ++i) {
             // i | localeSoFar    | localeElements
             // 0 | ""             | ["en", "US", "POSIX"]
@@ -142,30 +142,28 @@ public class UserBinaryDictionary extends ExpandableBinaryDictionary {
             localeElements[i] = localeSoFar + localeElements[i];
             localeSoFar = localeElements[i] + "_";
             // i | request
-            // 0 | "(locale is NULL)"
-            // 1 | "(locale is NULL) or (locale=?)"
-            // 2 | "(locale is NULL) or (locale=?) or (locale=?)"
+            // 0 | "(locale is NULL or locale='')"
+            // 1 | "(locale is NULL or locale='') or (locale=?)"
+            // 2 | "(locale is NULL or locale='') or (locale=?) or (locale=?)"
             request.append(" or (locale=?)");
         }
         // At the end, localeElements = ["en", "en_US", "en_US_POSIX"]; localeSoFar = en_US_POSIX_"
-        // and request = "(locale is NULL) or (locale=?) or (locale=?) or (locale=?)"
+        // and request = "(locale is NULL or locale='') or (locale=?) or (locale=?) or (locale=?)"
 
         final String[] requestArguments;
         // If length == 3, we already have all the arguments we need (common prefix is meaningless
         // inside variants
         if (mAlsoUseMoreRestrictiveLocales && length < 3) {
             request.append(" or (locale like ?)");
-            // The following creates an array with one more (null) position
+            request.append(" or (locale like ?)");
+            // The following creates an array with two more positions
             final String[] localeElementsWithMoreRestrictiveLocalesIncluded =
-                    Arrays.copyOf(localeElements, length + 1);
+                    Arrays.copyOf(localeElements, length + 2);
             localeElementsWithMoreRestrictiveLocalesIncluded[length] =
                     localeElements[length - 1] + "_%";
+            localeElementsWithMoreRestrictiveLocalesIncluded[length + 1] =
+                    localeElements[length - 1] + "-%";
             requestArguments = localeElementsWithMoreRestrictiveLocalesIncluded;
-            // If for example localeElements = ["en"]
-            // then requestArguments = ["en", "en_%"]
-            // and request = (locale is NULL) or (locale=?) or (locale like ?)
-            // If localeElements = ["en", "en_US"]
-            // then requestArguments = ["en", "en_US", "en_US_%"]
         } else {
             requestArguments = localeElements;
         }

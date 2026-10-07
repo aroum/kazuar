@@ -194,7 +194,7 @@ public class UserDictionaryAddWordContents {
     private static final String HAS_WORD_SELECTION_ONE_LOCALE = UserDictionary.Words.WORD
             + "=? AND " + UserDictionary.Words.LOCALE + "=?";
     private static final String HAS_WORD_SELECTION_ALL_LOCALES = UserDictionary.Words.WORD
-            + "=? AND " + UserDictionary.Words.LOCALE + " is null";
+            + "=? AND (" + UserDictionary.Words.LOCALE + " is null OR " + UserDictionary.Words.LOCALE + "='')";
     private boolean hasWord(final String word, final Context context) {
         final Cursor cursor;
         // mLocale == "" indicates this is an entry for all languages. Here, mLocale can't

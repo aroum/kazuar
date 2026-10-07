@@ -180,15 +180,38 @@ public class UserDictionarySettings extends ListFragment {
         // TODO: it should be easy to make this more readable by making the special values
         // human-readable, like "all_locales" and "current_locales" strings, provided they
         // can be guaranteed not to match locales that may exist.
-        if ("".equals(locale)) {
-            // Case-insensitive sort
+        if (TextUtils.isEmpty(locale)) {
+            // Case-insensitive sort for words valid for all locales
+            final String selection = "(" + UserDictionary.Words.LOCALE + " IS NULL) OR ("
+                    + UserDictionary.Words.LOCALE + "='')";
             return getActivity().managedQuery(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
-                    QUERY_SELECTION_ALL_LOCALES, null,
+                    selection, null,
                     "UPPER(" + UserDictionary.Words.WORD + ")");
         }
         final String queryLocale = null != locale ? locale : Locale.getDefault().toString();
+        final String baseLang;
+        if (queryLocale.contains("_")) {
+            baseLang = queryLocale.substring(0, queryLocale.indexOf('_'));
+        } else if (queryLocale.contains("-")) {
+            baseLang = queryLocale.substring(0, queryLocale.indexOf('-'));
+        } else {
+            baseLang = queryLocale;
+        }
+
+        final String selection = "(" + UserDictionary.Words.LOCALE + " IS NULL) OR ("
+                + UserDictionary.Words.LOCALE + "='') OR ("
+                + UserDictionary.Words.LOCALE + "=?) OR ("
+                + UserDictionary.Words.LOCALE + "=?) OR ("
+                + UserDictionary.Words.LOCALE + " LIKE ?) OR ("
+                + UserDictionary.Words.LOCALE + " LIKE ?)";
+        final String[] selectionArgs = new String[] {
+                queryLocale,
+                baseLang,
+                baseLang + "_%",
+                baseLang + "-%"
+        };
         return getActivity().managedQuery(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
-                QUERY_SELECTION, new String[] { queryLocale },
+                selection, selectionArgs,
                 "UPPER(" + UserDictionary.Words.WORD + ")");
     }
 
