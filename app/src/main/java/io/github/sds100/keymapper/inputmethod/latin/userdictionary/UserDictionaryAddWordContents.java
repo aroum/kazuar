@@ -28,6 +28,7 @@ import android.widget.EditText;
 
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.LocaleUtils;
+import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -227,7 +228,10 @@ public class UserDictionaryAddWordContents {
             } else if ("".equals(localeString)) {
                 mDescription = context.getString(R.string.user_dict_settings_all_languages);
             } else {
-                mDescription = LocaleUtils.constructLocaleFromString(localeString).getDisplayName();
+                final Locale currentLocale = context.getResources().getConfiguration().locale;
+                final String displayName =
+                        LocaleUtils.constructLocaleFromString(localeString).getDisplayName();
+                mDescription = StringUtils.capitalizeFirstCodePoint(displayName, currentLocale);
             }
         }
         @Override
@@ -255,7 +259,7 @@ public class UserDictionaryAddWordContents {
         final TreeSet<String> locales = UserDictionaryList.getUserDictionaryLocalesSet(activity);
         // Remove our locale if it's in, because we're always gonna put it at the top
         locales.remove(mLocale); // mLocale may not be null
-        final String systemLocale = Locale.getDefault().toString();
+        final String systemLocale = UserDictionaryList.getBaseLanguage(Locale.getDefault().getLanguage());
         // The system locale should be inside. We want it at the 2nd spot.
         locales.remove(systemLocale); // system locale may not be null
         locales.remove(""); // Remove the empty string if it's there

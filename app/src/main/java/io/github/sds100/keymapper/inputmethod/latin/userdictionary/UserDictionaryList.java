@@ -33,6 +33,8 @@ import android.view.inputmethod.InputMethodSubtype;
 
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.common.LocaleUtils;
+import io.github.sds100.keymapper.inputmethod.latin.common.StringUtils;
+import io.github.sds100.keymapper.inputmethod.latin.utils.SubtypeLocaleUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -58,6 +60,17 @@ public class UserDictionaryList extends PreferenceFragment {
         setPreferenceScreen(getPreferenceManager().createPreferenceScreen(getActivity()));
     }
 
+    public static String getBaseLanguage(@Nullable final String loc) {
+        if (TextUtils.isEmpty(loc)) {
+            return "";
+        }
+        int index = loc.indexOf('_');
+        if (index < 0) {
+            index = loc.indexOf('-');
+        }
+        return index > 0 ? loc.substring(0, index) : loc;
+    }
+
     public static TreeSet<String> getUserDictionaryLocalesSet(final Activity activity) {
         final Cursor cursor = activity.getContentResolver().query(UserDictionary.Words.CONTENT_URI,
                 new String[] { UserDictionary.Words.LOCALE },
@@ -72,7 +85,10 @@ public class UserDictionaryList extends PreferenceFragment {
                 final int columnIndex = cursor.getColumnIndex(UserDictionary.Words.LOCALE);
                 do {
                     final String locale = cursor.getString(columnIndex);
-                    localeSet.add(null != locale ? locale : "");
+                    final String baseLang = getBaseLanguage(locale);
+                    if (!SubtypeLocaleUtils.NO_LANGUAGE.equals(baseLang)) {
+                        localeSet.add(baseLang);
+                    }
                 } while (cursor.moveToNext());
             }
         } finally {
@@ -92,19 +108,25 @@ public class UserDictionaryList extends PreferenceFragment {
                     imm.getEnabledInputMethodSubtypeList(
                             imi, true /* allowsImplicitlySelectedSubtypes */);
             for (InputMethodSubtype subtype : subtypes) {
-                final String locale = subtype.getLocale();
+                String locale = null;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    locale = subtype.getLanguageTag();
+                }
+                if (TextUtils.isEmpty(locale)) {
+                    locale = subtype.getLocale();
+                }
                 if (!TextUtils.isEmpty(locale)) {
-                    localeSet.add(locale);
+                    final String baseLang = getBaseLanguage(locale);
+                    if (!SubtypeLocaleUtils.NO_LANGUAGE.equals(baseLang)) {
+                        localeSet.add(baseLang);
+                    }
                 }
             }
         }
 
-        // We come here after we have collected locales from existing user dictionary entries and
-        // enabled subtypes. If we already have the locale-without-country version of the system
-        // locale, we don't add the system locale to avoid confusion even though it's technically
-        // correct to add it.
-        if (!localeSet.contains(Locale.getDefault().getLanguage())) {
-            localeSet.add(Locale.getDefault().toString());
+        final String systemLanguage = Locale.getDefault().getLanguage();
+        if (!TextUtils.isEmpty(systemLanguage) && !SubtypeLocaleUtils.NO_LANGUAGE.equals(systemLanguage)) {
+            localeSet.add(systemLanguage);
         }
 
         return localeSet;
@@ -124,37 +146,16 @@ public class UserDictionaryList extends PreferenceFragment {
             return;
         }
 
-        final TreeSet<String> normalizedLocaleSet = new TreeSet<>();
-        for (final String loc : localeSet) {
-            if (TextUtils.isEmpty(loc)) {
-                normalizedLocaleSet.add("");
-                continue;
-            }
-            final String baseLang;
-            if (loc.contains("_")) {
-                baseLang = loc.substring(0, loc.indexOf('_'));
-            } else if (loc.contains("-")) {
-                baseLang = loc.substring(0, loc.indexOf('-'));
-            } else {
-                baseLang = loc;
-            }
-            if (localeSet.contains(baseLang)) {
-                normalizedLocaleSet.add(baseLang);
-            } else {
-                normalizedLocaleSet.add(loc);
-            }
-        }
-
-        if (normalizedLocaleSet.size() > 1) {
+        if (localeSet.size() > 1) {
             // Have an "All languages" entry in the languages list if there are two or more active
             // languages
-            normalizedLocaleSet.add("");
+            localeSet.add("");
         }
 
-        if (normalizedLocaleSet.isEmpty()) {
+        if (localeSet.isEmpty()) {
             userDictGroup.addPreference(createUserDictionaryPreference(null));
         } else {
-            for (String locale : normalizedLocaleSet) {
+            for (String locale : localeSet) {
                 userDictGroup.addPreference(createUserDictionaryPreference(locale));
             }
         }
@@ -169,13 +170,17 @@ public class UserDictionaryList extends PreferenceFragment {
         final Preference newPref = new Preference(getActivity());
         final Intent intent = new Intent(USER_DICTIONARY_SETTINGS_INTENT_ACTION);
         if (null == localeString) {
-            newPref.setTitle(Locale.getDefault().getDisplayName());
+            final Locale defaultLocale = Locale.getDefault();
+            final String displayName = defaultLocale.getDisplayName();
+            newPref.setTitle(StringUtils.capitalizeFirstCodePoint(displayName, defaultLocale));
         } else {
             if (localeString.isEmpty()) {
                 newPref.setTitle(getString(R.string.user_dict_settings_all_languages));
             } else {
-                newPref.setTitle(
-                        LocaleUtils.constructLocaleFromString(localeString).getDisplayName());
+                final Locale currentLocale = getResources().getConfiguration().locale;
+                final String displayName =
+                        LocaleUtils.constructLocaleFromString(localeString).getDisplayName();
+                newPref.setTitle(StringUtils.capitalizeFirstCodePoint(displayName, currentLocale));
             }
             intent.putExtra("locale", localeString);
             newPref.getExtras().putString("locale", localeString);

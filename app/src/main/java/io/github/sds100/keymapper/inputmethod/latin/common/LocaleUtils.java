@@ -174,7 +174,7 @@ public final class LocaleUtils {
             if (sLocaleCache.containsKey(localeString)) {
                 return sLocaleCache.get(localeString);
             }
-            final String[] elements = localeString.split("_", 3);
+            final String[] elements = localeString.replace('-', '_').split("_", 3);
             final Locale locale;
             if (elements.length == 1) {
                 locale = new Locale(elements[0] /* language */);
