@@ -42,7 +42,7 @@ object CustomLayoutHelper {
         val content = try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 inputStream.bufferedReader(Charsets.UTF_8).readText()
-            } ?: throw Exception("Cannot open file stream")
+            } ?: throw Exception(context.getString(R.string.error_cannot_open_file_stream))
         } catch (e: Exception) {
             Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
             return
@@ -50,7 +50,7 @@ object CustomLayoutHelper {
 
         val trimmed = content.trim().removePrefix("\uFEFF").trim()
         if (!trimmed.startsWith("<")) {
-            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, "File is not an XML layout"), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, context.getString(R.string.error_file_not_xml_layout)), Toast.LENGTH_LONG).show()
             return
         }
 
@@ -79,7 +79,7 @@ object CustomLayoutHelper {
                 eventType = parser.next()
             }
         } catch (e: Exception) {
-            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, "Invalid layout XML format: ${e.message}"), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, context.getString(R.string.error_invalid_layout_xml, e.message ?: "")), Toast.LENGTH_LONG).show()
             return
         }
 

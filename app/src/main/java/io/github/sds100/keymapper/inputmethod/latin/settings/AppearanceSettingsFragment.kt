@@ -242,7 +242,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
         } else if (trimmed.startsWith("<")) {
             CustomLayoutHelper.handleLoadedLayout(context, uri)
         } else {
-            throw Exception("Unknown file format. Theme must start with '{'.")
+            throw Exception(getString(R.string.error_theme_must_start_with_json))
         }
     }
 

@@ -646,4 +646,10 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="settings_category_sound">Sound</string>
     <string name="settings_category_physical_keyboard">Physical keyboard</string>
     <string name="settings_category_display_sizing">Display &amp; Sizing</string>
+
+    <!-- Error messages -->
+    <string name="error_cannot_open_file_stream">Cannot open file stream</string>
+    <string name="error_file_not_xml_layout">File is not an XML layout</string>
+    <string name="error_invalid_layout_xml">Invalid layout XML format: %s</string>
+    <string name="error_theme_must_start_with_json">Unknown file format. Theme must start with \'{\'.</string>
 </resources>

@@ -330,4 +330,25 @@
     <string name="settings_category_sound">Звук</string>
     <string name="settings_category_physical_keyboard">Физическая клавиатура</string>
     <string name="settings_category_display_sizing">Отображение и размер</string>
+
+    <!-- Настройки отладки -->
+    <string name="prefs_debug_mode">Режим отладки</string>
+    <string name="prefs_force_non_distinct_multitouch">Принудительный неразличимый мультитач</string>
+    <string name="prefs_should_show_lxx_suggestion_ui">Показывать интерфейс подсказок LXX</string>
+    <string name="sliding_key_input_preview">Показывать индикатор скольжения</string>
+    <string name="sliding_key_input_preview_summary">Визуальная индикация при скольжении от Shift или клавиш символов</string>
+    <string name="prefs_customize_key_preview_animation">Настройка анимации всплывающих клавиш</string>
+    <string name="prefs_key_popup_show_up_start_x_scale_settings">Начальный масштаб X при появлении всплывающего окна</string>
+    <string name="prefs_key_popup_show_up_start_y_scale_settings">Начальный масштаб Y при появлении всплывающего окна</string>
+    <string name="prefs_key_popup_dismiss_end_x_scale_settings">Конечный масштаб X при исчезновении всплывающего окна</string>
+    <string name="prefs_key_popup_dismiss_end_y_scale_settings">Конечный масштаб Y при исчезновении всплывающего окна</string>
+    <string name="prefs_key_popup_show_up_duration_settings">Длительность появления всплывающего окна</string>
+    <string name="prefs_key_popup_dismiss_duration_settings">Длительность исчезновения всплывающего окна</string>
+    <string name="prefs_dump_dynamic_dicts">Дамп динамических словарей</string>
+
+    <!-- Сообщения об ошибках -->
+    <string name="error_cannot_open_file_stream">Не удалось открыть поток файла</string>
+    <string name="error_file_not_xml_layout">Файл не является XML-раскладкой</string>
+    <string name="error_invalid_layout_xml">Неверный формат XML-раскладки: %s</string>
+    <string name="error_theme_must_start_with_json">Неизвестный формат файла. Тема должна начинаться с \'{\'.</string>
 </resources>
