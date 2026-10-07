@@ -168,7 +168,6 @@ public class UserDictionaryList extends PreferenceFragment {
      */
     protected Preference createUserDictionaryPreference(@Nullable final String localeString) {
         final Preference newPref = new Preference(getActivity());
-        final Intent intent = new Intent(USER_DICTIONARY_SETTINGS_INTENT_ACTION);
         if (null == localeString) {
             final Locale defaultLocale = Locale.getDefault();
             final String displayName = defaultLocale.getDisplayName();
@@ -182,10 +181,8 @@ public class UserDictionaryList extends PreferenceFragment {
                         LocaleUtils.constructLocaleFromString(localeString).getDisplayName();
                 newPref.setTitle(StringUtils.capitalizeFirstCodePoint(displayName, currentLocale));
             }
-            intent.putExtra("locale", localeString);
             newPref.getExtras().putString("locale", localeString);
         }
-        newPref.setIntent(intent);
         newPref.setFragment(UserDictionarySettings.class.getName());
         return newPref;
     }

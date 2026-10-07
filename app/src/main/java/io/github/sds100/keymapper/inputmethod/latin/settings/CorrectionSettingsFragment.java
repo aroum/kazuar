@@ -48,25 +48,14 @@ import java.util.TreeSet;
 public final class CorrectionSettingsFragment extends SubScreenFragment
     implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final boolean DBG_USE_INTERNAL_PERSONAL_DICTIONARY_SETTINGS = false;
-    private static final boolean USE_INTERNAL_PERSONAL_DICTIONARY_SETTINGS =
-            DBG_USE_INTERNAL_PERSONAL_DICTIONARY_SETTINGS;
-
     @Override
     public void onCreate(final Bundle icicle) {
         super.onCreate(icicle);
         addPreferencesFromResource(R.xml.prefs_screen_correction);
 
-        final Context context = getActivity();
-        final PackageManager pm = context.getPackageManager();
-
         final Preference editPersonalDictionary =
                 findPreference(Settings.PREF_EDIT_PERSONAL_DICTIONARY);
-        final Intent editPersonalDictionaryIntent = editPersonalDictionary.getIntent();
-        final ResolveInfo ri = USE_INTERNAL_PERSONAL_DICTIONARY_SETTINGS ? null
-                : pm.resolveActivity(
-                        editPersonalDictionaryIntent, PackageManager.MATCH_DEFAULT_ONLY);
-        if (ri == null) {
+        if (editPersonalDictionary != null) {
             overwriteUserDictionaryPreference(editPersonalDictionary);
         }
 
@@ -84,6 +73,7 @@ public final class CorrectionSettingsFragment extends SubScreenFragment
     }
 
     private void overwriteUserDictionaryPreference(final Preference userDictionaryPreference) {
+        userDictionaryPreference.setIntent(null);
         final Activity activity = getActivity();
         final TreeSet<String> localeList = UserDictionaryList.getUserDictionaryLocalesSet(activity);
         if (null == localeList) {

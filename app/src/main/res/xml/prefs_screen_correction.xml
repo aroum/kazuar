@@ -20,9 +20,7 @@
 
     <PreferenceScreen
             android:key="edit_personal_dictionary"
-            android:title="@string/edit_personal_dictionary">
-        <intent android:action="android.settings.USER_DICTIONARY_SETTINGS" />
-    </PreferenceScreen>
+            android:title="@string/edit_personal_dictionary" />
 
     <PreferenceCategory
         android:title="@string/settings_category_replacements">
