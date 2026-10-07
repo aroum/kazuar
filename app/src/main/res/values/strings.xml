@@ -48,7 +48,7 @@
     <!-- Settings screen title for accounts and privacy preferences [CHAR LIMIT=33]-->
     <string name="settings_screen_accounts">Accounts &amp; Privacy</string>
     <!-- Settings screen title for appearance & layouts preferences [CHAR LIMIT=33] -->
-    <string name="settings_screen_appearance">Appearance &amp; Layouts</string>
+    <string name="settings_screen_appearance">Themes &amp; Appearance</string>
     <!-- Settings screen title for gesture typing preferences [CHAR_LIMIT=33] -->
     <string name="settings_screen_gesture">Gesture Typing</string>
     <!-- Settings screen title for text correction options [CHAR_LIMIT=33] -->
@@ -633,4 +633,15 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
         <item>Emoji</item>
         <item>Clipboard</item>
     </string-array>
+
+    <!-- New settings screen titles and categories -->
+    <string name="settings_screen_layouts_clipboard">Layouts &amp; Clipboard</string>
+    <string name="settings_screen_sound_vibration">Sound &amp; Vibration</string>
+    <string name="settings_screen_actions">Gestures &amp; Actions</string>
+    <string name="settings_category_space_bar">Space bar behavior</string>
+    <string name="settings_category_input_automation">Input automation</string>
+    <string name="settings_category_vibration">Vibration</string>
+    <string name="settings_category_sound">Sound</string>
+    <string name="settings_category_physical_keyboard">Physical keyboard</string>
+    <string name="settings_category_display_sizing">Display &amp; Sizing</string>
 </resources>

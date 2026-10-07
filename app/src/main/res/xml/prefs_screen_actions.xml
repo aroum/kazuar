@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2014 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/settings_screen_actions"
+    android:key="screen_actions">
+
+    <PreferenceCategory
+        android:title="@string/settings_category_space_bar">
+
+        <CheckBoxPreference
+            android:key="pref_space_trackpad"
+            android:title="@string/space_trackpad"
+            android:summary="@string/space_trackpad_summary"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="prefs_long_press_keyboard_to_change_lang"
+            android:title="@string/prefs_long_press_keyboard_to_change_lang"
+            android:summary="@string/prefs_long_press_keyboard_to_change_lang_summary"
+            android:persistent="true"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="pref_key_use_double_space_period"
+            android:title="@string/use_double_space_period"
+            android:summary="@string/use_double_space_period_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
+
+        <CheckBoxPreference
+            android:key="pref_key_use_multi_space_punctuation"
+            android:title="@string/use_multi_space_punctuation"
+            android:summary="@string/use_multi_space_punctuation_summary"
+            android:defaultValue="false"
+            android:persistent="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/settings_category_input_automation">
+
+        <CheckBoxPreference
+            android:key="pref_autospace_after_punctuation"
+            android:title="@string/autospace_after_punctuation"
+            android:summary="@string/autospace_after_punctuation_summary"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="pref_delete_swipe"
+            android:title="@string/delete_swipe"
+            android:summary="@string/delete_swipe_summary"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/settings_category_actions">
+
+        <CheckBoxPreference
+            android:key="pref_enable_double_tap_replacements"
+            android:title="@string/pref_enable_double_taps_title"
+            android:summary="@string/pref_enable_double_taps_summary"
+            android:defaultValue="true" />
+
+        <PreferenceScreen
+            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
+            android:key="screen_double_tap_editor_ru"
+            android:title="@string/pref_setup_double_taps_ru"
+            android:dependency="pref_enable_double_tap_replacements">
+            <extra android:name="lang" android:value="ru" />
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
+            android:key="screen_double_tap_editor_en"
+            android:title="@string/pref_setup_double_taps_en"
+            android:dependency="pref_enable_double_tap_replacements">
+            <extra android:name="lang" android:value="en" />
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment"
+            android:key="screen_swipe_controls"
+            android:title="@string/pref_setup_swipe_controls" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

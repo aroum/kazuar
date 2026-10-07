@@ -17,20 +17,30 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:key="english_ime_settings">
     <PreferenceScreen
-        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.PreferencesSettingsFragment"
-        android:title="@string/settings_screen_preferences"
-        android:key="screen_preferences"
-        android:icon="@drawable/ic_settings_preferences"/>
-    <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.AppearanceSettingsFragment"
         android:title="@string/settings_screen_appearance"
         android:key="screen_appearance"
         android:icon="@drawable/ic_settings_appearance"/>
     <PreferenceScreen
+        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.LayoutSettingsFragment"
+        android:title="@string/settings_screen_layouts_clipboard"
+        android:key="screen_layouts_clipboard"
+        android:icon="@drawable/ic_settings_preferences"/>
+    <PreferenceScreen
+        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.FeedbackSettingsFragment"
+        android:title="@string/settings_screen_sound_vibration"
+        android:key="screen_sound_vibration"
+        android:icon="@drawable/ic_settings_preferences"/>
+    <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsFragment"
         android:title="@string/settings_screen_correction"
         android:key="screen_correction"
         android:icon="@drawable/ic_settings_correction"/>
+    <PreferenceScreen
+        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.ActionsSettingsFragment"
+        android:title="@string/settings_screen_actions"
+        android:key="screen_actions"
+        android:icon="@drawable/ic_settings_advanced"/>
     <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.AdvancedSettingsFragment"
         android:title="@string/settings_screen_advanced"

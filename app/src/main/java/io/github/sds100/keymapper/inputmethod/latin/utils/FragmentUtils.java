@@ -16,6 +16,7 @@
 
 package io.github.sds100.keymapper.inputmethod.latin.utils;
 
+import io.github.sds100.keymapper.inputmethod.latin.settings.ActionsSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.AdvancedSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.AppearanceSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.BackupSettingsFragment;
@@ -23,8 +24,10 @@ import io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsF
 import io.github.sds100.keymapper.inputmethod.latin.settings.CustomInputStyleSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.FeedbackSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.GestureSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.IncognitoModeRulesFragment;
+import io.github.sds100.keymapper.inputmethod.latin.settings.LayoutSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.PreferencesSettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsFragment;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment;
@@ -42,6 +45,9 @@ public class FragmentUtils {
     private static final Set<String> sLatinImeFragments = new HashSet<>(Arrays.asList(
             PreferencesSettingsFragment.class.getName(),
             AppearanceSettingsFragment.class.getName(),
+            LayoutSettingsFragment.class.getName(),
+            FeedbackSettingsFragment.class.getName(),
+            ActionsSettingsFragment.class.getName(),
             CustomInputStyleSettingsFragment.class.getName(),
             GestureSettingsFragment.class.getName(),
             CorrectionSettingsFragment.class.getName(),

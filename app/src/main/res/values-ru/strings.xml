@@ -25,7 +25,7 @@
     <string name="popup_on_keypress" msgid="123894815723512944">"Увеличивать при нажатии"</string>
     <string name="settings_screen_preferences" msgid="2696713156722014624">"Настройки"</string>
     <string name="settings_screen_accounts" msgid="2786418968536696670">"Аккаунты"</string>
-    <string name="settings_screen_appearance" msgid="7358046399111611615">"Вид и раскладки"</string>
+    <string name="settings_screen_appearance">"Темы и оформление"</string>
     <string name="settings_screen_gesture" msgid="8826372746901183556">"Непрерывный ввод"</string>
     <string name="settings_screen_correction" msgid="1616818407747682955">"Исправление текста"</string>
     <string name="settings_screen_advanced" msgid="7472408607625972994">"Дополнительные настройки"</string>
@@ -317,4 +317,15 @@
     </string-array>
 
     <string name="prefs_debug_settings_title">Режим отладки</string>
+
+    <!-- Новые названия экранов настроек и категорий -->
+    <string name="settings_screen_layouts_clipboard">Раскладки и буфер обмена</string>
+    <string name="settings_screen_sound_vibration">Звук и вибрация</string>
+    <string name="settings_screen_actions">Жесты и действия</string>
+    <string name="settings_category_space_bar">Поведение клавиши пробел</string>
+    <string name="settings_category_input_automation">Автоматизация ввода</string>
+    <string name="settings_category_vibration">Вибрация</string>
+    <string name="settings_category_sound">Звук</string>
+    <string name="settings_category_physical_keyboard">Физическая клавиатура</string>
+    <string name="settings_category_display_sizing">Отображение и размер</string>
 </resources>

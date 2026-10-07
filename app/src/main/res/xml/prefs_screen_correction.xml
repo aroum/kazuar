@@ -67,20 +67,6 @@
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
-            android:key="pref_key_use_double_space_period"
-            android:title="@string/use_double_space_period"
-            android:summary="@string/use_double_space_period_summary"
-            android:defaultValue="true"
-            android:persistent="true" />
-
-        <CheckBoxPreference
-            android:key="pref_key_use_multi_space_punctuation"
-            android:title="@string/use_multi_space_punctuation"
-            android:summary="@string/use_multi_space_punctuation_summary"
-            android:defaultValue="false"
-            android:persistent="true" />
-
     </PreferenceCategory>
 
     <PreferenceCategory

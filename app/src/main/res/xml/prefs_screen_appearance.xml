@@ -69,7 +69,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/settings_category_miscellaneous">
+        android:title="@string/settings_category_display_sizing">
 
         <CheckBoxPreference
             android:key="pref_resize_keyboard"
@@ -100,37 +100,6 @@
             android:key="pref_load_custom_file"
             android:title="@string/pref_load_custom_file_title"
             android:summary="@string/pref_load_custom_file_summary" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="@string/settings_category_layouts">
-
-        <CheckBoxPreference
-            android:key="pref_split_keyboard_portrait"
-            android:title="@string/enable_split_keyboard_portrait"
-            android:persistent="true"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
-            android:key="pref_split_keyboard_landscape"
-            android:title="@string/enable_split_keyboard_landscape"
-            android:persistent="true"
-            android:defaultValue="false" />
-
-        <ListPreference
-            android:key="pref_keyboard_layout_ru"
-            android:title="@string/pref_keyboard_layout_ru_title"
-            android:entries="@array/layout_choices_names"
-            android:entryValues="@array/layout_choices_values"
-            android:defaultValue="v3" />
-
-        <ListPreference
-            android:key="pref_keyboard_layout_en"
-            android:title="@string/pref_keyboard_layout_en_title"
-            android:entries="@array/layout_choices_names"
-            android:entryValues="@array/layout_choices_values"
-            android:defaultValue="v3" />
 
     </PreferenceCategory>
 

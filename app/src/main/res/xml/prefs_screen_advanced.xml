@@ -25,68 +25,15 @@
         android:key="screen_incognito_mode_rules"
         android:title="@string/prefs_incognito_mode_rules_title" />
 
-    <CheckBoxPreference
-        android:key="prefs_long_press_keyboard_to_change_lang"
-        android:title="@string/prefs_long_press_keyboard_to_change_lang"
-        android:summary="@string/prefs_long_press_keyboard_to_change_lang_summary"
-        android:persistent="true"
-        android:defaultValue="true" />
-
-    <CheckBoxPreference
-        android:key="pref_enable_emoji_alt_physical_key"
-        android:title="@string/prefs_enable_emoji_alt_physical_key"
-        android:summary="@string/prefs_enable_emoji_alt_physical_key_summary"
-        android:defaultValue="true"
-        android:persistent="true" />
-
-
-    <CheckBoxPreference
-        android:key="pref_autospace_after_punctuation"
-        android:title="@string/autospace_after_punctuation"
-        android:summary="@string/autospace_after_punctuation_summary"
-        android:defaultValue="false" />
-
     <PreferenceCategory
-        android:title="@string/settings_category_actions">
+        android:title="@string/settings_category_physical_keyboard">
 
         <CheckBoxPreference
-            android:key="pref_space_trackpad"
-            android:title="@string/space_trackpad"
-            android:summary="@string/space_trackpad_summary"
-            android:defaultValue="true" />
-
-        <CheckBoxPreference
-            android:key="pref_delete_swipe"
-            android:title="@string/delete_swipe"
-            android:summary="@string/delete_swipe_summary"
-            android:defaultValue="true" />
-
-        <CheckBoxPreference
-            android:key="pref_enable_double_tap_replacements"
-            android:title="@string/pref_enable_double_taps_title"
-            android:summary="@string/pref_enable_double_taps_summary"
-            android:defaultValue="true" />
-
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
-            android:key="screen_double_tap_editor_ru"
-            android:title="@string/pref_setup_double_taps_ru"
-            android:dependency="pref_enable_double_tap_replacements">
-            <extra android:name="lang" android:value="ru" />
-        </PreferenceScreen>
-
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
-            android:key="screen_double_tap_editor_en"
-            android:title="@string/pref_setup_double_taps_en"
-            android:dependency="pref_enable_double_tap_replacements">
-            <extra android:name="lang" android:value="en" />
-        </PreferenceScreen>
-
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment"
-            android:key="screen_swipe_controls"
-            android:title="@string/pref_setup_swipe_controls" />
+            android:key="pref_enable_emoji_alt_physical_key"
+            android:title="@string/prefs_enable_emoji_alt_physical_key"
+            android:summary="@string/prefs_enable_emoji_alt_physical_key_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
 
     </PreferenceCategory>
 
@@ -106,8 +53,7 @@
             latin:minValue="100"
             latin:maxValue="1000"
             latin:stepValue="50"
-            android:defaultValue="400"
-            android:dependency="pref_enable_double_tap_replacements" />
+            android:defaultValue="400" />
 
         <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_double_swipe_timeout"
