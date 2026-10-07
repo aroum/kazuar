@@ -30,7 +30,7 @@
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.FeedbackSettingsFragment"
         android:title="@string/settings_screen_sound_vibration"
         android:key="screen_sound_vibration"
-        android:icon="@drawable/ic_settings_preferences"/>
+        android:icon="@drawable/ic_settings_sound"/>
     <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.CorrectionSettingsFragment"
         android:title="@string/settings_screen_correction"
@@ -40,7 +40,7 @@
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.ActionsSettingsFragment"
         android:title="@string/settings_screen_actions"
         android:key="screen_actions"
-        android:icon="@drawable/ic_settings_advanced"/>
+        android:icon="@drawable/ic_settings_actions"/>
     <PreferenceScreen
         android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.AdvancedSettingsFragment"
         android:title="@string/settings_screen_advanced"
