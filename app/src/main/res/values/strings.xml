@@ -560,9 +560,11 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="delete">Delete</string>
     <string name="select_icon_style">Select icon style</string>
     <string name="settings_category_customization">Customization</string>
-    <string name="pref_load_custom_file_title">Load theme or layout from file</string>
-    <string name="pref_load_custom_file_summary">Choose an XML layout file or JSON theme file</string>
+    <string name="pref_load_custom_file_title">Load theme from file</string>
+    <string name="pref_load_custom_file_summary">Choose a JSON theme file</string>
     <string name="settings_category_layouts">Layouts</string>
+    <string name="pref_load_custom_layout_title">Load layout from file</string>
+    <string name="pref_load_custom_layout_summary">Choose an XML layout file</string>
     <string name="pref_keyboard_layout_ru_title">Keyboard layout for ru</string>
     <string name="pref_keyboard_layout_en_title">Keyboard layout for en</string>
     <string name="settings_category_actions">Actions</string>

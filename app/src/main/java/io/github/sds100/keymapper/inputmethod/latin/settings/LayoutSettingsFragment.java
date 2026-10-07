@@ -16,7 +16,9 @@
 
 package io.github.sds100.keymapper.inputmethod.latin.settings;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -29,6 +31,8 @@ import io.github.sds100.keymapper.inputmethod.latin.define.ProductionFlags;
 
 public final class LayoutSettingsFragment extends SubScreenFragment {
 
+    private static final int REQ_LOAD_CUSTOM_LAYOUT = 2002;
+
     @Override
     public void onCreate(final Bundle icicle) {
         super.onCreate(icicle);
@@ -40,8 +44,15 @@ public final class LayoutSettingsFragment extends SubScreenFragment {
         }
 
         setupLayoutPickers();
+        setupLoadCustomLayout();
         setupHistoryRetentionTimeSettings();
         refreshEnablingsOfClipboardSettings();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateLayoutPickersState();
     }
 
     @Override
@@ -94,6 +105,55 @@ public final class LayoutSettingsFragment extends SubScreenFragment {
                     return true;
                 }
             });
+        }
+    }
+
+    private void setupLoadCustomLayout() {
+        final Preference loadLayoutPref = findPreference("pref_load_custom_layout");
+        if (loadLayoutPref != null) {
+            loadLayoutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(final Preference preference) {
+                    final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("*/*");
+                    startActivityForResult(intent, REQ_LOAD_CUSTOM_LAYOUT);
+                    return true;
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+
+        if (requestCode == REQ_LOAD_CUSTOM_LAYOUT) {
+            final Activity activity = getActivity();
+            if (activity == null) return;
+            CustomLayoutHelper.handleLoadedLayout(activity, data.getData(), new CustomLayoutHelper.Callback() {
+                @Override
+                public void onLayoutLoaded(final String language) {
+                    updateLayoutPickersState();
+                }
+            });
+        }
+    }
+
+    private void updateLayoutPickersState() {
+        final SharedPreferences prefs = getSharedPreferences();
+        final ListPreference ruPref = (ListPreference)findPreference("pref_keyboard_layout_ru");
+        if (ruPref != null) {
+            ruPref.setValue(prefs.getString("pref_keyboard_layout_ru", "v3"));
+            ruPref.setSummary(ruPref.getEntry());
+        }
+        final ListPreference enPref = (ListPreference)findPreference("pref_keyboard_layout_en");
+        if (enPref != null) {
+            enPref.setValue(prefs.getString("pref_keyboard_layout_en", "v3"));
+            enPref.setSummary(enPref.getEntry());
         }
     }
 

@@ -49,6 +49,11 @@
             android:entryValues="@array/layout_choices_values"
             android:defaultValue="v3" />
 
+        <Preference
+            android:key="pref_load_custom_layout"
+            android:title="@string/pref_load_custom_layout_title"
+            android:summary="@string/pref_load_custom_layout_summary" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

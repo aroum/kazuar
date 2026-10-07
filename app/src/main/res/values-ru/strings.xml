@@ -243,9 +243,11 @@
     <string name="delete">Удалить</string>
     <string name="select_icon_style">Стиль иконки приложения</string>
     <string name="settings_category_customization">Пользовательские настройки</string>
-    <string name="pref_load_custom_file_title">Загрузить тему или раскладку из файла</string>
-    <string name="pref_load_custom_file_summary">Выберите XML-файл раскладки или JSON-файл темы</string>
+    <string name="pref_load_custom_file_title">Загрузить тему из файла</string>
+    <string name="pref_load_custom_file_summary">Выберите JSON-файл темы</string>
     <string name="settings_category_layouts">Раскладки</string>
+    <string name="pref_load_custom_layout_title">Загрузить раскладку из файла</string>
+    <string name="pref_load_custom_layout_summary">Выберите XML-файл раскладки</string>
     <string name="pref_keyboard_layout_ru_title">Раскладка для русского (ru)</string>
     <string name="pref_keyboard_layout_en_title">Раскладка для английского (en)</string>
     <string name="settings_category_actions">Действия и жесты</string>
