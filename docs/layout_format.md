@@ -100,18 +100,14 @@ Defines autocorrection or double-tap replacement rules.
 - **`from`**: The character sequence to detect (e.g., `from="чч"`).
 - **`to`**: The sequence to replace it with (e.g., `to="ф"`).
 
-#### Case Sensitivity
+#### Automatic Case Matching
 
-XML layout replacements are **strictly case-sensitive**.
+Double-tap rules automatically preserve and adapt to letter casing:
 
-- `ЧЧ` and `чч` are **different** sequences!
-- If you define `<Replace from="ЧЧ" to="Ф" />`, double-tapping lowercase `ч` (which outputs `чч`) will **not** match the rule.
-- To support both upper and lowercase double-taps, you must declare both rules separately:
-
-  ```xml
-  <Replace from="чч" to="ф" />
-  <Replace from="ЧЧ" to="Ф" />
-  ```
+- Define the rule using **lowercase** characters (e.g. `<Replace from="чч" to="ц" />`).
+- **Lowercase double-tap**: Tapping `ч` twice (`чч`) outputs lowercase `ц`.
+- **Uppercase double-tap**: Tapping `Ч` with Shift or Caps Lock (`ЧЧ` or `Чч`) automatically outputs uppercase `Ц`.
+- You do **not** need to declare separate uppercase rules (such as `from="ЧЧ" to="Ц"`), as the engine handles uppercase conversion dynamically.
 
 #### Limitations & Preconfigured Rules
 
