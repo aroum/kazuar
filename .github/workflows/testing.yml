@@ -93,10 +93,10 @@ jobs:
           
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG_NAME="${{ github.ref_name }}"
-            RELEASE_TITLE="Kazuar Keyboard ${TAG_NAME}"
+            RELEASE_TITLE="${TAG_NAME}"
             ARTIFACT_NAME="kazuar-keyboard-${TAG_NAME}"
           else
-            RELEASE_TITLE="Kazuar Keyboard ${BUILD_DATE} (Nightly)"
+            RELEASE_TITLE="${BUILD_DATE} (Nightly)"
             ARTIFACT_NAME="kazuar-keyboard-${BUILD_DATE}-nightly"
           fi
           
@@ -151,14 +151,24 @@ jobs:
           generate_release_notes: true
           prerelease: false
 
-      - name: Update Nightly GitHub Release (Normal Push)
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/')
+      - name: Clean up previous Nightly release
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete nightly --yes --cleanup-tag || true
+          sleep 2
+
+      - name: Create Nightly GitHub Release
+        if: "!startsWith(github.ref, 'refs/tags/')"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly
+          target_commitish: ${{ github.sha }}
           name: ${{ env.RELEASE_TITLE }}
           body: "Automated nightly build (${{ env.BUILD_DATE }}) from master branch."
           files: app/build/outputs/apk/ci/*.apk
           prerelease: true
           make_latest: false
+
 
