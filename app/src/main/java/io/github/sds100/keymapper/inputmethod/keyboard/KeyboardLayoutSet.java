@@ -245,9 +245,7 @@ public final class KeyboardLayoutSet {
         
         final android.content.SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(mContext);
         final String language = id.getLocale().getLanguage();
-        final String layoutVersion = "ru".equals(language) ?
-                prefs.getString("pref_keyboard_layout_ru", "v3") :
-                prefs.getString("pref_keyboard_layout_en", "v3");
+        final String layoutVersion = prefs.getString("pref_keyboard_layout_" + language, "v3");
 
         boolean loadedCustom = false;
         if (id.mElementId == KeyboardId.ELEMENT_EDITING) {

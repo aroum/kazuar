@@ -55,6 +55,7 @@ object CustomLayoutHelper {
         }
 
         var language: String? = null
+        val parsedReplaceRules = mutableListOf<Pair<String, String>>()
         try {
             val factory = XmlPullParserFactory.newInstance()
             val parser = factory.newPullParser()
@@ -62,19 +63,33 @@ object CustomLayoutHelper {
             var eventType = parser.eventType
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 if (eventType == XmlPullParser.START_TAG) {
-                    for (i in 0 until parser.attributeCount) {
-                        val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
-                        if (attrName == "language" || attrName == "locale") {
-                            val attrVal = parser.getAttributeValue(i)?.lowercase(Locale.ROOT) ?: ""
-                            if (attrVal.contains("ru") || attrVal.contains("rus") || attrVal.contains("slavic")) {
-                                language = "ru"
-                            } else if (attrVal.contains("en") || attrVal.contains("eng") || attrVal.contains("qwerty")) {
-                                language = "en"
+                    val tagName = parser.name
+                    if (language == null) {
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "language" || attrName == "locale") {
+                                val attrVal = parser.getAttributeValue(i)?.lowercase(Locale.ROOT) ?: ""
+                                if (attrVal.contains("ru") || attrVal.contains("rus") || attrVal.contains("slavic")) {
+                                    language = "ru"
+                                } else if (attrVal.contains("en") || attrVal.contains("eng") || attrVal.contains("qwerty")) {
+                                    language = "en"
+                                }
+                                break
                             }
-                            break
                         }
                     }
-                    if (language != null) break
+                    if ("Replace".equals(tagName, ignoreCase = true)) {
+                        var from: String? = null
+                        var to: String? = null
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "from") from = parser.getAttributeValue(i)
+                            else if (attrName == "to") to = parser.getAttributeValue(i)
+                        }
+                        if (from != null && to != null) {
+                            parsedReplaceRules.add(Pair(from, to))
+                        }
+                    }
                 }
                 eventType = parser.next()
             }
@@ -95,7 +110,7 @@ object CustomLayoutHelper {
 
         if (language == "ru" || language == "en") {
             try {
-                applyCustomLayout(context, trimmed, language, callback)
+                applyCustomLayout(context, trimmed, language, parsedReplaceRules, callback)
             } catch (e: Exception) {
                 Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
             }
@@ -109,7 +124,7 @@ object CustomLayoutHelper {
                 .setItems(options) { _, which ->
                     val selectedLang = if (which == 0) "ru" else "en"
                     try {
-                        applyCustomLayout(context, trimmed, selectedLang, callback)
+                        applyCustomLayout(context, trimmed, selectedLang, parsedReplaceRules, callback)
                     } catch (e: Exception) {
                         Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
                     }
@@ -120,29 +135,39 @@ object CustomLayoutHelper {
     }
 
     @JvmStatic
-    fun applyCustomLayout(context: Context, xmlContent: String, language: String, callback: Callback? = null) {
-        val replaceRules = mutableListOf<Pair<String, String>>()
-        val factory = XmlPullParserFactory.newInstance()
-        val parser = factory.newPullParser()
-        parser.setInput(StringReader(xmlContent))
-        var eventType = parser.eventType
-        while (eventType != XmlPullParser.END_DOCUMENT) {
-            if (eventType == XmlPullParser.START_TAG) {
-                val tagName = parser.name
-                if ("Replace".equals(tagName, ignoreCase = true)) {
-                    var from: String? = null
-                    var to: String? = null
-                    for (i in 0 until parser.attributeCount) {
-                        val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
-                        if (attrName == "from") from = parser.getAttributeValue(i)
-                        else if (attrName == "to") to = parser.getAttributeValue(i)
-                    }
-                    if (from != null && to != null) {
-                        replaceRules.add(Pair(from, to))
+    @JvmOverloads
+    fun applyCustomLayout(
+        context: Context,
+        xmlContent: String,
+        language: String,
+        replaceRules: List<Pair<String, String>>? = null,
+        callback: Callback? = null
+    ) {
+        val rulesToApply = replaceRules ?: run {
+            val rules = mutableListOf<Pair<String, String>>()
+            val factory = XmlPullParserFactory.newInstance()
+            val parser = factory.newPullParser()
+            parser.setInput(StringReader(xmlContent))
+            var eventType = parser.eventType
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG) {
+                    val tagName = parser.name
+                    if ("Replace".equals(tagName, ignoreCase = true)) {
+                        var from: String? = null
+                        var to: String? = null
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "from") from = parser.getAttributeValue(i)
+                            else if (attrName == "to") to = parser.getAttributeValue(i)
+                        }
+                        if (from != null && to != null) {
+                            rules.add(Pair(from, to))
+                        }
                     }
                 }
+                eventType = parser.next()
             }
-            eventType = parser.next()
+            rules
         }
 
         val prefs = DeviceProtectedUtils.getSharedPreferences(context)
@@ -158,7 +183,7 @@ object CustomLayoutHelper {
             }
         }
 
-        for (rule in replaceRules) {
+        for (rule in rulesToApply) {
             val fromStr = rule.first
             val toStr = rule.second
             if (fromStr.isNotEmpty()) {
