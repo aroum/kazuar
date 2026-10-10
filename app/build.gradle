@@ -12,7 +12,8 @@ android {
         minSdkVersion 19
         targetSdkVersion 34
         versionCode 31
-        versionName '26.10.07'
+        def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.08')
+        versionName appVersionName
     }
 
     signingConfigs {

@@ -79,14 +79,6 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > release.jks
           cp release.jks app/release.jks
 
-      - name: Build debug APK
-        run: bash ./gradlew assembleCi --stacktrace
-        env:
-          RELEASE_KEYSTORE_PATH: "release.jks"
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
       - name: Prepare build metadata and artifact names
         run: |
           BUILD_DATE=$(date -u +'%y.%m.%d')
@@ -95,14 +87,26 @@ jobs:
             TAG_NAME="${{ github.ref_name }}"
             RELEASE_TITLE="${TAG_NAME}"
             ARTIFACT_NAME="kazuar-keyboard-${TAG_NAME}"
+            VERSION_NAME="${TAG_NAME}"
           else
             RELEASE_TITLE="${BUILD_DATE} (Nightly)"
             ARTIFACT_NAME="kazuar-keyboard-${BUILD_DATE}-nightly"
+            VERSION_NAME="${BUILD_DATE}"
           fi
           
           echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_ENV
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+
+      - name: Build debug APK
+        run: bash ./gradlew assembleCi --stacktrace
+        env:
+          VERSION_NAME: ${{ env.VERSION_NAME }}
+          RELEASE_KEYSTORE_PATH: "release.jks"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Prepare APK artifact names
         run: |
@@ -113,6 +117,12 @@ jobs:
             if [ -n "$UNIVERSAL_APK" ] && [ -f "$UNIVERSAL_APK" ]; then
               cp -f "$UNIVERSAL_APK" "kazuar-keyboard-${TAG_NAME}.apk" || true
             fi
+            for arch in arm64-v8a armeabi-v7a x86_64 x86; do
+              SOURCE_APK=$(ls *${arch}*.apk 2>/dev/null | head -n 1 || true)
+              if [ -n "$SOURCE_APK" ] && [ -f "$SOURCE_APK" ] && [ "$SOURCE_APK" != "kazuar-keyboard-${TAG_NAME}-${arch}.apk" ]; then
+                mv -f "$SOURCE_APK" "kazuar-keyboard-${TAG_NAME}-${arch}.apk" || true
+              fi
+            done
           else
             BUILD_DATE=$(date -u +'%y.%m.%d')
             # Create nightly-named split APKs for all architectures
