@@ -22,6 +22,7 @@ import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.inputmethod.EditorInfo;
 
 import io.github.sds100.keymapper.inputmethod.compat.AppWorkaroundsUtils;
@@ -121,6 +122,7 @@ public class SettingsValues {
     public final String mKeyboardLayoutEn;
     public final ArrayList<DoubleTapRule> mCustomDoubleTapRules;
     public final Map<String, String> mCustomDoubleTapRulesMap;
+    public final SparseArray<String> mCustomDoubleTapRulesByCodePoint;
     public final float mSwipeThreshold;
     public final int mSwipeUpAction;
     public final int mSwipeDownAction;
@@ -293,14 +295,19 @@ public class SettingsValues {
         mKeyboardLayoutRu = prefs.getString("pref_keyboard_layout_ru", "v3");
         mKeyboardLayoutEn = prefs.getString("pref_keyboard_layout_en", "v3");
         final String lang = mLocale != null && mLocale.getLanguage() != null ? mLocale.getLanguage() : "";
-        final String layoutVersion = "ru".equals(lang) ? mKeyboardLayoutRu : mKeyboardLayoutEn;
+        final String layoutVersion = prefs.getString("pref_keyboard_layout_" + lang, "v3");
         final String rulesJson = prefs.getString("pref_custom_double_tap_rules_" + lang + "_" + layoutVersion, "ru".equals(lang) ? DEFAULT_RULES_JSON : "[]");
         mCustomDoubleTapRules = parseDoubleTapRules(rulesJson);
         mCustomDoubleTapRulesMap = new HashMap<>();
+        mCustomDoubleTapRulesByCodePoint = new SparseArray<>();
         if (mCustomDoubleTapRules != null) {
             for (DoubleTapRule rule : mCustomDoubleTapRules) {
                 if (rule != null && rule.enabled && rule.key != null && rule.replacement != null) {
-                    mCustomDoubleTapRulesMap.put(rule.key.toLowerCase(Locale.ROOT), rule.replacement);
+                    final String lowerKey = rule.key.toLowerCase(Locale.ROOT);
+                    mCustomDoubleTapRulesMap.put(lowerKey, rule.replacement);
+                    if (!lowerKey.isEmpty()) {
+                        mCustomDoubleTapRulesByCodePoint.put(lowerKey.codePointAt(0), rule.replacement);
+                    }
                 }
             }
         }

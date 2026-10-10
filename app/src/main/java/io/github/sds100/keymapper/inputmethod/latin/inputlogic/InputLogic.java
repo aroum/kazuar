@@ -142,19 +142,17 @@ public final class InputLogic {
     };
 
     private static boolean isDoubleTapTriggerCandidate(final int codePoint, final SettingsValues settingsValues) {
-        if (codePoint < 0 || settingsValues.mCustomDoubleTapRulesMap == null) return false;
-        final String key = String.valueOf(Character.toChars(Character.toLowerCase(codePoint)));
-        return settingsValues.mCustomDoubleTapRulesMap.containsKey(key);
+        if (codePoint < 0 || settingsValues.mCustomDoubleTapRulesByCodePoint == null) return false;
+        return settingsValues.mCustomDoubleTapRulesByCodePoint.indexOfKey(Character.toLowerCase(codePoint)) >= 0;
     }
 
     private static String getDoubleTapReplacement(final int prevCodePoint, final int currentCodePoint, final SettingsValues settingsValues) {
-        if (prevCodePoint < 0 || currentCodePoint < 0 || settingsValues.mCustomDoubleTapRulesMap == null) return null;
+        if (prevCodePoint < 0 || currentCodePoint < 0 || settingsValues.mCustomDoubleTapRulesByCodePoint == null) return null;
         final int lowerPrev = Character.toLowerCase(prevCodePoint);
         final int lowerCurrent = Character.toLowerCase(currentCodePoint);
         if (lowerPrev != lowerCurrent) return null;
 
-        final String key = String.valueOf(Character.toChars(lowerCurrent));
-        final String replacement = settingsValues.mCustomDoubleTapRulesMap.get(key);
+        final String replacement = settingsValues.mCustomDoubleTapRulesByCodePoint.get(lowerCurrent);
         if (replacement != null) {
             if (Character.isLetter(currentCodePoint) && (Character.isUpperCase(prevCodePoint) || Character.isUpperCase(currentCodePoint))) {
                 final StringBuilder sb = new StringBuilder();

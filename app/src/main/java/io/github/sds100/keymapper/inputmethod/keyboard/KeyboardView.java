@@ -129,6 +129,7 @@ public class KeyboardView extends View {
     private boolean mShowsDoubleTapHints = true;
     private boolean mEnableDoubleTapReplacements = false;
     private java.util.Map<String, String> mCustomDoubleTapRulesMap = null;
+    private android.util.SparseArray<String> mCustomDoubleTapRulesByCodePoint = null;
     private final Paint mCustomThemeKeyPaint = new Paint();
     private final RectF mCustomThemeKeyRect = new RectF();
     private boolean mCustomThemeHasBorders = true;
@@ -317,6 +318,7 @@ public class KeyboardView extends View {
             mShowsDoubleTapHints = currentSettings.mShowsDoubleTapHints;
             mEnableDoubleTapReplacements = currentSettings.mEnableDoubleTapReplacements;
             mCustomDoubleTapRulesMap = currentSettings.mCustomDoubleTapRulesMap;
+            mCustomDoubleTapRulesByCodePoint = currentSettings.mCustomDoubleTapRulesByCodePoint;
             if (mIsCustomTheme) {
                 mCustomThemeHasBorders = currentSettings.mThemeKeyBorders;
             }
@@ -517,8 +519,14 @@ public class KeyboardView extends View {
         }
 
         // Draw double-tap hint label in top-left corner.
-        if (mShowsDoubleTapHints && mEnableDoubleTapReplacements && mCustomDoubleTapRulesMap != null && label != null) {
-            final String doubleTapReplacement = mCustomDoubleTapRulesMap.get(label.toLowerCase(java.util.Locale.ROOT));
+        if (mShowsDoubleTapHints && mEnableDoubleTapReplacements && label != null) {
+            String doubleTapReplacement = null;
+            final int primaryCode = key.getCode();
+            if (primaryCode > 0 && mCustomDoubleTapRulesByCodePoint != null) {
+                doubleTapReplacement = mCustomDoubleTapRulesByCodePoint.get(Character.toLowerCase(primaryCode));
+            } else if (mCustomDoubleTapRulesMap != null) {
+                doubleTapReplacement = mCustomDoubleTapRulesMap.get(label.toLowerCase(java.util.Locale.ROOT));
+            }
             if (doubleTapReplacement != null && !doubleTapReplacement.isEmpty()) {
                 paint.setTextSize(key.selectHintTextSize(params));
                 if (mIsCustomTheme) {
