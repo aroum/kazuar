@@ -11,8 +11,8 @@ android {
         applicationId "io.github.sds100.keymapper.inputmethod.latin"
         minSdkVersion 19
         targetSdkVersion 34
-        versionCode 31
-        def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.08')
+        versionCode 32
+        def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.18')
         versionName appVersionName
     }
 
