@@ -173,6 +173,7 @@
     <string name="show_double_tap_hints_summary">Отображать символы дабл-тапа в левом верхнем углу</string>
     <string name="prefs_resize_keyboard">"Включить изменение размера клавиатуры"</string>
     <string name="prefs_keyboard_height_scale">"Масштабирование по высоте"</string>
+    <string name="prefs_keyboard_row_gap_scale">"Расстояние между рядами"</string>
     <string name="delete_swipe">"Удаление жестом"</string>
     <string name="space_trackpad">"Жест по пробелу"</string>
     <string name="delete_swipe_summary">Быстрое удаление текста жестом по клавише удаления</string>

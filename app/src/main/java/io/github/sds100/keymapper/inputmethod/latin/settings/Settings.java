@@ -96,6 +96,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_ENABLE_SPLIT_KEYBOARD_PORTRAIT = "pref_split_keyboard_portrait";
     public static final String PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE = "pref_split_keyboard_landscape";
     public static final String PREF_KEYBOARD_HEIGHT_SCALE = "pref_keyboard_height_scale";
+    public static final String PREF_KEYBOARD_ROW_GAP_SCALE = "pref_keyboard_row_gap_scale";
     public static final String PREF_SPACE_TRACKPAD = "pref_space_trackpad";
     public static final String PREF_DELETE_SWIPE = "pref_delete_swipe";
     public static final String PREF_AUTOSPACE_AFTER_PUNCTUATION = "pref_autospace_after_punctuation";
@@ -205,7 +206,9 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                     || "pref_keyboard_layout_num".equals(key) || "pref_custom_layout_num".equals(key)
                     || "pref_keyboard_layout_usr0".equals(key) || "pref_custom_layout_usr0".equals(key)
                     || "pref_keyboard_layout_usr1".equals(key) || "pref_custom_layout_usr1".equals(key)
-                    || "pref_keyboard_layout_usr2".equals(key) || "pref_custom_layout_usr2".equals(key)) {
+                    || "pref_keyboard_layout_usr2".equals(key) || "pref_custom_layout_usr2".equals(key)
+                    || PREF_KEYBOARD_HEIGHT_SCALE.equals(key) || PREF_KEYBOARD_ROW_GAP_SCALE.equals(key)
+                    || DebugSettings.PREF_RESIZE_KEYBOARD.equals(key)) {
                 KeyboardLayoutSet.clearKeyboardCache();
             }
         } finally {
@@ -423,6 +426,13 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                                            final float defaultValue) {
         final float percentage = prefs.getFloat(
                 Settings.PREF_KEYBOARD_HEIGHT_SCALE, UNDEFINED_PREFERENCE_VALUE_FLOAT);
+        return (percentage != UNDEFINED_PREFERENCE_VALUE_FLOAT) ? percentage : defaultValue;
+    }
+
+    public static float readKeyboardRowGap(final SharedPreferences prefs,
+                                           final float defaultValue) {
+        final float percentage = prefs.getFloat(
+                Settings.PREF_KEYBOARD_ROW_GAP_SCALE, UNDEFINED_PREFERENCE_VALUE_FLOAT);
         return (percentage != UNDEFINED_PREFERENCE_VALUE_FLOAT) ? percentage : defaultValue;
     }
 

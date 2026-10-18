@@ -156,6 +156,7 @@ public final class KeyboardLayoutSet {
         // Indicates if split layout is actually enabled, taking into account
         // whether the user has enabled it, and the keyboard layout supports it.
         boolean mIsSplitLayoutEnabled;
+        float mRowGapScale = 1.0f;
         // Sparse array of KeyboardLayoutSet element parameters indexed by element's id.
         final SparseArray<ElementParams> mKeyboardLayoutSetElementIdToParamsMap =
                 new SparseArray<>();
@@ -471,6 +472,11 @@ public final class KeyboardLayoutSet {
 
         public Builder setOneHandedModeEnabled(boolean enabled) {
             mParams.mOneHandedModeEnabled = enabled;
+            return this;
+        }
+
+        public Builder setRowGapScale(final float scale) {
+            mParams.mRowGapScale = scale;
             return this;
         }
 

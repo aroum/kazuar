@@ -90,6 +90,7 @@ public final class KeyboardId {
     public final boolean mHasShortcutKey;
     public final boolean mIsSplitLayout;
     public final boolean mOneHandedModeEnabled;
+    public final float mRowGapScale;
 
     private final int mHashCode;
 
@@ -109,6 +110,7 @@ public final class KeyboardId {
         mHasShortcutKey = params.mVoiceInputKeyEnabled;
         mIsSplitLayout = params.mIsSplitLayoutEnabled;
         mOneHandedModeEnabled = params.mOneHandedModeEnabled;
+        mRowGapScale = params.mRowGapScale;
 
         mHashCode = computeHashCode(this);
     }
@@ -131,7 +133,9 @@ public final class KeyboardId {
                 id.navigateNext(),
                 id.navigatePrevious(),
                 id.mSubtype,
-                id.mIsSplitLayout
+                id.mIsSplitLayout,
+                id.mOneHandedModeEnabled,
+                id.mRowGapScale
         });
     }
 
@@ -154,7 +158,9 @@ public final class KeyboardId {
                 && other.navigateNext() == navigateNext()
                 && other.navigatePrevious() == navigatePrevious()
                 && other.mSubtype.equals(mSubtype)
-                && other.mIsSplitLayout == mIsSplitLayout;
+                && other.mIsSplitLayout == mIsSplitLayout
+                && other.mOneHandedModeEnabled == mOneHandedModeEnabled
+                && Float.compare(other.mRowGapScale, mRowGapScale) == 0;
     }
 
     private static boolean isAlphabetKeyboard(final int elementId) {
@@ -205,7 +211,7 @@ public final class KeyboardId {
 
     @Override
     public String toString() {
-        return String.format(Locale.ROOT, "[%s %s:%s %dx%d %s %s%s%s%s%s%s%s%s%s]",
+        return String.format(Locale.ROOT, "[%s %s:%s %dx%d %s %s%s%s%s%s%s%s%s%s%s%s rowGapScale=%.2f]",
                 elementIdToName(mElementId),
                 mSubtype.getLocale(),
                 mSubtype.getExtraValueOf(KEYBOARD_LAYOUT_SET),
@@ -221,7 +227,9 @@ public final class KeyboardId {
                 (mLanguageSwitchKeyEnabled ? " languageSwitchKeyEnabled" : ""),
                 (mEmojiKeyEnabled ? " emojiKeyEnabled" : ""),
                 (isMultiLine() ? " isMultiLine" : ""),
-                (mIsSplitLayout ? " isSplitLayout" : "")
+                (mIsSplitLayout ? " isSplitLayout" : ""),
+                (mOneHandedModeEnabled ? " oneHandedMode" : ""),
+                mRowGapScale
         );
     }
 

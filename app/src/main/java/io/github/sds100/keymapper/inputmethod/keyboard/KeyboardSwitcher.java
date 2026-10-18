@@ -79,6 +79,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     private boolean mKeyboardsPrewarmed = false;
     private int mLastPrewarmedWidth = 0;
     private int mLastPrewarmedHeight = 0;
+    private float mLastPrewarmedRowGapScale = 1.0f;
 
     private static final KeyboardSwitcher sInstance = new KeyboardSwitcher();
 
@@ -142,6 +143,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
                 && !settingsValues.mOneHandedModeEnabled);
         final boolean oneHandedModeEnabled = settingsValues.mOneHandedModeEnabled;
         builder.setOneHandedModeEnabled(oneHandedModeEnabled);
+        builder.setRowGapScale(settingsValues.mKeyboardRowGapScale);
         mKeyboardLayoutSet = builder.build();
         try {
             mState.onLoadKeyboard(currentAutoCapsState, currentRecapitalizeState,
@@ -156,12 +158,15 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     private void scheduleKeyboardPrewarming(final EditorInfo editorInfo, final SettingsValues settingsValues,
                                             final int keyboardWidth, final int keyboardHeight,
                                             final boolean oneHandedModeEnabled) {
-        final boolean geometryChanged = (mLastPrewarmedWidth != keyboardWidth || mLastPrewarmedHeight != keyboardHeight);
+        final boolean geometryChanged = (mLastPrewarmedWidth != keyboardWidth
+                || mLastPrewarmedHeight != keyboardHeight
+                || mLastPrewarmedRowGapScale != settingsValues.mKeyboardRowGapScale);
         if (mKeyboardsPrewarmed && !geometryChanged) {
             return;
         }
         mLastPrewarmedWidth = keyboardWidth;
         mLastPrewarmedHeight = keyboardHeight;
+        mLastPrewarmedRowGapScale = settingsValues.mKeyboardRowGapScale;
         mKeyboardsPrewarmed = true;
 
         Looper.myQueue().addIdleHandler(new MessageQueue.IdleHandler() {
@@ -208,6 +213,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
                         && settingsValues.mIsSplitKeyboardEnabled
                         && !settingsValues.mOneHandedModeEnabled);
                 altBuilder.setOneHandedModeEnabled(oneHandedModeEnabled);
+                altBuilder.setRowGapScale(settingsValues.mKeyboardRowGapScale);
                 final KeyboardLayoutSet altSet = altBuilder.build();
                 altSet.getKeyboard(KeyboardId.ELEMENT_ALPHABET);
             }

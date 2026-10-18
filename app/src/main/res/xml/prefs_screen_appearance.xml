@@ -84,6 +84,12 @@
             latin:minValue="50"
             latin:maxValue="150" /> <!-- percentage -->
 
+        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+            android:key="pref_keyboard_row_gap_scale"
+            android:title="@string/prefs_keyboard_row_gap_scale"
+            latin:minValue="0"
+            latin:maxValue="200" /> <!-- percentage -->
+
         <ListPreference
             android:key="pref_icon_style"
             android:title="@string/select_icon_style"

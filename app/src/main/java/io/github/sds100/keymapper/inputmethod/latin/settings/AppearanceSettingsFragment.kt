@@ -59,6 +59,8 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
         }
         setupKeyboardHeight(
                 Settings.PREF_KEYBOARD_HEIGHT_SCALE, SettingsValues.DEFAULT_SIZE_SCALE)
+        setupKeyboardRowGap(
+                Settings.PREF_KEYBOARD_ROW_GAP_SCALE, SettingsValues.DEFAULT_SIZE_SCALE)
     }
 
     override fun onResume() {
@@ -166,6 +168,31 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
 
             override fun readValue(key: String) = getPercentageFromValue(
                     Settings.readKeyboardHeight(prefs, defaultValue))
+
+            override fun readDefaultValue(key: String) = getPercentageFromValue(defaultValue)
+
+            override fun getValueText(value: Int) = String.format(Locale.ROOT, "%d%%", value)
+
+            override fun feedbackValue(value: Int) = Unit
+        })
+    }
+
+    private fun setupKeyboardRowGap(prefKey: String, defaultValue: Float) {
+        val prefs = sharedPreferences
+        val pref = findPreference(prefKey) as? SeekBarDialogPreference
+        pref?.setInterface(object : SeekBarDialogPreference.ValueProxy {
+
+            private fun getValueFromPercentage(percentage: Int) = percentage / PERCENTAGE_FLOAT
+
+            private fun getPercentageFromValue(floatValue: Float) = (floatValue * PERCENTAGE_FLOAT).toInt()
+
+            override fun writeValue(value: Int, key: String) = prefs.edit()
+                    .putFloat(key, getValueFromPercentage(value)).apply()
+
+            override fun writeDefaultValue(key: String) = prefs.edit().remove(key).apply()
+
+            override fun readValue(key: String) = getPercentageFromValue(
+                    Settings.readKeyboardRowGap(prefs, defaultValue))
 
             override fun readDefaultValue(key: String) = getPercentageFromValue(defaultValue)
 

@@ -300,8 +300,10 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
             // TODO: Fix keyboard geometry calculation clearer. Historically vertical gap between
             // rows are determined based on the entire keyboard height including top and bottom
             // paddings.
-            params.mVerticalGap = (int)keyboardAttr.getFraction(
-                    R.styleable.Keyboard_verticalGap, height, height, 0);
+            final float rowGapScale = (params.mId != null && params.mId.mRowGapScale >= 0.0f)
+                    ? params.mId.mRowGapScale : 1.0f;
+            params.mVerticalGap = Math.round(keyboardAttr.getFraction(
+                    R.styleable.Keyboard_verticalGap, height, height, 0) * rowGapScale);
             final int baseHeight = params.mOccupiedHeight - params.mTopPadding
                     - params.mBottomPadding + params.mVerticalGap;
             params.mBaseHeight = baseHeight;
