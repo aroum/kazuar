@@ -255,6 +255,8 @@
     <string name="pref_keyboard_layout_num_title">Цифровая раскладка</string>
     <string name="pref_replace_yo_with_ye_title">Заменять букву «ё» на «е» в словарях</string>
     <string name="pref_replace_yo_with_ye_summary">Предлагать подсказки из словарей с буквой «е» вместо «ё»</string>
+    <string name="pref_split_space_neighbor_words_title">Разделение слов при промахе по пробелу</string>
+    <string name="pref_split_space_neighbor_words_summary">Автоматически разделять два слова, если вместо пробела была нажата соседняя буква</string>
     <string name="pref_keyboard_layout_usr0_title">Пользовательская раскладка 1 (usr0)</string>
     <string name="pref_keyboard_layout_usr1_title">Пользовательская раскладка 2 (usr1)</string>
     <string name="pref_keyboard_layout_usr2_title">Пользовательская раскладка 3 (usr2)</string>

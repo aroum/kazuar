@@ -381,7 +381,8 @@ public final class InputLogic {
         // Don't allow cancellation of manual pick
         mLastComposedWord.deactivate();
         // Space state must be updated before calling updateShiftState
-        mSpaceState = SpaceState.PHANTOM;
+        mSpaceState = settingsValues.shouldInsertSpacesAutomatically()
+                ? SpaceState.PHANTOM : SpaceState.NONE;
         inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
 
         // If we're not showing the "Touch again to save", then update the suggestion strip.
@@ -1223,10 +1224,10 @@ public final class InputLogic {
                 sendKeyCodePoint(settingsValues, codePoint);
             }
         } else {
-            if ((SpaceState.PHANTOM == inputTransaction.getMSpaceState()
+            if (!settingsValues.isUriField() && ((SpaceState.PHANTOM == inputTransaction.getMSpaceState()
                     && settingsValues.isUsuallyFollowedBySpace(codePoint))
                     || (Constants.CODE_DOUBLE_QUOTE == codePoint
-                            && isInsideDoubleQuoteOrAfterDigit)) {
+                            && isInsideDoubleQuoteOrAfterDigit))) {
                 // If we are in phantom space state, and the user presses a separator, we want to
                 // stay in phantom space state so that the next keypress has a chance to add the
                 // space. For example, if I type "Good dat", pick "day" from the suggestion strip
@@ -1247,6 +1248,7 @@ public final class InputLogic {
                 // setting phantom space state after ending a sentence with a non-word.
                 if (wasComposingWord
                     && settingsValues.mAutospaceAfterPunctuationEnabled
+                    && !settingsValues.isUriField()
                     && settingsValues.isUsuallyFollowedBySpace(codePoint)
                     && !(codePoint == Constants.CODE_PERIOD && Character.isDigit(mConnection.getCodePointBeforeCursor()))) {
                 mSpaceState = SpaceState.PHANTOM;
@@ -2372,6 +2374,7 @@ public final class InputLogic {
      */
     private void insertAutomaticSpaceIfOptionsAndTextAllow(final SettingsValues settingsValues) {
         if (settingsValues.shouldInsertSpacesAutomatically()
+                && !settingsValues.isUriField()
                 && settingsValues.mSpacingAndPunctuations.mCurrentLanguageHasSpaces
                 && !mConnection.textBeforeCursorLooksLikeURL()) {
             sendKeyCodePoint(settingsValues, Constants.CODE_SPACE);
@@ -2603,7 +2606,7 @@ public final class InputLogic {
                         mWordComposer.isComposingWord() ? 2 : 1),
                 keyboard,
                 new SettingsValuesForSuggestion(settingsValues.mBlockPotentiallyOffensive,
-                        settingsValues.mReplaceYoWithYe),
+                        settingsValues.mReplaceYoWithYe, settingsValues.mSplitSpaceNeighborWords),
                 settingsValues.mAutoCorrectionEnabledPerUserSettings,
                 inputStyle, sequenceNumber, callback);
     }

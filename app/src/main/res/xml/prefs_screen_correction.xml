@@ -71,6 +71,13 @@
             android:summary="@string/pref_replace_yo_with_ye_summary"
             android:defaultValue="false"
             android:persistent="true" />
+
+        <CheckBoxPreference
+            android:key="pref_split_space_neighbor_words"
+            android:title="@string/pref_split_space_neighbor_words_title"
+            android:summary="@string/pref_split_space_neighbor_words_summary"
+            android:defaultValue="true"
+            android:persistent="true" />
     </PreferenceCategory>
 
     <PreferenceCategory

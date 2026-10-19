@@ -283,6 +283,8 @@ public final class Suggest {
             final int sequenceNumber, final OnGetSuggestedWordsCallback callback) {
         final boolean replaceYo = settingsValuesForSuggestion != null
                 && settingsValuesForSuggestion.mReplaceYoWithYe;
+        final boolean splitSpaceNeighborWords = settingsValuesForSuggestion != null
+                && settingsValuesForSuggestion.mSplitSpaceNeighborWords;
         final boolean resultsArePredictions = !wordComposer.isComposingWord();
         if (resultsArePredictions && mDictionaryFacilitator.hasAtLeastOneInitializedMainDictionary()) {
             final Locale locale = mDictionaryFacilitator.getLocale();
@@ -339,7 +341,7 @@ public final class Suggest {
         }
 
         final SuggestedWordInfo splitSuggestion;
-        if (!foundInDictionary && !mDictionaryFacilitator.isValidSuggestionWord(typedWordString)) {
+        if (splitSpaceNeighborWords && !foundInDictionary && !mDictionaryFacilitator.isValidSuggestionWord(typedWordString)) {
             splitSuggestion = getSpaceNeighborSplitSuggestion(wordComposer, keyboard, locale);
             if (splitSuggestion != null) {
                 suggestionsContainer.add(0, splitSuggestion);

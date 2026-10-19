@@ -19,14 +19,21 @@ package io.github.sds100.keymapper.inputmethod.latin.settings;
 public class SettingsValuesForSuggestion {
     public final boolean mBlockPotentiallyOffensive;
     public final boolean mReplaceYoWithYe;
+    public final boolean mSplitSpaceNeighborWords;
+
+    public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive,
+            final boolean replaceYoWithYe, final boolean splitSpaceNeighborWords) {
+        mBlockPotentiallyOffensive = blockPotentiallyOffensive;
+        mReplaceYoWithYe = replaceYoWithYe;
+        mSplitSpaceNeighborWords = splitSpaceNeighborWords;
+    }
 
     public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive,
             final boolean replaceYoWithYe) {
-        mBlockPotentiallyOffensive = blockPotentiallyOffensive;
-        mReplaceYoWithYe = replaceYoWithYe;
+        this(blockPotentiallyOffensive, replaceYoWithYe, true);
     }
 
     public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive) {
-        this(blockPotentiallyOffensive, false);
+        this(blockPotentiallyOffensive, false, true);
     }
 }

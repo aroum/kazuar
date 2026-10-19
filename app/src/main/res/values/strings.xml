@@ -573,6 +573,8 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="pref_keyboard_layout_num_title">Numeric layout</string>
     <string name="pref_replace_yo_with_ye_title">Replace \"ё\" with \"е\" in dictionaries</string>
     <string name="pref_replace_yo_with_ye_summary">Suggest words with letter \"е\" instead of \"ё\"</string>
+    <string name="pref_split_space_neighbor_words_title">Split words typed without space</string>
+    <string name="pref_split_space_neighbor_words_summary">Automatically split words when a letter neighboring the spacebar was typed instead of a space</string>
     <string name="pref_keyboard_layout_usr0_title">User layout 1 (usr0)</string>
     <string name="pref_keyboard_layout_usr1_title">User layout 2 (usr1)</string>
     <string name="pref_keyboard_layout_usr2_title">User layout 3 (usr2)</string>

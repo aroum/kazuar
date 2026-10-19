@@ -88,6 +88,7 @@ public class SettingsValues {
     public final boolean mUseMultiSpacePunctuation;
     public final boolean mBlockPotentiallyOffensive;
     public final boolean mReplaceYoWithYe;
+    public final boolean mSplitSpaceNeighborWords;
     public final boolean mSpaceTrackpadEnabled;
     public final boolean mDeleteSwipeEnabled;
     public final boolean mAutospaceAfterPunctuationEnabled;
@@ -198,6 +199,7 @@ public class SettingsValues {
         mUseMultiSpacePunctuation = prefs.getBoolean(Settings.PREF_KEY_USE_MULTI_SPACE_PUNCTUATION, false);
         mBlockPotentiallyOffensive = Settings.readBlockPotentiallyOffensive(prefs, res);
         mReplaceYoWithYe = prefs.getBoolean(Settings.PREF_REPLACE_YO_WITH_YE, false);
+        mSplitSpaceNeighborWords = Settings.readSplitSpaceNeighborWordsEnabled(prefs);
         mAutoCorrectEnabled = Settings.readAutoCorrectEnabled(prefs, res);
         mAutoCorrectionThreshold = mAutoCorrectEnabled
                 ? readAutoCorrectionThreshold(res, prefs)
@@ -358,6 +360,10 @@ public class SettingsValues {
 
     public boolean shouldInsertSpacesAutomatically() {
         return mInputAttributes.mShouldInsertSpacesAutomatically;
+    }
+
+    public boolean isUriField() {
+        return mInputAttributes.mIsUriField;
     }
 
     public boolean isLanguageSwitchKeyEnabled() {

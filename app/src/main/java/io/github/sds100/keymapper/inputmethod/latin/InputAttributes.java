@@ -53,6 +53,7 @@ public final class InputAttributes {
      */
     final public boolean mDisableGestureFloatingPreviewText;
     final public boolean mIsGeneralTextInput;
+    final public boolean mIsUriField;
     final private int mInputType;
     final private EditorInfo mEditorInfo;
     final private String mPackageNameForPrivateImeOptions;
@@ -91,6 +92,7 @@ public final class InputAttributes {
             mShouldShowVoiceInputKey = false;
             mDisableGestureFloatingPreviewText = false;
             mIsGeneralTextInput = false;
+            mIsUriField = false;
             mNoLearning = hasNoPersonalizedLearning;
             return;
         }
@@ -140,7 +142,7 @@ public final class InputAttributes {
                 && InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD != variation
                 && InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS != variation
                 && InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != variation;
-
+        mIsUriField = (variation == InputType.TYPE_TEXT_VARIATION_URI);
 
         mNoLearning = hasNoPersonalizedLearning || flagNoSuggestions;
     }

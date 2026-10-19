@@ -79,6 +79,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
             "pref_key_block_potentially_offensive";
     public static final String PREF_REPLACE_YO_WITH_YE =
             "pref_key_replace_yo_with_ye";
+    public static final String PREF_SPLIT_SPACE_NEIGHBOR_WORDS =
+            "pref_split_space_neighbor_words";
     public static final boolean ENABLE_SHOW_LANGUAGE_SWITCH_KEY_SETTINGS =
             Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT;
     public static final boolean SHOULD_SHOW_LXX_SUGGESTION_UI =
@@ -446,6 +448,10 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public static boolean readAutospaceAfterPunctuationEnabled(final SharedPreferences prefs) {
         return prefs.getBoolean(PREF_AUTOSPACE_AFTER_PUNCTUATION, false);
+    }
+
+    public static boolean readSplitSpaceNeighborWordsEnabled(final SharedPreferences prefs) {
+        return prefs.getBoolean(PREF_SPLIT_SPACE_NEIGHBOR_WORDS, true);
     }
 
     public static boolean readUseFullscreenMode(final Resources res) {
