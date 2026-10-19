@@ -255,6 +255,31 @@ abstract public class ExpandableBinaryDictionary extends Dictionary {
         });
     }
 
+    public void flushSync() {
+        mLock.writeLock().lock();
+        try {
+            final BinaryDictionary binaryDictionary = getBinaryDictionary();
+            if (binaryDictionary != null && binaryDictionary.isValidDictionary()) {
+                if (binaryDictionary.needsToRunGC(false /* mindsBlockByGC */)) {
+                    binaryDictionary.flushWithGCIfHasUpdated();
+                } else {
+                    binaryDictionary.flush();
+                }
+            }
+        } finally {
+            mLock.writeLock().unlock();
+        }
+    }
+
+    public void closeSync() {
+        mLock.writeLock().lock();
+        try {
+            closeBinaryDictionary();
+        } finally {
+            mLock.writeLock().unlock();
+        }
+    }
+
     /**
      * Check whether GC is needed and run GC if required.
      */

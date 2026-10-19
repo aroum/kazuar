@@ -550,6 +550,11 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="pref_backup_dict_export_summary">Save user dictionary words to a file</string>
     <string name="pref_backup_dict_import">Import Personal Dictionary</string>
     <string name="pref_backup_dict_import_summary">Restore user dictionary words from a file</string>
+    <string name="pref_backup_history_export">Export Typing History</string>
+    <string name="pref_backup_history_export_summary">Save learned words, n-grams, and statistics to a ZIP file</string>
+    <string name="pref_backup_history_import">Import Typing History</string>
+    <string name="pref_backup_history_import_summary">Restore learned words, n-grams, and statistics from a ZIP file</string>
+    <string name="history_backup_empty">Typing history is empty</string>
     <string name="backup_success">Backup saved successfully</string>
     <string name="backup_fail">Failed to save backup</string>
     <string name="restore_success">Backup restored successfully</string>

@@ -39,7 +39,7 @@ import javax.annotation.Nullable;
  * typist over time.
  */
 public class UserHistoryDictionary extends ExpandableBinaryDictionary {
-    static final String NAME = UserHistoryDictionary.class.getSimpleName();
+    public static final String NAME = UserHistoryDictionary.class.getSimpleName();
 
     // TODO: Make this constructor private
     UserHistoryDictionary(final Context context, final Locale locale,

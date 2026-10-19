@@ -223,6 +223,11 @@
     <string name="pref_backup_dict_export_summary">Сохранить слова из личного словаря в файл</string>
     <string name="pref_backup_dict_import">Импорт личного словаря</string>
     <string name="pref_backup_dict_import_summary">Восстановить слова в личный словарь из файла</string>
+    <string name="pref_backup_history_export">Экспорт истории обучения</string>
+    <string name="pref_backup_history_export_summary">Сохранить выученные слова, n-граммы и статистику в ZIP-файл</string>
+    <string name="pref_backup_history_import">Импорт истории обучения</string>
+    <string name="pref_backup_history_import_summary">Восстановить выученные слова, n-граммы и статистику из ZIP-файла</string>
+    <string name="history_backup_empty">История обучения пуста</string>
     <string name="backup_success">Резервная копия успешно сохранена</string>
     <string name="backup_fail">Не удалось сохранить резервную копию</string>
     <string name="restore_success">Резервная копия успешно восстановлена</string>

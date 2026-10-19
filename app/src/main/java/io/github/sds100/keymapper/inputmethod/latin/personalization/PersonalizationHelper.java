@@ -93,10 +93,39 @@ public class PersonalizationHelper {
         }
     }
 
-    private static class DictFilter implements FilenameFilter {
+    public static void flushAllUserHistoryDictionaries() {
+        synchronized (sLangUserHistoryDictCache) {
+            for (final ConcurrentHashMap.Entry<String, SoftReference<UserHistoryDictionary>> entry
+                    : sLangUserHistoryDictCache.entrySet()) {
+                if (entry.getValue() != null) {
+                    final UserHistoryDictionary dict = entry.getValue().get();
+                    if (dict != null) {
+                        dict.flushSync();
+                    }
+                }
+            }
+        }
+    }
+
+    public static void closeAllUserHistoryDictionaries() {
+        synchronized (sLangUserHistoryDictCache) {
+            for (final ConcurrentHashMap.Entry<String, SoftReference<UserHistoryDictionary>> entry
+                    : sLangUserHistoryDictCache.entrySet()) {
+                if (entry.getValue() != null) {
+                    final UserHistoryDictionary dict = entry.getValue().get();
+                    if (dict != null) {
+                        dict.closeSync();
+                    }
+                }
+            }
+            sLangUserHistoryDictCache.clear();
+        }
+    }
+
+    public static class DictFilter implements FilenameFilter {
         private final String mName;
 
-        DictFilter(final String name) {
+        public DictFilter(final String name) {
             mName = name;
         }
 
