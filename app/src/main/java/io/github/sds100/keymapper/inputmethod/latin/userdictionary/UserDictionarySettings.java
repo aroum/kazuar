@@ -16,12 +16,16 @@
 
 package io.github.sds100.keymapper.inputmethod.latin.userdictionary;
 
+import android.app.Activity;
 import android.app.ListFragment;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.UserDictionary;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -104,10 +108,21 @@ public class UserDictionarySettings extends ListFragment {
 
     protected String mLocale;
 
+    private final ContentObserver mObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
+        @Override
+        public void onChange(final boolean selfChange) {
+            if (isResumed()) {
+                updateAdapter();
+            }
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActivity().getActionBar().setTitle(R.string.edit_personal_dictionary);
+        if (getActivity() != null && getActivity().getActionBar() != null) {
+            getActivity().getActionBar().setTitle(R.string.edit_personal_dictionary);
+        }
     }
 
     @Override
@@ -135,41 +150,83 @@ public class UserDictionarySettings extends ListFragment {
         } else locale = localeFromIntent;
 
         mLocale = locale;
-        // WARNING: The following cursor is never closed! TODO: don't put that in a member, and
-        // make sure all cursors are correctly closed. Also, this comes from a call to
-        // Activity#managedQuery, which has been deprecated for a long time (and which FORBIDS
-        // closing the cursor, so take care when resolving this TODO). We should either use a
-        // regular query and close the cursor, or switch to a LoaderManager and a CursorLoader.
-        mCursor = createCursor(locale);
         TextView emptyView = getView().findViewById(android.R.id.empty);
         emptyView.setText(R.string.user_dict_settings_empty_text);
 
         final ListView listView = getListView();
-        listView.setAdapter(createAdapter());
         listView.setFastScrollEnabled(true);
         listView.setEmptyView(emptyView);
 
+        updateAdapter();
+
         setHasOptionsMenu(true);
         // Show the language as a subtitle of the action bar
-        getActivity().getActionBar().setSubtitle(
-                UserDictionarySettingsUtils.getLocaleDisplayName(getActivity(), mLocale));
+        if (getActivity() != null && getActivity().getActionBar() != null) {
+            getActivity().getActionBar().setSubtitle(
+                    UserDictionarySettingsUtils.getLocaleDisplayName(getActivity(), mLocale));
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        ListAdapter adapter = getListView().getAdapter();
-        if (adapter != null && adapter instanceof MyAdapter) {
-            // The list view is forced refreshed here. This allows the changes done 
-            // in UserDictionaryAddWordFragment (update/delete/insert) to be seen when 
-            // user goes back to this view. 
-            MyAdapter listAdapter = (MyAdapter) adapter;
-            listAdapter.notifyDataSetChanged();
+        updateAdapter();
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.getContentResolver().registerContentObserver(
+                    UserDictionary.Words.CONTENT_URI, true, mObserver);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public void onPause() {
+        super.onPause();
+        final Activity activity = getActivity();
+        if (activity != null) {
+            try {
+                activity.getContentResolver().unregisterContentObserver(mObserver);
+            } catch (final Exception ignored) {
+            }
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mCursor != null && !mCursor.isClosed()) {
+            mCursor.close();
+            mCursor = null;
+        }
+        super.onDestroy();
+    }
+
+    private void updateAdapter() {
+        final Activity activity = getActivity();
+        if (activity == null || isDetached() || getView() == null) {
+            return;
+        }
+        final Cursor newCursor = createCursor(mLocale);
+        mCursor = newCursor;
+        try {
+            final ListView listView = getListView();
+            if (listView == null) return;
+            final ListAdapter adapter = listView.getAdapter();
+            if (adapter instanceof MyAdapter) {
+                ((MyAdapter) adapter).changeCursor(newCursor);
+            } else if (newCursor != null) {
+                listView.setAdapter(new MyAdapter(activity, R.layout.user_dictionary_item, newCursor,
+                        ADAPTER_FROM, ADAPTER_TO));
+            }
+        } catch (final IllegalStateException ignored) {
+            // View hierarchy might not be attached yet
+        }
+    }
+
     private Cursor createCursor(final String locale) {
+        final Activity activity = getActivity();
+        if (activity == null) return null;
+        final ContentResolver resolver = activity.getContentResolver();
+        if (resolver == null) return null;
+
         // Locale can be any of:
         // - The string representation of a locale, as returned by Locale#toString()
         // - The empty string. This means we want a cursor returning words valid for all locales.
@@ -177,14 +234,11 @@ public class UserDictionarySettings extends ListFragment {
         // Note that this contrasts with the data inside the database, where NULL means "all
         // locales" and there should never be an empty string. The confusion is called by the
         // historical use of null for "all locales".
-        // TODO: it should be easy to make this more readable by making the special values
-        // human-readable, like "all_locales" and "current_locales" strings, provided they
-        // can be guaranteed not to match locales that may exist.
         if (TextUtils.isEmpty(locale)) {
             // Case-insensitive sort for words valid for all locales
             final String selection = "(" + UserDictionary.Words.LOCALE + " IS NULL) OR ("
                     + UserDictionary.Words.LOCALE + "='')";
-            return getActivity().managedQuery(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
+            return resolver.query(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
                     selection, null,
                     "UPPER(" + UserDictionary.Words.WORD + ")");
         }
@@ -210,7 +264,7 @@ public class UserDictionarySettings extends ListFragment {
                 baseLang + "_%",
                 baseLang + "-%"
         };
-        return getActivity().managedQuery(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
+        return resolver.query(UserDictionary.Words.CONTENT_URI, QUERY_PROJECTION,
                 selection, selectionArgs,
                 "UPPER(" + UserDictionary.Words.WORD + ")");
     }
@@ -249,6 +303,10 @@ public class UserDictionarySettings extends ListFragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            getActivity().onBackPressed();
+            return true;
+        }
         if (item.getItemId() == OPTIONS_MENU_ADD) {
             showAddOrEditDialog(null, null);
             return true;
@@ -276,7 +334,20 @@ public class UserDictionarySettings extends ListFragment {
     }
 
     private String getWord(final int position) {
-        if (null == mCursor) return null;
+        try {
+            final ListView listView = getListView();
+            if (listView != null && listView.getAdapter() != null) {
+                final Object item = listView.getAdapter().getItem(position);
+                if (item instanceof Cursor) {
+                    final Cursor c = (Cursor) item;
+                    if (!c.isClosed() && !c.isAfterLast()) {
+                        return c.getString(c.getColumnIndexOrThrow(UserDictionary.Words.WORD));
+                    }
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        if (null == mCursor || mCursor.isClosed()) return null;
         mCursor.moveToPosition(position);
         // Handle a possible race-condition
         if (mCursor.isAfterLast()) return null;
@@ -287,7 +358,20 @@ public class UserDictionarySettings extends ListFragment {
 
     private String getShortcut(final int position) {
         if (!IS_SHORTCUT_API_SUPPORTED) return null;
-        if (null == mCursor) return null;
+        try {
+            final ListView listView = getListView();
+            if (listView != null && listView.getAdapter() != null) {
+                final Object item = listView.getAdapter().getItem(position);
+                if (item instanceof Cursor) {
+                    final Cursor c = (Cursor) item;
+                    if (!c.isClosed() && !c.isAfterLast()) {
+                        return c.getString(c.getColumnIndexOrThrow(UserDictionary.Words.SHORTCUT));
+                    }
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        if (null == mCursor || mCursor.isClosed()) return null;
         mCursor.moveToPosition(position);
         // Handle a possible race-condition
         if (mCursor.isAfterLast()) return null;
@@ -314,6 +398,7 @@ public class UserDictionarySettings extends ListFragment {
 
     private static class MyAdapter extends SimpleCursorAdapter implements SectionIndexer {
         private AlphabetIndexer mIndexer;
+        private final Context mContext;
 
         private ViewBinder mViewBinder = new ViewBinder() {
 
@@ -342,6 +427,7 @@ public class UserDictionarySettings extends ListFragment {
         public MyAdapter(final Context context, final int layout, final Cursor c,
                 final String[] from, final int[] to) {
             super(context, layout, c, from, to, 0 /* flags */);
+            mContext = context;
 
             if (null != c) {
                 final String alphabet = context.getString(R.string.user_dict_fast_scroll_alphabet);
@@ -349,6 +435,18 @@ public class UserDictionarySettings extends ListFragment {
                 mIndexer = new AlphabetIndexer(c, wordColIndex, alphabet);
             }
             setViewBinder(mViewBinder);
+        }
+
+        @Override
+        public Cursor swapCursor(final Cursor newCursor) {
+            if (null != mIndexer) {
+                mIndexer.setCursor(newCursor);
+            } else if (null != newCursor && null != mContext) {
+                final String alphabet = mContext.getString(R.string.user_dict_fast_scroll_alphabet);
+                final int wordColIndex = newCursor.getColumnIndexOrThrow(UserDictionary.Words.WORD);
+                mIndexer = new AlphabetIndexer(newCursor, wordColIndex, alphabet);
+            }
+            return super.swapCursor(newCursor);
         }
 
         @Override

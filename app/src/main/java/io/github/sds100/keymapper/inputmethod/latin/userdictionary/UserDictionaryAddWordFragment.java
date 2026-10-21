@@ -60,7 +60,11 @@ public class UserDictionaryAddWordFragment extends Fragment
     public void onActivityCreated(final Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         setHasOptionsMenu(true);
-        getActivity().getActionBar().setTitle(R.string.edit_personal_dictionary);
+        if (getActivity() != null && getActivity().getActionBar() != null) {
+            getActivity().getActionBar().setTitle(R.string.edit_personal_dictionary);
+            getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
+            getActivity().getActionBar().setHomeButtonEnabled(true);
+        }
         // Keep the instance so that we remember mContents when configuration changes (eg rotation)
         setRetainInstance(true);
     }
@@ -108,6 +112,10 @@ public class UserDictionaryAddWordFragment extends Fragment
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            getActivity().onBackPressed();
+            return true;
+        }
         if (item.getItemId() == OPTIONS_MENU_ADD) {
             // added the entry in "onPause"
             getActivity().onBackPressed();
