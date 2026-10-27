@@ -60,5 +60,5 @@
 # Disable obfuscation to keep stack traces readable and prevent reflection/JNI mismatches
 -dontobfuscate
 
-# Keep all keymapper classes and members
+# Keep all Kazuar classes and members
 -keep class io.github.sds100.keymapper.** { *; }

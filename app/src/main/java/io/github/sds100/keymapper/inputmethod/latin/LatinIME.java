@@ -61,7 +61,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import androidx.core.content.ContextCompat;
-import io.github.sds100.keymapper.api.IKeyEventRelayServiceCallback;
 import io.github.sds100.keymapper.inputmethod.accessibility.AccessibilityUtils;
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
 import io.github.sds100.keymapper.inputmethod.compat.EditorInfoCompatUtils;
@@ -132,13 +131,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             "io.github.sds100.keymapper.inputmethod.latin.HIDE_SOFT_INPUT";
 
     //DON'T CHANGE THESE!!!
-    private static final String KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN_UP = "io.github.sds100.keymapper.inputmethod.ACTION_INPUT_DOWN_UP";
-    private static final String KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN = "io.github.sds100.keymapper.inputmethod.ACTION_INPUT_DOWN";
-    private static final String KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_UP = "io.github.sds100.keymapper.inputmethod.ACTION_INPUT_UP";
-    private static final String KEY_MAPPER_INPUT_METHOD_ACTION_TEXT = "io.github.sds100.keymapper.inputmethod.ACTION_INPUT_TEXT";
-
-    private static final String KEY_MAPPER_INPUT_METHOD_EXTRA_TEXT = "io.github.sds100.keymapper.inputmethod.EXTRA_TEXT";
-    private static final String KEY_MAPPER_INPUT_METHOD_EXTRA_KEY_EVENT = "io.github.sds100.keymapper.inputmethod.EXTRA_KEY_EVENT";
+    private static boolean sCrashHandlerInstalled = false;
 
     public final Settings mSettings;
     private final DictionaryFacilitator mDictionaryFacilitator =
@@ -205,101 +198,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     }
 
     final RestartAfterDeviceUnlockReceiver mRestartAfterDeviceUnlockReceiver = new RestartAfterDeviceUnlockReceiver();
-
-    private KeyEventRelayServiceWrapperImpl mKeyEventRelayServiceWrapperRelease;
-    private KeyEventRelayServiceWrapperImpl mKeyEventRelayServiceWrapperDebug;
-    private KeyEventRelayServiceWrapperImpl mKeyEventRelayServiceWrapperCi;
-    private final IKeyEventRelayServiceCallback mKeyEventRelayServiceCallback = new IKeyEventRelayServiceCallback.Stub() {
-        @Override
-        public boolean onKeyEvent(KeyEvent event) {
-            InputConnection ic = getCurrentInputConnection();
-
-            if (ic == null) {
-                return false;
-            }
-
-            return ic.sendKeyEvent(event);
-        }
-    };
-
-    final static class KeyMapperBroadcastReceiver extends BroadcastReceiver {
-        private final InputMethodService mIms;
-
-        public KeyMapperBroadcastReceiver(InputMethodService ims) {
-            mIms = ims;
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            assert action != null;
-
-            switch (action) {
-                case LatinIME.KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN_UP: {
-                    KeyEvent downEvent = intent.getParcelableExtra(KEY_MAPPER_INPUT_METHOD_EXTRA_KEY_EVENT);
-
-                    InputConnection ic = mIms.getCurrentInputConnection();
-
-                    if (ic != null) {
-                        ic.sendKeyEvent(downEvent);
-                    }
-
-                    KeyEvent upEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_UP);
-
-                    if (ic != null) {
-                        ic.sendKeyEvent(upEvent);
-                    }
-
-                    break;
-                }
-
-                case LatinIME.KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN: {
-                    KeyEvent downEvent = intent.getParcelableExtra(KEY_MAPPER_INPUT_METHOD_EXTRA_KEY_EVENT);
-
-                    downEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_DOWN);
-
-                    InputConnection ic = mIms.getCurrentInputConnection();
-
-                    if (ic != null) {
-                        ic.sendKeyEvent(downEvent);
-                    }
-
-                    break;
-                }
-
-                case LatinIME.KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_UP: {
-                    KeyEvent upEvent = intent.getParcelableExtra(KEY_MAPPER_INPUT_METHOD_EXTRA_KEY_EVENT);
-
-                    upEvent = KeyEvent.changeAction(upEvent, KeyEvent.ACTION_UP);
-
-                    InputConnection ic = mIms.getCurrentInputConnection();
-
-                    if (ic != null) {
-                        ic.sendKeyEvent(upEvent);
-                    }
-
-                    break;
-                }
-
-                case LatinIME.KEY_MAPPER_INPUT_METHOD_ACTION_TEXT: {
-                    String text = intent.getStringExtra(KEY_MAPPER_INPUT_METHOD_EXTRA_TEXT);
-
-                    if (text == null) return;
-
-                    InputConnection ic = mIms.getCurrentInputConnection();
-
-                    if (ic != null) {
-                        ic.commitText(text, 1);
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
-
-    final KeyMapperBroadcastReceiver mKeyMapperBroadcastReceiver = new KeyMapperBroadcastReceiver(this);
 
     private AlertDialog mOptionsDialog;
 
@@ -707,27 +605,30 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public void onCreate() {
-        final Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable throwable) {
-                try {
-                    final java.io.File file = new java.io.File(getExternalFilesDir(null), "crash_log.txt");
-                    final java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(file, true));
-                    pw.println("--- CRASH REPORT ---");
-                    pw.println("Time: " + new java.util.Date().toString());
-                    pw.println("Thread: " + thread.getName());
-                    throwable.printStackTrace(pw);
-                    pw.println();
-                    pw.close();
-                } catch (Exception e) {
-                    Log.e(TAG, "Could not write crash log to file", e);
+        if (!sCrashHandlerInstalled) {
+            final Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread thread, Throwable throwable) {
+                    try {
+                        final java.io.File file = new java.io.File(getExternalFilesDir(null), "crash_log.txt");
+                        final java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(file, true));
+                        pw.println("--- CRASH REPORT ---");
+                        pw.println("Time: " + new java.util.Date().toString());
+                        pw.println("Thread: " + thread.getName());
+                        throwable.printStackTrace(pw);
+                        pw.println();
+                        pw.close();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Could not write crash log to file", e);
+                    }
+                    if (defaultHandler != null) {
+                        defaultHandler.uncaughtException(thread, throwable);
+                    }
                 }
-                if (defaultHandler != null) {
-                    defaultHandler.uncaughtException(thread, throwable);
-                }
-            }
-        });
+            });
+            sCrashHandlerInstalled = true;
+        }
 
         Settings.init(this);
         DebugFlags.init(DeviceProtectedUtils.getSharedPreferences(this));
@@ -762,45 +663,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         final IntentFilter restartAfterUnlockFilter = new IntentFilter();
         restartAfterUnlockFilter.addAction(Intent.ACTION_USER_UNLOCKED);
         ContextCompat.registerReceiver(this, mRestartAfterDeviceUnlockReceiver, restartAfterUnlockFilter, ContextCompat.RECEIVER_EXPORTED);
-
-        final IntentFilter keyMapperIntentFilter = new IntentFilter();
-        keyMapperIntentFilter.addAction(KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN_UP);
-        keyMapperIntentFilter.addAction(KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_DOWN);
-        keyMapperIntentFilter.addAction(KEY_MAPPER_INPUT_METHOD_ACTION_INPUT_UP);
-        keyMapperIntentFilter.addAction(KEY_MAPPER_INPUT_METHOD_ACTION_TEXT);
-
-        ContextCompat.registerReceiver(this, mKeyMapperBroadcastReceiver, keyMapperIntentFilter, ContextCompat.RECEIVER_EXPORTED);
-
-        // Connect to the different key mapper build types asynchronously in background to avoid blocking onCreate.
-        final Context appContext = getApplicationContext();
-        java.util.concurrent.Executors.newSingleThreadExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                mKeyEventRelayServiceWrapperRelease =
-                        new KeyEventRelayServiceWrapperImpl(
-                                appContext,
-                                "io.github.sds100.keymapper",
-                                "input_method",
-                                mKeyEventRelayServiceCallback);
-                mKeyEventRelayServiceWrapperRelease.onCreate();
-
-                mKeyEventRelayServiceWrapperDebug =
-                        new KeyEventRelayServiceWrapperImpl(
-                                appContext,
-                                "io.github.sds100.keymapper.debug",
-                                "input_method",
-                                mKeyEventRelayServiceCallback);
-                mKeyEventRelayServiceWrapperDebug.onCreate();
-
-                mKeyEventRelayServiceWrapperCi =
-                        new KeyEventRelayServiceWrapperImpl(
-                                appContext,
-                                "io.github.sds100.keymapper.ci",
-                                "input_method",
-                                mKeyEventRelayServiceCallback);
-                mKeyEventRelayServiceWrapperCi.onCreate();
-            }
-        });
     }
 
     // Has to be package-visible for unit tests
@@ -918,19 +780,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         unregisterReceiver(mRingerModeChangeReceiver);
         unregisterReceiver(mDictionaryDumpBroadcastReceiver);
         unregisterReceiver(mRestartAfterDeviceUnlockReceiver);
-        unregisterReceiver(mKeyMapperBroadcastReceiver);
-        if (mKeyEventRelayServiceWrapperRelease != null) {
-            mKeyEventRelayServiceWrapperRelease.onDestroy();
-            mKeyEventRelayServiceWrapperRelease = null;
-        }
-        if (mKeyEventRelayServiceWrapperDebug != null) {
-            mKeyEventRelayServiceWrapperDebug.onDestroy();
-            mKeyEventRelayServiceWrapperDebug = null;
-        }
-        if (mKeyEventRelayServiceWrapperCi != null) {
-            mKeyEventRelayServiceWrapperCi.onDestroy();
-            mKeyEventRelayServiceWrapperCi = null;
-        }
         super.onDestroy();
     }
 
@@ -1934,25 +1783,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // Hooks for hardware keyboard
     @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent keyEvent) {
-
-        if (mKeyEventRelayServiceWrapperRelease != null) {
-            if (mKeyEventRelayServiceWrapperRelease.sendKeyEvent(keyEvent, "io.github.sds100.keymapper", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperCi != null) {
-            if (mKeyEventRelayServiceWrapperCi.sendKeyEvent(keyEvent, "io.github.sds100.keymapper.ci", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperDebug != null) {
-            if (mKeyEventRelayServiceWrapperDebug.sendKeyEvent(keyEvent, "io.github.sds100.keymapper.debug", "accessibility_service")) {
-                return true;
-            }
-        }
-
         if (mEmojiAltPhysicalKeyDetector == null) {
             mEmojiAltPhysicalKeyDetector = new EmojiAltPhysicalKeyDetector(
                     getApplicationContext().getResources());
@@ -1979,24 +1809,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public boolean onKeyUp(final int keyCode, final KeyEvent keyEvent) {
-        if (mKeyEventRelayServiceWrapperRelease != null) {
-            if (mKeyEventRelayServiceWrapperRelease.sendKeyEvent(keyEvent, "io.github.sds100.keymapper", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperCi != null) {
-            if (mKeyEventRelayServiceWrapperCi.sendKeyEvent(keyEvent, "io.github.sds100.keymapper.ci", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperDebug != null) {
-            if (mKeyEventRelayServiceWrapperDebug.sendKeyEvent(keyEvent, "io.github.sds100.keymapper.debug", "accessibility_service")) {
-                return true;
-            }
-        }
-
         if (mEmojiAltPhysicalKeyDetector == null) {
             mEmojiAltPhysicalKeyDetector = new EmojiAltPhysicalKeyDetector(
                     getApplicationContext().getResources());
@@ -2015,28 +1827,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (event == null) {
-            return super.onGenericMotionEvent(null);
-        }
-
-        if (mKeyEventRelayServiceWrapperRelease != null) {
-            if (mKeyEventRelayServiceWrapperRelease.sendMotionEvent(event, "io.github.sds100.keymapper", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperCi != null) {
-            if (mKeyEventRelayServiceWrapperCi.sendMotionEvent(event, "io.github.sds100.keymapper.ci", "accessibility_service")) {
-                return true;
-            }
-        }
-
-        if (mKeyEventRelayServiceWrapperDebug != null) {
-            if (mKeyEventRelayServiceWrapperDebug.sendMotionEvent(event, "io.github.sds100.keymapper.debug", "accessibility_service")) {
-                return true;
-            }
-        }
-
         return super.onGenericMotionEvent(event);
     }
 

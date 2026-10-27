@@ -1,6 +1,6 @@
 # kazuar
 
-**kazuar** is a 100% FOSS keyboard, forked from [KeyMapperOpenBoard](https://github.com/keymapperorg/KeyMapperOpenBoard) (which is built upon OpenBoard and the AOSP keyboard).
+**kazuar** is a 100% FOSS keyboard, built upon OpenBoard and the AOSP keyboard.
 
 > [!NOTE]
 > A cassowary (kazuar) is a large flightless bird native to the tropical forests of New Guinea and nearby islands.
