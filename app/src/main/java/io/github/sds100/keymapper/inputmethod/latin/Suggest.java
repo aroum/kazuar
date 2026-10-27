@@ -182,25 +182,25 @@ public final class Suggest {
     private static final Set<String> VALID_SINGLE_LETTER_WORDS_EN = new HashSet<>(
             Arrays.asList("a", "i"));
 
-    private boolean isValidWordForSplit(final String part, final Locale locale) {
+    private int getWordFrequencyForSplit(final String part, final Locale locale) {
         if (TextUtils.isEmpty(part)) {
-            return false;
+            return -1;
         }
         if (part.length() == 1) {
             final String lang = locale == null ? "" : locale.getLanguage();
             if ("ru".equalsIgnoreCase(lang)) {
                 if (!VALID_SINGLE_LETTER_WORDS_RU.contains(part)) {
-                    return false;
+                    return -1;
                 }
             } else if ("en".equalsIgnoreCase(lang)) {
                 if (!VALID_SINGLE_LETTER_WORDS_EN.contains(part)) {
-                    return false;
+                    return -1;
                 }
             } else {
-                return false;
+                return -1;
             }
         }
-        return mDictionaryFacilitator.isValidSuggestionWord(part);
+        return mDictionaryFacilitator.getFrequency(part);
     }
 
     private SuggestedWordInfo getSpaceNeighborSplitSuggestion(final WordComposer wordComposer,
@@ -234,29 +234,31 @@ public final class Suggest {
                 continue;
             }
             final String part1 = lowerTyped.substring(0, i);
+            final int freq1 = getWordFrequencyForSplit(part1, activeLocale);
+            if (freq1 < 0) {
+                continue;
+            }
             final String part2 = lowerTyped.substring(i + 1);
+            final int freq2 = getWordFrequencyForSplit(part2, activeLocale);
+            if (freq2 < 0) {
+                continue;
+            }
 
-            if (isValidWordForSplit(part1, activeLocale) && isValidWordForSplit(part2, activeLocale)) {
-                int freq1 = mDictionaryFacilitator.getFrequency(part1);
-                int freq2 = mDictionaryFacilitator.getFrequency(part2);
-                if (freq1 < 0) freq1 = 0;
-                if (freq2 < 0) freq2 = 0;
-                final int totalScore = freq1 + freq2;
-                if (totalScore > bestScore) {
-                    bestScore = totalScore;
-                    bestSplitIndex = i;
+            final int totalScore = freq1 + freq2;
+            if (totalScore > bestScore) {
+                bestScore = totalScore;
+                bestSplitIndex = i;
 
-                    final String originalPart1 = typedWordString.substring(0, i);
-                    final String originalPart2 = typedWordString.substring(i + 1);
-                    if (wordComposer.isAllUpperCase()) {
-                        bestCandidate = originalPart1.toUpperCase(activeLocale) + " "
-                                + originalPart2.toUpperCase(activeLocale);
-                    } else if (wordComposer.isOrWillBeOnlyFirstCharCapitalized()) {
-                        bestCandidate = StringUtils.capitalizeFirstCodePoint(originalPart1, activeLocale)
-                                + " " + originalPart2.toLowerCase(activeLocale);
-                    } else {
-                        bestCandidate = originalPart1 + " " + originalPart2;
-                    }
+                final String originalPart1 = typedWordString.substring(0, i);
+                final String originalPart2 = typedWordString.substring(i + 1);
+                if (wordComposer.isAllUpperCase()) {
+                    bestCandidate = originalPart1.toUpperCase(activeLocale) + " "
+                            + originalPart2.toUpperCase(activeLocale);
+                } else if (wordComposer.isOrWillBeOnlyFirstCharCapitalized()) {
+                    bestCandidate = StringUtils.capitalizeFirstCodePoint(originalPart1, activeLocale)
+                            + " " + originalPart2.toLowerCase(activeLocale);
+                } else {
+                    bestCandidate = originalPart1 + " " + originalPart2;
                 }
             }
         }
@@ -397,12 +399,15 @@ public final class Suggest {
                 // TODO: now that we have personalization, we may want to re-evaluate this decision
                 || !mDictionaryFacilitator.hasAtLeastOneInitializedMainDictionary()
                 // If the first suggestion is a shortcut we never auto-correct to it, regardless
-                // of how strong it is (whitelist entries are not KIND_SHORTCUT but KIND_WHITELIST).
-                // TODO: we may want to have shortcut-only entries auto-correct in the future.
+                // of how strong it is (whitelist entries are not KIND_SHORTCUT but KIND_WHITELIST),
+                // unless macro/shortcut replacements are enabled in settings.
                 || (splitSuggestion == null && !suggestionResults.isEmpty()
-                        && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT))) {
+                        && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT)
+                        && (Settings.getInstance().getCurrent() == null
+                                || !Settings.getInstance().getCurrent().mEnableMacroReplacements))) {
             hasAutoCorrection = false;
-        } else if (splitSuggestion != null) {
+        } else if (splitSuggestion != null
+                || (!suggestionResults.isEmpty() && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT))) {
             hasAutoCorrection = true;
         } else {
             final SuggestedWordInfo firstSuggestion = suggestionsContainer.isEmpty() ? null

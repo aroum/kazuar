@@ -153,6 +153,7 @@ public class SettingsValues {
     public final float mKeyboardHeightScale;
     public final float mKeyboardRowGapScale;
     public final int mKeyPreviewShowUpDuration;
+    public final SettingsValuesForSuggestion mSettingsValuesForSuggestion;
     public final int mKeyPreviewDismissDuration;
     public final float mKeyPreviewShowUpStartXScale;
     public final float mKeyPreviewShowUpStartYScale;
@@ -314,6 +315,9 @@ public class SettingsValues {
         mSwipeDownAction = parseIntPref(prefs, "pref_swipe_down_action", 10);
         mSwipeLeftAction = parseIntPref(prefs, "pref_swipe_left_action", -10);
         mSwipeRightAction = parseIntPref(prefs, "pref_swipe_right_action", -341);
+
+        mSettingsValuesForSuggestion = new SettingsValuesForSuggestion(
+                mBlockPotentiallyOffensive, mReplaceYoWithYe, mSplitSpaceNeighborWords);
     }
 
     public boolean isMetricsLoggingEnabled() {

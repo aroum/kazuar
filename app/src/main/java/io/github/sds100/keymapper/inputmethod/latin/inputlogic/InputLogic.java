@@ -167,16 +167,12 @@ public final class InputLogic {
         return null;
     }
 
-    private static final java.util.HashMap<String, String> sMacroReplacements = new java.util.HashMap<>();
-    static {
-        sMacroReplacements.put("AOSP", "Android Open Source Project");
-        sMacroReplacements.put("aosp", "android open source project");
-        sMacroReplacements.put("км", "километр");
-        sMacroReplacements.put("спс", "спасибо");
-    }
-
-    private static String getMacroReplacement(final String word) {
-        return sMacroReplacements.get(word);
+    private String getMacroReplacement(final String word) {
+        if (word == null || mLatinIME == null) {
+            return null;
+        }
+        return io.github.sds100.keymapper.inputmethod.latin.PersonalDictionaryShortcutCache.getShortcutReplacement(
+                mLatinIME, word, getDictionaryFacilitatorLocale());
     }
 
 
@@ -1176,6 +1172,23 @@ public final class InputLogic {
             } else {
                 commitTyped(settingsValues,
                         StringUtils.newSingleCodePointString(codePoint));
+            }
+        } else if (!wasComposingWord && settingsValues.mEnableMacroReplacements && !settingsValues.isUriField()) {
+            final CharSequence before = mConnection.getTextBeforeCursor(40, 0);
+            if (before != null && before.length() > 0) {
+                int start = before.length();
+                while (start > 0 && settingsValues.isWordCodePoint(Character.codePointBefore(before, start))) {
+                    final int cp = Character.codePointBefore(before, start);
+                    start -= Character.charCount(cp);
+                }
+                if (start < before.length()) {
+                    final String wordBefore = before.subSequence(start, before.length()).toString();
+                    final String macro = getMacroReplacement(wordBefore);
+                    if (macro != null) {
+                        mConnection.deleteTextBeforeCursor(wordBefore.length());
+                        mConnection.commitText(macro, 1);
+                    }
+                }
             }
         }
 
@@ -2462,8 +2475,14 @@ public final class InputLogic {
         }
         final SuggestedWordInfo autoCorrectionOrNull = mWordComposer.getAutoCorrectionOrNull();
         final String typedWord = mWordComposer.getTypedWord();
-        final String stringToCommit = (autoCorrectionOrNull != null)
+        String stringToCommit = (autoCorrectionOrNull != null)
                 ? autoCorrectionOrNull.mWord : typedWord;
+        if (settingsValues.mEnableMacroReplacements && !TextUtils.isEmpty(typedWord)) {
+            final String shortcutReplacement = getMacroReplacement(typedWord);
+            if (shortcutReplacement != null) {
+                stringToCommit = shortcutReplacement;
+            }
+        }
         if (stringToCommit != null) {
             if (TextUtils.isEmpty(typedWord)) {
                 throw new RuntimeException("We have an auto-correction but the typed word "
@@ -2605,8 +2624,7 @@ public final class InputLogic {
                         // hence 2; if we aren't, we should just skip whitespace if any, so 1.
                         mWordComposer.isComposingWord() ? 2 : 1),
                 keyboard,
-                new SettingsValuesForSuggestion(settingsValues.mBlockPotentiallyOffensive,
-                        settingsValues.mReplaceYoWithYe, settingsValues.mSplitSpaceNeighborWords),
+                settingsValues.mSettingsValuesForSuggestion,
                 settingsValues.mAutoCorrectionEnabledPerUserSettings,
                 inputStyle, sequenceNumber, callback);
     }
