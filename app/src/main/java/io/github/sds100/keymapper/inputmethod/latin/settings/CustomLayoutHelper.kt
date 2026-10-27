@@ -196,18 +196,10 @@ object CustomLayoutHelper {
             .putString("pref_custom_layout_$target", xmlContent)
             .putString("pref_keyboard_layout_$target", "custom")
 
-        if (target == "ru" || target == "en") {
+        if ((target == "ru" || target == "en") && rulesToApply.isNotEmpty()) {
             val rulesKey = "pref_custom_double_tap_rules_${target}_custom"
-            val existingRulesJson = prefs.getString(rulesKey, "[]") ?: "[]"
-            val rulesArray = JSONArray(existingRulesJson)
+            val rulesArray = JSONArray()
             val existingKeys = mutableMapOf<String, JSONObject>()
-            for (i in 0 until rulesArray.length()) {
-                val obj = rulesArray.getJSONObject(i)
-                val key = obj.optString("key")
-                if (key.isNotEmpty()) {
-                    existingKeys[key] = obj
-                }
-            }
 
             for (rule in rulesToApply) {
                 val fromStr = rule.first

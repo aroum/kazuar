@@ -427,7 +427,8 @@ public class KeyboardView extends View {
             final int keyHeight = key.getHeight();
             final Paint paint = mCustomThemeKeyPaint;
             paint.setStyle(Paint.Style.FILL);
-            boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL);
+            boolean isFunctional = (key.getBackgroundType() == Key.BACKGROUND_TYPE_FUNCTIONAL)
+                    || (key.getBackgroundType() == Key.BACKGROUND_TYPE_ACTION);
             int bgColor;
             if (isFunctional) {
                 bgColor = key.isPressed() ? mCustomColors.functionalKeyBackgroundPressed : mCustomColors.functionalKeyBackground;
@@ -435,13 +436,14 @@ public class KeyboardView extends View {
                 bgColor = key.isPressed() ? mCustomColors.keyBackgroundPressed : mCustomColors.keyBackground;
             }
             paint.setColor(bgColor);
-            float radius = 8f; // rounded corner radius in pixels
+            final float density = getResources().getDisplayMetrics().density;
+            final float radius = 4f * density; // rounded corner radius in dp
             mCustomThemeKeyRect.set(0, 0, keyWidth, keyHeight);
             canvas.drawRoundRect(mCustomThemeKeyRect, radius, radius, paint);
 
             if (mCustomThemeHasBorders) {
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(2.0f);
+                paint.setStrokeWidth(1.0f * density);
                 paint.setColor(mCustomColors.keyBorderColor);
                 canvas.drawRoundRect(mCustomThemeKeyRect, radius, radius, paint);
             }
@@ -653,7 +655,11 @@ public class KeyboardView extends View {
 
         paint.setTypeface(params.mTypeface);
         paint.setTextSize(params.mHintLetterSize);
-        paint.setColor(params.mHintLabelColor);
+        if (mIsCustomTheme) {
+            paint.setColor(mCustomColors.keyHintColor);
+        } else {
+            paint.setColor(params.mHintLabelColor);
+        }
         paint.setTextAlign(Align.CENTER);
         final float hintX = keyWidth - mKeyHintLetterPadding
                 - TypefaceUtils.getReferenceCharWidth(paint) / 2.0f;

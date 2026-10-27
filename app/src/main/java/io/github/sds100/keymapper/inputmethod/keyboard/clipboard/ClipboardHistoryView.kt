@@ -151,6 +151,16 @@ class ClipboardHistoryView @JvmOverloads constructor(
         setupClipKey(params)
         setupClearKey(params)
 
+        val customColors = io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper.getCustomThemeColors(context)
+        if (customColors != null) {
+            setBackgroundColor(customColors.keyboardBackground)
+            clipboardRecyclerView.setBackgroundColor(customColors.keyboardBackground)
+            placeholderView.setTextColor(customColors.keyTextColor)
+            alphabetKey.setTextColor(customColors.functionalKeyTextColor)
+            clearKey.setTextColor(customColors.functionalKeyTextColor)
+            clipboardAdapter.itemTextColor = customColors.keyTextColor
+        }
+
         placeholderView.apply {
             typeface = params.mTypeface
             setTextColor(params.mTextColor)

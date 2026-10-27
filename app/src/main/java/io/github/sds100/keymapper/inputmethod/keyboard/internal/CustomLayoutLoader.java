@@ -27,22 +27,11 @@ public class CustomLayoutLoader {
         }
     }
 
-    private static ArrayList<CustomReplaceRule> sReplaceRules = new ArrayList<>();
-
-    public static synchronized void setReplaceRules(ArrayList<CustomReplaceRule> rules) {
-        sReplaceRules = rules;
-    }
-
-    public static synchronized ArrayList<CustomReplaceRule> getReplaceRules() {
-        return sReplaceRules;
-    }
-
     public static boolean tryLoadCustomLayout(Context context, KeyboardParams params, File file) {
-        try {
-            if (!file.exists()) return false;
-
+        if (file == null || !file.exists()) return false;
+        try (FileInputStream fis = new FileInputStream(file)) {
             XmlPullParser parser = Xml.newPullParser();
-            parser.setInput(new FileInputStream(file), "UTF-8");
+            parser.setInput(fis, "UTF-8");
             return loadCustomLayout(context, params, parser);
         } catch (Exception e) {
             Log.e(TAG, "Failed to load custom layout from file", e);
@@ -76,7 +65,6 @@ public class CustomLayoutLoader {
 
             ArrayList<ArrayList<CustomKeySpec>> rows = new ArrayList<>();
             ArrayList<Float> rowDefaultWidths = new ArrayList<>();
-            ArrayList<CustomReplaceRule> replaceRules = new ArrayList<>();
             ArrayDeque<SwitchState> switchStack = new ArrayDeque<>();
 
             while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -153,12 +141,6 @@ public class CustomLayoutLoader {
                                 if (matchesKeyConditions(spec, params, context)) {
                                     rows.get(currentRow).add(spec);
                                 }
-                            }
-                        } else if ("Replace".equalsIgnoreCase(tagName)) {
-                            String from = getAttributeValue(parser, "from");
-                            String to = getAttributeValue(parser, "to");
-                            if (from != null && to != null) {
-                                replaceRules.add(new CustomReplaceRule(from, to));
                             }
                         }
                     }
@@ -478,7 +460,6 @@ public class CustomLayoutLoader {
                 }
             }
 
-            setReplaceRules(replaceRules);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse layout XML", e);

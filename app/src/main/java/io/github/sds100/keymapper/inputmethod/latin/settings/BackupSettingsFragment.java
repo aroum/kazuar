@@ -33,6 +33,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet;
+import io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper;
+import io.github.sds100.keymapper.inputmethod.latin.PersonalDictionaryShortcutCache;
 import io.github.sds100.keymapper.inputmethod.latin.common.FileUtils;
 import io.github.sds100.keymapper.inputmethod.latin.personalization.PersonalizationHelper;
 import io.github.sds100.keymapper.inputmethod.latin.personalization.UserHistoryDictionary;
@@ -44,11 +47,29 @@ public final class BackupSettingsFragment extends SubScreenFragment {
     private static final int REQ_IMPORT_DICT = 1004;
     private static final int REQ_EXPORT_HISTORY = 1005;
     private static final int REQ_IMPORT_HISTORY = 1006;
+    private static final int REQ_EXPORT_ALL = 1007;
+    private static final int REQ_IMPORT_ALL = 1008;
 
     @Override
     public void onCreate(final Bundle icicle) {
         super.onCreate(icicle);
         addPreferencesFromResource(R.xml.prefs_screen_backup);
+
+        findPreference("pref_backup_all_export").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                exportAll();
+                return true;
+            }
+        });
+
+        findPreference("pref_backup_all_import").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                importAll();
+                return true;
+            }
+        });
 
         findPreference("pref_backup_settings_export").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
@@ -144,6 +165,21 @@ public final class BackupSettingsFragment extends SubScreenFragment {
         startActivityForResult(intent, REQ_IMPORT_HISTORY);
     }
 
+    private void exportAll() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        intent.putExtra(Intent.EXTRA_TITLE, "kazuar_full_backup.zip");
+        startActivityForResult(intent, REQ_EXPORT_ALL);
+    }
+
+    private void importAll() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQ_IMPORT_ALL);
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -168,6 +204,10 @@ public final class BackupSettingsFragment extends SubScreenFragment {
                 doExportHistory(context, uri);
             } else if (requestCode == REQ_IMPORT_HISTORY) {
                 doImportHistory(context, uri);
+            } else if (requestCode == REQ_EXPORT_ALL) {
+                doExportAll(context, uri);
+            } else if (requestCode == REQ_IMPORT_ALL) {
+                doImportAll(context, uri);
             }
         } catch (Exception e) {
             Toast.makeText(context, R.string.restore_fail, Toast.LENGTH_LONG).show();
@@ -201,8 +241,11 @@ public final class BackupSettingsFragment extends SubScreenFragment {
                 sb.append(line);
             }
         }
+        restoreSettingsFromJsonObject(context, new JSONObject(sb.toString()));
+        Toast.makeText(context, R.string.restore_success, Toast.LENGTH_SHORT).show();
+    }
 
-        JSONObject json = new JSONObject(sb.toString());
+    private void restoreSettingsFromJsonObject(Context context, JSONObject json) throws Exception {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.clear();
 
@@ -230,7 +273,9 @@ public final class BackupSettingsFragment extends SubScreenFragment {
             }
         }
         editor.apply();
-        Toast.makeText(context, R.string.restore_success, Toast.LENGTH_SHORT).show();
+        KeyboardLayoutSet.clearKeyboardCache();
+        CustomThemeHelper.clearCache();
+        PersonalDictionaryShortcutCache.invalidate();
     }
 
     private void doExportDict(Context context, Uri uri) throws Exception {
@@ -273,8 +318,11 @@ public final class BackupSettingsFragment extends SubScreenFragment {
             }
         }
 
-        JSONArray array = new JSONArray(sb.toString());
+        restoreDictFromJsonArray(context, new JSONArray(sb.toString()));
+        Toast.makeText(context, R.string.restore_success, Toast.LENGTH_SHORT).show();
+    }
 
+    private void restoreDictFromJsonArray(Context context, JSONArray array) {
         HashSet<String> existing = new HashSet<>();
         try (Cursor cursor = context.getContentResolver().query(Words.CONTENT_URI, new String[]{Words.WORD, Words.SHORTCUT, Words.LOCALE}, null, null, null)) {
             if (cursor != null) {
@@ -290,9 +338,12 @@ public final class BackupSettingsFragment extends SubScreenFragment {
             }
         }
 
+        ArrayList<ContentValues> batch = new ArrayList<>();
         for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.getJSONObject(i);
-            String word = obj.getString("word");
+            JSONObject obj = array.optJSONObject(i);
+            if (obj == null) continue;
+            String word = obj.optString("word", null);
+            if (word == null) continue;
             String shortcut = obj.optString("shortcut", null);
             int freq = obj.optInt("frequency", 250);
             String locale = obj.optString("locale", null);
@@ -304,11 +355,176 @@ public final class BackupSettingsFragment extends SubScreenFragment {
                 values.put(Words.SHORTCUT, shortcut);
                 values.put(Words.FREQUENCY, freq);
                 values.put(Words.LOCALE, locale);
-                context.getContentResolver().insert(Words.CONTENT_URI, values);
+                batch.add(values);
+                existing.add(key);
+
+                if (batch.size() >= 100) {
+                    context.getContentResolver().bulkInsert(Words.CONTENT_URI, batch.toArray(new ContentValues[0]));
+                    batch.clear();
+                }
             }
         }
+        if (!batch.isEmpty()) {
+            context.getContentResolver().bulkInsert(Words.CONTENT_URI, batch.toArray(new ContentValues[0]));
+            batch.clear();
+        }
+        PersonalDictionaryShortcutCache.invalidate();
+    }
 
-        Toast.makeText(context, R.string.restore_success, Toast.LENGTH_SHORT).show();
+    private void doExportAll(Context context, Uri uri) throws Exception {
+        PersonalizationHelper.flushAllUserHistoryDictionaries();
+        try (OutputStream outputStream = context.getContentResolver().openOutputStream(uri);
+             ZipOutputStream zos = new ZipOutputStream(outputStream)) {
+            if (outputStream == null) {
+                throw new Exception("Output stream is null");
+            }
+            // 1. Settings
+            ZipEntry settingsEntry = new ZipEntry("settings.json");
+            zos.putNextEntry(settingsEntry);
+            Map<String, ?> allEntries = getSharedPreferences().getAll();
+            JSONObject settingsJson = new JSONObject();
+            for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+                settingsJson.put(entry.getKey(), entry.getValue());
+            }
+            zos.write(settingsJson.toString(4).getBytes("UTF-8"));
+            zos.closeEntry();
+
+            // 2. Personal dictionary
+            ZipEntry dictEntry = new ZipEntry("dictionary.json");
+            zos.putNextEntry(dictEntry);
+            JSONArray dictArray = new JSONArray();
+            try (Cursor cursor = context.getContentResolver().query(Words.CONTENT_URI, null, null, null, null)) {
+                if (cursor != null) {
+                    int wordIdx = cursor.getColumnIndex(Words.WORD);
+                    int shortcutIdx = cursor.getColumnIndex(Words.SHORTCUT);
+                    int freqIdx = cursor.getColumnIndex(Words.FREQUENCY);
+                    int localeIdx = cursor.getColumnIndex(Words.LOCALE);
+                    while (cursor.moveToNext()) {
+                        JSONObject obj = new JSONObject();
+                        obj.put("word", cursor.getString(wordIdx));
+                        if (shortcutIdx >= 0) obj.put("shortcut", cursor.getString(shortcutIdx));
+                        if (freqIdx >= 0) obj.put("frequency", cursor.getInt(freqIdx));
+                        if (localeIdx >= 0) obj.put("locale", cursor.getString(localeIdx));
+                        dictArray.put(obj);
+                    }
+                }
+            }
+            zos.write(dictArray.toString(4).getBytes("UTF-8"));
+            zos.closeEntry();
+
+            // 3. User history
+            File filesDir = context.getFilesDir();
+            if (filesDir != null) {
+                File[] historyFiles = filesDir.listFiles(new PersonalizationHelper.DictFilter(UserHistoryDictionary.NAME));
+                if (historyFiles != null) {
+                    for (File file : historyFiles) {
+                        if (!file.getName().endsWith(".tmp")) {
+                            addFileToZip("history", file, zos);
+                        }
+                    }
+                }
+            }
+
+            Toast.makeText(context, R.string.backup_success, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void doImportAll(Context context, Uri uri) throws Exception {
+        PersonalizationHelper.closeAllUserHistoryDictionaries();
+        File cacheDir = context.getCacheDir();
+        File tempDir = new File(cacheDir, "all_import_tmp_" + System.currentTimeMillis());
+        if (!tempDir.mkdirs()) {
+            throw new Exception("Cannot create temp directory: " + tempDir);
+        }
+
+        try {
+            File settingsFile = null;
+            File dictFile = null;
+            ArrayList<File> historyFiles = new ArrayList<>();
+
+            try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                 ZipInputStream zis = new ZipInputStream(inputStream)) {
+                if (inputStream == null) {
+                    throw new Exception("Input stream is null");
+                }
+                ZipEntry entry;
+                byte[] buffer = new byte[8192];
+                String canonicalDest = tempDir.getCanonicalPath();
+                while ((entry = zis.getNextEntry()) != null) {
+                    String name = entry.getName();
+                    File destFile = new File(tempDir, name);
+                    String canonicalFile = destFile.getCanonicalPath();
+                    if (!canonicalFile.startsWith(canonicalDest)) {
+                        throw new SecurityException("Zip traversal detected: " + name);
+                    }
+                    if (entry.isDirectory()) {
+                        destFile.mkdirs();
+                    } else {
+                        File parent = destFile.getParentFile();
+                        if (parent != null && !parent.exists()) {
+                            parent.mkdirs();
+                        }
+                        try (FileOutputStream fos = new FileOutputStream(destFile)) {
+                            int len;
+                            while ((len = zis.read(buffer)) > 0) {
+                                fos.write(buffer, 0, len);
+                            }
+                        }
+                        if ("settings.json".equals(name)) {
+                            settingsFile = destFile;
+                        } else if ("dictionary.json".equals(name)) {
+                            dictFile = destFile;
+                        } else if (name.startsWith("history/") || name.startsWith(UserHistoryDictionary.NAME)) {
+                            historyFiles.add(destFile);
+                        }
+                    }
+                    zis.closeEntry();
+                }
+            }
+
+            if (settingsFile != null && settingsFile.exists()) {
+                StringBuilder sb = new StringBuilder();
+                try (InputStream is = new FileInputStream(settingsFile);
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                }
+                restoreSettingsFromJsonObject(context, new JSONObject(sb.toString()));
+            }
+
+            if (dictFile != null && dictFile.exists()) {
+                StringBuilder sb = new StringBuilder();
+                try (InputStream is = new FileInputStream(dictFile);
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                }
+                restoreDictFromJsonArray(context, new JSONArray(sb.toString()));
+            }
+
+            if (!historyFiles.isEmpty()) {
+                File filesDir = context.getFilesDir();
+                if (filesDir != null) {
+                    FileUtils.deleteFilteredFiles(filesDir, new PersonalizationHelper.DictFilter(UserHistoryDictionary.NAME));
+                    for (File file : historyFiles) {
+                        copyRecursively(file, new File(filesDir, file.getName()));
+                    }
+                }
+            }
+
+            PersonalizationHelper.closeAllUserHistoryDictionaries();
+            KeyboardLayoutSet.clearKeyboardCache();
+            CustomThemeHelper.clearCache();
+            PersonalDictionaryShortcutCache.invalidate();
+
+            Toast.makeText(context, R.string.restore_success, Toast.LENGTH_SHORT).show();
+        } finally {
+            FileUtils.deleteRecursively(tempDir);
+        }
     }
 
     private void doExportHistory(Context context, Uri uri) throws Exception {

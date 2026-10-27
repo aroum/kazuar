@@ -227,6 +227,12 @@
     <string name="pref_backup_history_export_summary">Сохранить выученные слова, n-граммы и статистику в ZIP-файл</string>
     <string name="pref_backup_history_import">Импорт истории обучения</string>
     <string name="pref_backup_history_import_summary">Восстановить выученные слова, n-граммы и статистику из ZIP-файла</string>
+    <string name="pref_backup_all_export">Полный экспорт (все данные)</string>
+    <string name="pref_backup_all_export_summary">Сохранить настройки, личный словарь и историю обучения в один ZIP-архив</string>
+    <string name="pref_backup_all_import">Полный импорт (все данные)</string>
+    <string name="pref_backup_all_import_summary">Восстановить настройки, личный словарь и историю обучения из ZIP-архива</string>
+    <string name="pref_reset_to_default">Сбросить по умолчанию</string>
+    <string name="pref_reset_to_default_confirm">Вы уверены, что хотите сбросить все правила по умолчанию?</string>
     <string name="history_backup_empty">История обучения пуста</string>
     <string name="backup_success">Резервная копия успешно сохранена</string>
     <string name="backup_fail">Не удалось сохранить резервную копию</string>
@@ -278,8 +284,8 @@
     <string name="pref_key_repeat_delay_title">Задержка автоповтора клавиш (мс)</string>
     <string name="prefs_debug_settings_category">Настройки отладки</string>
     <string name="settings_category_replacements">Автозамена и макросы</string>
-    <string name="pref_enable_macro_replacements_title">Включить текстовые макросы</string>
-    <string name="pref_enable_macro_replacements_summary">Автоматически заменять текстовые сокращения из словаря при вводе разделителей</string>
+    <string name="pref_enable_macro_replacements_title">Всегда заменять сокращения</string>
+    <string name="pref_enable_macro_replacements_summary">Автоматически заменять сокращения из личного словаря (например, спс → спасибо) при нажатии пробела или знаков препинания</string>
     <string name="pref_swipe_threshold_title">Порог срабатывания свайпа (%)</string>
     <string name="pref_swipe_threshold_summary">Минимальная длина жеста для регистрации свайпа</string>
     <string name="pref_swipe_up_action_title">Действие при свайпе вверх</string>
@@ -344,6 +350,11 @@
         <item>Настройки</item>
         <item>Эмодзи</item>
         <item>Буфер обмена</item>
+        <item>Цифровая раскладка</item>
+        <item>Буквенная раскладка (ABC)</item>
+        <item>Пользовательская раскладка 0</item>
+        <item>Пользовательская раскладка 1</item>
+        <item>Пользовательская раскладка 2</item>
     </string-array>
 
     <string name="prefs_debug_settings_title">Режим отладки</string>

@@ -21,6 +21,7 @@ import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayoutSet;
 import io.github.sds100.keymapper.inputmethod.latin.R;
 import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues.DoubleTapRule;
 
@@ -210,10 +211,13 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         return list;
     }
 
+    private static final int MENU_RESET = 1001;
+
     private void saveRules() {
         String json = SettingsValues.serializeDoubleTapRules(mRules);
         String layoutVersion = getSharedPreferences().getString("pref_keyboard_layout_" + mLang, "v3");
         getSharedPreferences().edit().putString("pref_custom_double_tap_rules_" + mLang + "_" + layoutVersion, json).apply();
+        KeyboardLayoutSet.clearKeyboardCache();
     }
 
     private void rebuildPreferenceScreen() {
@@ -291,7 +295,19 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
                 if (key.length() > 1) {
                     key = key.substring(0, 1);
                 }
-                if (index == -1) {
+                int existingIdx = -1;
+                for (int i = 0; i < mRules.size(); i++) {
+                    if (i != index && mRules.get(i).key.equalsIgnoreCase(key)) {
+                        existingIdx = i;
+                        break;
+                    }
+                }
+                if (existingIdx != -1) {
+                    mRules.set(existingIdx, new DoubleTapRule(key, replacement, true));
+                    if (index != -1 && index != existingIdx) {
+                        mRules.remove(index);
+                    }
+                } else if (index == -1) {
                     mRules.add(new DoubleTapRule(key, replacement, true));
                 } else if (index >= 0 && index < mRules.size()) {
                     mRules.set(index, new DoubleTapRule(key, replacement, mRules.get(index).enabled));
@@ -318,6 +334,26 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         builder.show();
     }
 
+    private void showResetConfirmDialog() {
+        final Context context = getActivity();
+        if (context == null) return;
+        new AlertDialog.Builder(context)
+                .setTitle(R.string.pref_reset_to_default)
+                .setMessage(R.string.pref_reset_to_default_confirm)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String layoutVersion = getSharedPreferences().getString("pref_keyboard_layout_" + mLang, "v3");
+                        getSharedPreferences().edit().remove("pref_custom_double_tap_rules_" + mLang + "_" + layoutVersion).apply();
+                        loadRules();
+                        rebuildPreferenceScreen();
+                        KeyboardLayoutSet.clearKeyboardCache();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     @Override
     public void onCreateOptionsMenu(final Menu menu, final MenuInflater inflater) {
         inflater.inflate(R.menu.add_style, menu);
@@ -325,12 +361,18 @@ public final class DoubleTapSettingsFragment extends SubScreenFragment {
         if (addStyleItem != null) {
             addStyleItem.setTitle(R.string.pref_double_tap_rule_add_menu);
         }
+        menu.add(Menu.NONE, MENU_RESET, Menu.NONE, R.string.pref_reset_to_default)
+                .setIcon(android.R.drawable.ic_menu_revert)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     }
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         if (item.getItemId() == R.id.action_add_style) {
             showAddOrEditDialog(-1);
+            return true;
+        } else if (item.getItemId() == MENU_RESET) {
+            showResetConfirmDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);

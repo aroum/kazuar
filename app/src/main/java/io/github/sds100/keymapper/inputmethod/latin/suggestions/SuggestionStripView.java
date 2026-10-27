@@ -198,6 +198,11 @@ public final class SuggestionStripView extends RelativeLayout implements OnClick
     public void updateVisibility(final boolean shouldBeVisible, final boolean isFullscreenMode) {
         final int visibility = shouldBeVisible ? VISIBLE : (isFullscreenMode ? GONE : INVISIBLE);
         setVisibility(visibility);
+        final io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper.ThemeColors customColors =
+                io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomThemeHelper.getCustomThemeColors(getContext());
+        if (customColors != null) {
+            setBackgroundColor(customColors.keyboardBackground);
+        }
         final SettingsValues currentSettingsValues = Settings.getInstance().getCurrent();
         if (currentSettingsValues == null) {
             return;

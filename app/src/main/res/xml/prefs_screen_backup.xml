@@ -8,6 +8,16 @@
         android:title="@string/settings_backup_category">
 
         <Preference
+            android:key="pref_backup_all_export"
+            android:title="@string/pref_backup_all_export"
+            android:summary="@string/pref_backup_all_export_summary" />
+
+        <Preference
+            android:key="pref_backup_all_import"
+            android:title="@string/pref_backup_all_import"
+            android:summary="@string/pref_backup_all_import_summary" />
+
+        <Preference
             android:key="pref_backup_settings_export"
             android:title="@string/pref_backup_settings_export"
             android:summary="@string/pref_backup_settings_export_summary" />
