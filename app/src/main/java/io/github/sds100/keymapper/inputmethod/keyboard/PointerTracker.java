@@ -1018,44 +1018,47 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
             final float swipeThreshold = settingsValues.mSwipeThreshold;
 
-            if (mDownKey != null && mDownKey.getCode() == Constants.CODE_DELETE
-                    && deltaX < -keyboardWidth * 0.25f && absX > absY * 2.0f) {
-                isGesture = true;
-                gestureCode = Constants.CODE_DELETE_WORD;
-            } else if (absX > keyboardWidth * swipeThreshold && absX > absY * 1.5f) {
-                final int leftAction = settingsValues.mSwipeLeftAction;
-                final int rightAction = settingsValues.mSwipeRightAction;
-                if (deltaX > 0) {
-                    gestureCode = rightAction;
-                } else {
-                    gestureCode = leftAction;
-                }
-                if (gestureCode != 0) {
+            if (!mCursorMoved) {
+                if (mDownKey != null && mDownKey.getCode() == Constants.CODE_DELETE
+                        && deltaX < -keyboardWidth * 0.25f && absX > absY * 2.0f
+                        && !settingsValues.mDeleteSwipeEnabled) {
                     isGesture = true;
-                }
-            } else if (absY > keyboardHeight * swipeThreshold && absY > absX * 1.5f) {
-                final int upAction = settingsValues.mSwipeUpAction;
-                final int downAction = settingsValues.mSwipeDownAction;
-                if (deltaY < 0) {
-                    if (upAction == Constants.CODE_SWIPE_SHIFT) {
-                        // Swipe up: double swipe = Caps Lock, single swipe = Shift.
-                        final long now = SystemClock.uptimeMillis();
-                        final int doubleSwipeTimeout = settingsValues.mDoubleSwipeTimeout;
-                        if (now - sLastSwipeUpTime <= doubleSwipeTimeout) {
-                            gestureCode = Constants.CODE_CAPSLOCK;
-                            sLastSwipeUpTime = 0;
+                    gestureCode = Constants.CODE_DELETE_WORD;
+                } else if (absX > keyboardWidth * swipeThreshold && absX > absY * 1.5f) {
+                    final int leftAction = settingsValues.mSwipeLeftAction;
+                    final int rightAction = settingsValues.mSwipeRightAction;
+                    if (deltaX > 0) {
+                        gestureCode = rightAction;
+                    } else {
+                        gestureCode = leftAction;
+                    }
+                    if (gestureCode != 0) {
+                        isGesture = true;
+                    }
+                } else if (absY > keyboardHeight * swipeThreshold && absY > absX * 1.5f) {
+                    final int upAction = settingsValues.mSwipeUpAction;
+                    final int downAction = settingsValues.mSwipeDownAction;
+                    if (deltaY < 0) {
+                        if (upAction == Constants.CODE_SWIPE_SHIFT) {
+                            // Swipe up: double swipe = Caps Lock, single swipe = Shift.
+                            final long now = SystemClock.uptimeMillis();
+                            final int doubleSwipeTimeout = settingsValues.mDoubleSwipeTimeout;
+                            if (now - sLastSwipeUpTime <= doubleSwipeTimeout) {
+                                gestureCode = Constants.CODE_CAPSLOCK;
+                                sLastSwipeUpTime = 0;
+                            } else {
+                                gestureCode = Constants.CODE_SWIPE_SHIFT;
+                                sLastSwipeUpTime = now;
+                            }
                         } else {
-                            gestureCode = Constants.CODE_SWIPE_SHIFT;
-                            sLastSwipeUpTime = now;
+                            gestureCode = upAction;
                         }
                     } else {
-                        gestureCode = upAction;
+                        gestureCode = downAction;
                     }
-                } else {
-                    gestureCode = downAction;
-                }
-                if (gestureCode != 0) {
-                    isGesture = true;
+                    if (gestureCode != 0) {
+                        isGesture = true;
+                    }
                 }
             }
 
@@ -1081,7 +1084,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         // Release the last pressed key.
         setReleasedKeyGraphics(currentKey, true /* withAnimation */);
 
-        if(mCursorMoved && currentKey.getCode() == Constants.CODE_DELETE) {
+        final boolean isDeletePointerActive = (mDownKey != null && mDownKey.getCode() == Constants.CODE_DELETE)
+                || (currentKey != null && currentKey.getCode() == Constants.CODE_DELETE);
+        if (mCursorMoved && isDeletePointerActive) {
             sListener.onUpWithDeletePointerActive();
         }
 
