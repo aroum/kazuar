@@ -317,7 +317,7 @@ public class SettingsValues {
         mSwipeRightAction = parseIntPref(prefs, "pref_swipe_right_action", -341);
 
         mSettingsValuesForSuggestion = new SettingsValuesForSuggestion(
-                mBlockPotentiallyOffensive, mReplaceYoWithYe, mSplitSpaceNeighborWords);
+                mBlockPotentiallyOffensive, mReplaceYoWithYe, mSplitSpaceNeighborWords, mEnableMacroReplacements);
     }
 
     public boolean isMetricsLoggingEnabled() {

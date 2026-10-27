@@ -403,8 +403,7 @@ public final class Suggest {
                 // unless macro/shortcut replacements are enabled in settings.
                 || (splitSuggestion == null && !suggestionResults.isEmpty()
                         && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT)
-                        && (Settings.getInstance().getCurrent() == null
-                                || !Settings.getInstance().getCurrent().mEnableMacroReplacements))) {
+                        && !settingsValuesForSuggestion.mEnableMacroReplacements)) {
             hasAutoCorrection = false;
         } else if (splitSuggestion != null
                 || (!suggestionResults.isEmpty() && suggestionResults.first().isKindOf(SuggestedWordInfo.KIND_SHORTCUT))) {

@@ -20,12 +20,20 @@ public class SettingsValuesForSuggestion {
     public final boolean mBlockPotentiallyOffensive;
     public final boolean mReplaceYoWithYe;
     public final boolean mSplitSpaceNeighborWords;
+    public final boolean mEnableMacroReplacements;
 
     public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive,
-            final boolean replaceYoWithYe, final boolean splitSpaceNeighborWords) {
+            final boolean replaceYoWithYe, final boolean splitSpaceNeighborWords,
+            final boolean enableMacroReplacements) {
         mBlockPotentiallyOffensive = blockPotentiallyOffensive;
         mReplaceYoWithYe = replaceYoWithYe;
         mSplitSpaceNeighborWords = splitSpaceNeighborWords;
+        mEnableMacroReplacements = enableMacroReplacements;
+    }
+
+    public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive,
+            final boolean replaceYoWithYe, final boolean splitSpaceNeighborWords) {
+        this(blockPotentiallyOffensive, replaceYoWithYe, splitSpaceNeighborWords, true);
     }
 
     public SettingsValuesForSuggestion(final boolean blockPotentiallyOffensive,
