@@ -144,13 +144,15 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         final boolean oneHandedModeEnabled = settingsValues.mOneHandedModeEnabled;
         builder.setOneHandedModeEnabled(oneHandedModeEnabled);
         builder.setRowGapScale(settingsValues.mKeyboardRowGapScale);
-        mKeyboardLayoutSet = builder.build();
         try {
+            mKeyboardLayoutSet = builder.build();
             mState.onLoadKeyboard(currentAutoCapsState, currentRecapitalizeState,
                     oneHandedModeEnabled);
             mKeyboardTextsSet.setLocale(mRichImm.getCurrentSubtypeLocale(), mThemeContext);
         } catch (KeyboardLayoutSetException e) {
             Log.w(TAG, "loading keyboard failed: " + e.mKeyboardId, e.getCause());
+        } catch (Throwable t) {
+            Log.e(TAG, "unexpected error loading keyboard layout set", t);
         }
         scheduleKeyboardPrewarming(editorInfo, settingsValues, keyboardWidth, keyboardHeight, oneHandedModeEnabled);
     }
