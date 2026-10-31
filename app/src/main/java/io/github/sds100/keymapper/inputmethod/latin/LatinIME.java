@@ -61,6 +61,8 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import io.github.sds100.keymapper.inputmethod.accessibility.AccessibilityUtils;
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
 import io.github.sds100.keymapper.inputmethod.compat.EditorInfoCompatUtils;
@@ -91,6 +93,7 @@ import io.github.sds100.keymapper.inputmethod.latin.settings.SettingsValues;
 import io.github.sds100.keymapper.inputmethod.latin.suggestions.SuggestionStripView;
 import android.view.ContextThemeWrapper;
 import io.github.sds100.keymapper.inputmethod.latin.utils.ApplicationUtils;
+import io.github.sds100.keymapper.inputmethod.latin.utils.ResourceUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.DeviceProtectedUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.IntentUtils;
 import io.github.sds100.keymapper.inputmethod.latin.utils.JniUtils;
@@ -155,6 +158,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // Working variable for {@link #startShowingInputView()} and
     // {@link #onEvaluateInputViewShown()}.
     private boolean mIsExecutingStartShowingInputView;
+    private int mLastLoadedOrientation = Configuration.ORIENTATION_UNDEFINED;
 
 
     private final BroadcastReceiver mDictionaryDumpBroadcastReceiver =
@@ -308,6 +312,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                         latinIme.mKeyboardSwitcher.loadKeyboard(latinIme.getCurrentInputEditorInfo(),
                                 settingsValues, latinIme.getCurrentAutoCapsState(),
                                 latinIme.getCurrentRecapitalizeState());
+                        latinIme.mLastLoadedOrientation = latinIme.getResources().getConfiguration().orientation;
                     }
                     break;
                 case MSG_WAIT_FOR_DICTIONARY_LOAD:
@@ -800,23 +805,19 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     @Override
     public void onConfigurationChanged(final Configuration conf) {
         SettingsValues settingsValues = mSettings.getCurrent();
-        if (settingsValues.mDisplayOrientation != conf.orientation) {
+        final boolean orientationChanged = settingsValues == null
+                || settingsValues.mDisplayOrientation != conf.orientation;
+        if (orientationChanged) {
             mHandler.startOrientationChanging();
-            mInputLogic.onOrientationChange(mSettings.getCurrent());
+            if (settingsValues != null) {
+                mInputLogic.onOrientationChange(settingsValues);
+            }
         }
-        if (settingsValues.mHasHardwareKeyboard != Settings.readHasHardwareKeyboard(conf)) {
-            // If the state of having a hardware keyboard changed, then we want to reload the
-            // settings to adjust for that.
-            // TODO: we should probably do this unconditionally here, rather than only when we
-            // have a change in hardware keyboard configuration.
+        if (settingsValues == null || orientationChanged
+                || settingsValues.mHasHardwareKeyboard != Settings.readHasHardwareKeyboard(conf)) {
             loadSettings();
             settingsValues = mSettings.getCurrent();
             if (isImeSuppressedByHardwareKeyboard()) {
-                // We call cleanupInternalStateForFinishInput() because it's the right thing to do;
-                // however, it seems at the moment the framework is passing us a seemingly valid
-                // but actually non-functional InputConnection object. So if this bug ever gets
-                // fixed we'll be able to remove the composition, but until it is this code is
-                // actually not doing much.
                 cleanupInternalStateForFinishInput();
             }
         }
@@ -840,6 +841,31 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         if (hasSuggestionStripView()) {
             mSuggestionStripView.setListener(this, view);
         }
+
+        view.setPadding(ResourceUtils.getHorizontalInsetsLeft(), 0,
+                ResourceUtils.getHorizontalInsetsRight(), 0);
+
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, windowInsets) -> {
+            final androidx.core.graphics.Insets insets = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.navigationBars() | WindowInsetsCompat.Type.displayCutout()
+            );
+            final int left = insets.left;
+            final int right = insets.right;
+            final boolean insetsChanged = (left != ResourceUtils.getHorizontalInsetsLeft()
+                    || right != ResourceUtils.getHorizontalInsetsRight());
+            ResourceUtils.setHorizontalInsets(left, right);
+            v.setPadding(left, 0, right, 0);
+
+            if (insetsChanged && isInputViewShown()) {
+                final SettingsValues currentSettings = mSettings.getCurrent();
+                if (currentSettings != null) {
+                    mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), currentSettings,
+                            getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+                    mLastLoadedOrientation = getResources().getConfiguration().orientation;
+                }
+            }
+            return windowInsets;
+        });
     }
 
     @Override
@@ -1003,11 +1029,15 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             needToCallLoadKeyboardLater = false;
         }
 
-        if (isDifferentTextField ||
+        final int currentOrientation = getResources().getConfiguration().orientation;
+        final boolean orientationChanged = (mLastLoadedOrientation != Configuration.ORIENTATION_UNDEFINED
+                && mLastLoadedOrientation != currentOrientation);
+
+        if (isDifferentTextField || orientationChanged ||
                 (currentSettingsValues != null && !currentSettingsValues.hasSameOrientation(getResources().getConfiguration()))) {
             loadSettings();
         }
-        if (isDifferentTextField) {
+        if (isDifferentTextField || orientationChanged) {
             mainKeyboardView.closing();
             currentSettingsValues = mSettings.getCurrent();
 
@@ -1021,6 +1051,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
             switcher.loadKeyboard(editorInfo, currentSettingsValues, getCurrentAutoCapsState(),
                     getCurrentRecapitalizeState());
+            mLastLoadedOrientation = currentOrientation;
             if (needToCallLoadKeyboardLater) {
                 // If we need to call loadKeyboard again later, we need to save its state now. The
                 // later call will be done in #retryResetCaches.
@@ -1236,9 +1267,9 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         mSuggestionStripView.setMoreSuggestionsHeight(visibleTopY);
         // Need to set expanded touchable region only if a keyboard view is being shown.
         if (visibleKeyboardView.isShown()) {
-            final int touchLeft = 0;
+            final int touchLeft = visibleKeyboardView.getLeft();
             final int touchTop = mKeyboardSwitcher.isShowingMoreKeysPanel() ? 0 : visibleTopY;
-            final int touchRight = visibleKeyboardView.getWidth();
+            final int touchRight = visibleKeyboardView.getRight();
             final int touchBottom = inputHeight
                     // Extend touchable region below the keyboard.
                     + EXTENDED_TOUCHABLE_REGION_HEIGHT;
@@ -1689,6 +1720,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             // Reload keyboard because the current language has been changed.
             mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), mSettings.getCurrent(),
                     getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+            mLastLoadedOrientation = getResources().getConfiguration().orientation;
         }
     }
 

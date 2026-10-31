@@ -16,6 +16,7 @@
 
 package io.github.sds100.keymapper.inputmethod.latin.utils;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Build;
@@ -23,6 +24,9 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+import android.view.WindowMetrics;
 
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
 import io.github.sds100.keymapper.inputmethod.latin.R;
@@ -182,9 +186,67 @@ public final class ResourceUtils {
         return matchedAll;
     }
 
+    private static volatile int sHorizontalInsetsLeft = 0;
+    private static volatile int sHorizontalInsetsRight = 0;
+
+    public static void setHorizontalInsets(final int left, final int right) {
+        sHorizontalInsetsLeft = Math.max(0, left);
+        sHorizontalInsetsRight = Math.max(0, right);
+    }
+
+    public static int getHorizontalInsetsLeft() {
+        return sHorizontalInsetsLeft;
+    }
+
+    public static int getHorizontalInsetsRight() {
+        return sHorizontalInsetsRight;
+    }
+
+    public static int getHorizontalInsetsTotal() {
+        return sHorizontalInsetsLeft + sHorizontalInsetsRight;
+    }
+
+    public static int getDefaultKeyboardWidth(final Context context) {
+        if (context == null) {
+            return getDefaultKeyboardWidth(Resources.getSystem());
+        }
+        final Resources res = context.getResources();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                final WindowManager wm = context.getSystemService(WindowManager.class);
+                if (wm != null) {
+                    final WindowMetrics metrics = wm.getCurrentWindowMetrics();
+                    final WindowInsets windowInsets = metrics.getWindowInsets();
+                    final android.graphics.Insets insets = windowInsets.getInsetsIgnoringVisibility(
+                            WindowInsets.Type.navigationBars() | WindowInsets.Type.displayCutout());
+                    setHorizontalInsets(insets.left, insets.right);
+                    final int totalWidth = metrics.getBounds().width();
+                    final int usableWidth = totalWidth - insets.left - insets.right;
+                    if (usableWidth > 0) {
+                        return usableWidth;
+                    }
+                }
+            } catch (final Throwable ignored) {
+            }
+        }
+        return getDefaultKeyboardWidth(res);
+    }
+
+    public static int getKeyboardWidth(final Context context, final SettingsValues settingsValues) {
+        final int defaultKeyboardWidth = (context != null)
+                ? getDefaultKeyboardWidth(context)
+                : getDefaultKeyboardWidth(Resources.getSystem());
+        if (settingsValues != null && settingsValues.mOneHandedModeEnabled) {
+            final Resources res = (context != null) ? context.getResources() : Resources.getSystem();
+            return (int) res.getFraction(R.fraction.config_one_handed_mode_width,
+                    defaultKeyboardWidth, defaultKeyboardWidth);
+        }
+        return defaultKeyboardWidth;
+    }
+
     public static int getKeyboardWidth(final Resources res, final SettingsValues settingsValues) {
         final int defaultKeyboardWidth = getDefaultKeyboardWidth(res);
-        if (settingsValues.mOneHandedModeEnabled) {
+        if (settingsValues != null && settingsValues.mOneHandedModeEnabled) {
             return (int) res.getFraction(R.fraction.config_one_handed_mode_width,
                     defaultKeyboardWidth, defaultKeyboardWidth);
         }
@@ -193,7 +255,9 @@ public final class ResourceUtils {
 
     public static int getDefaultKeyboardWidth(final Resources res) {
         final DisplayMetrics dm = res.getDisplayMetrics();
-        return dm.widthPixels;
+        final int insets = sHorizontalInsetsLeft + sHorizontalInsetsRight;
+        final int width = dm.widthPixels - insets;
+        return Math.max(1, width);
     }
 
     public static int getKeyboardHeight(final Resources res, final SettingsValues settingsValues) {
