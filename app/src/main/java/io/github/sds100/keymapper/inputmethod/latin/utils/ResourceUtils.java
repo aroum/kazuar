@@ -20,15 +20,11 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
-import android.graphics.Rect;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.WindowInsets;
-import android.view.WindowManager;
-import android.view.WindowMetrics;
 
 import io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting;
 import io.github.sds100.keymapper.inputmethod.latin.R;
@@ -212,37 +208,7 @@ public final class ResourceUtils {
         if (context == null) {
             return getDefaultKeyboardWidth(Resources.getSystem());
         }
-        final Resources res = context.getResources();
-        final Configuration conf = res.getConfiguration();
-        final DisplayMetrics dm = res.getDisplayMetrics();
-        if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            setHorizontalInsets(0, 0);
-            return Math.min(dm.widthPixels, dm.heightPixels);
-        }
-        final int landscapeTotalWidth = Math.max(dm.widthPixels, dm.heightPixels);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                final WindowManager wm = context.getSystemService(WindowManager.class);
-                if (wm != null) {
-                    final WindowMetrics metrics = wm.getCurrentWindowMetrics();
-                    final Rect bounds = metrics.getBounds();
-                    // Only trust WindowMetrics insets if metrics bounds have already transitioned to landscape
-                    if (bounds.width() >= bounds.height()) {
-                        final WindowInsets windowInsets = metrics.getWindowInsets();
-                        final android.graphics.Insets insets = windowInsets.getInsetsIgnoringVisibility(
-                                WindowInsets.Type.navigationBars() | WindowInsets.Type.displayCutout());
-                        setHorizontalInsets(insets.left, insets.right);
-                    }
-                    final int usableWidth = landscapeTotalWidth - sHorizontalInsetsLeft - sHorizontalInsetsRight;
-                    if (usableWidth > 0) {
-                        return usableWidth;
-                    }
-                }
-            } catch (final Throwable ignored) {
-            }
-        }
-        final int insets = sHorizontalInsetsLeft + sHorizontalInsetsRight;
-        return Math.max(1, landscapeTotalWidth - insets);
+        return getDefaultKeyboardWidth(context.getResources());
     }
 
     public static int getKeyboardWidth(final Context context, final SettingsValues settingsValues) {

@@ -872,7 +872,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                     if (currentSettings != null && mKeyboardSwitcher.getMainKeyboardView() != null) {
                         final Keyboard currentKeyboard = mKeyboardSwitcher.getMainKeyboardView().getKeyboard();
                         final int expectedWidth = ResourceUtils.getKeyboardWidth(this, currentSettings);
-                        if (currentKeyboard == null || Math.abs(currentKeyboard.mOccupiedWidth - expectedWidth) > 50) {
+                        if (currentKeyboard == null || Math.abs(currentKeyboard.mOccupiedWidth - expectedWidth) > 5) {
                             mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), currentSettings,
                                     getCurrentAutoCapsState(), getCurrentRecapitalizeState());
                             mLastLoadedOrientation = getResources().getConfiguration().orientation;
@@ -1090,7 +1090,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         final Keyboard currentKeyboard = mainKeyboardView.getKeyboard();
         final int currentKbWidth = (currentKeyboard != null) ? currentKeyboard.mOccupiedWidth : 0;
         final int expectedWidth = ResourceUtils.getKeyboardWidth(this, currentSettingsValues);
-        final boolean widthMismatched = (currentKbWidth > 0 && Math.abs(currentKbWidth - expectedWidth) > 50);
+        final boolean widthMismatched = (currentKbWidth > 0 && Math.abs(currentKbWidth - expectedWidth) > 5);
 
         if (isDifferentTextField || orientationChanged || widthMismatched ||
                 (currentSettingsValues != null && !currentSettingsValues.hasSameOrientation(getResources().getConfiguration()))) {
