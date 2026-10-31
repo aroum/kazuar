@@ -17,6 +17,7 @@
 package io.github.sds100.keymapper.inputmethod.latin.utils;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Build;
@@ -211,6 +212,11 @@ public final class ResourceUtils {
             return getDefaultKeyboardWidth(Resources.getSystem());
         }
         final Resources res = context.getResources();
+        final Configuration conf = res.getConfiguration();
+        if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            setHorizontalInsets(0, 0);
+            return res.getDisplayMetrics().widthPixels;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 final WindowManager wm = context.getSystemService(WindowManager.class);
@@ -254,6 +260,11 @@ public final class ResourceUtils {
     }
 
     public static int getDefaultKeyboardWidth(final Resources res) {
+        final Configuration conf = res.getConfiguration();
+        if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            setHorizontalInsets(0, 0);
+            return res.getDisplayMetrics().widthPixels;
+        }
         final DisplayMetrics dm = res.getDisplayMetrics();
         final int insets = sHorizontalInsetsLeft + sHorizontalInsetsRight;
         final int width = dm.widthPixels - insets;

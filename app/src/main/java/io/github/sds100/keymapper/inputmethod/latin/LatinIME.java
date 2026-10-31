@@ -804,6 +804,12 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public void onConfigurationChanged(final Configuration conf) {
+        if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            ResourceUtils.setHorizontalInsets(0, 0);
+            if (mInputView != null) {
+                mInputView.setPadding(0, 0, 0, 0);
+            }
+        }
         SettingsValues settingsValues = mSettings.getCurrent();
         final boolean orientationChanged = settingsValues == null
                 || settingsValues.mDisplayOrientation != conf.orientation;
@@ -842,10 +848,22 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             mSuggestionStripView.setListener(this, view);
         }
 
-        view.setPadding(ResourceUtils.getHorizontalInsetsLeft(), 0,
-                ResourceUtils.getHorizontalInsetsRight(), 0);
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            ResourceUtils.setHorizontalInsets(0, 0);
+            view.setPadding(0, 0, 0, 0);
+        } else {
+            view.setPadding(ResourceUtils.getHorizontalInsetsLeft(), 0,
+                    ResourceUtils.getHorizontalInsetsRight(), 0);
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, windowInsets) -> {
+            final int orientation = getResources().getConfiguration().orientation;
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                ResourceUtils.setHorizontalInsets(0, 0);
+                v.setPadding(0, 0, 0, 0);
+                return windowInsets;
+            }
+
             final androidx.core.graphics.Insets insets = windowInsets.getInsets(
                     WindowInsetsCompat.Type.navigationBars() | WindowInsetsCompat.Type.displayCutout()
             );
@@ -1030,6 +1048,15 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
 
         final int currentOrientation = getResources().getConfiguration().orientation;
+        if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+            ResourceUtils.setHorizontalInsets(0, 0);
+            if (mInputView != null) {
+                mInputView.setPadding(0, 0, 0, 0);
+            }
+        } else if (mInputView != null) {
+            mInputView.setPadding(ResourceUtils.getHorizontalInsetsLeft(), 0,
+                    ResourceUtils.getHorizontalInsetsRight(), 0);
+        }
         final boolean orientationChanged = (mLastLoadedOrientation != Configuration.ORIENTATION_UNDEFINED
                 && mLastLoadedOrientation != currentOrientation);
 
