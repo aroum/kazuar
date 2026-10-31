@@ -305,7 +305,7 @@ public class SettingsValues {
         final String lang;
         if ("ru".equals(rawLang) || "be".equals(rawLang) || "uk".equals(rawLang)) {
             lang = "ru";
-        } else if ("en".equals(rawLang) || "zz".equals(rawLang) || TextUtils.isEmpty(rawLang)) {
+        } else if ("en".equals(rawLang) || "zz".equals(rawLang) || rawLang.isEmpty()) {
             lang = "en";
         } else {
             lang = prefs.contains("pref_keyboard_layout_" + rawLang) ? rawLang : "en";

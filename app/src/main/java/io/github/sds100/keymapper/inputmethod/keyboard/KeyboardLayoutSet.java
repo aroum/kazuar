@@ -280,7 +280,7 @@ public final class KeyboardLayoutSet {
         final String language;
         if ("ru".equals(rawLanguage) || "be".equals(rawLanguage) || "uk".equals(rawLanguage)) {
             language = "ru";
-        } else if ("en".equals(rawLanguage) || "zz".equals(rawLanguage) || TextUtils.isEmpty(rawLanguage)) {
+        } else if ("en".equals(rawLanguage) || "zz".equals(rawLanguage) || rawLanguage.isEmpty()) {
             language = "en";
         } else {
             language = prefs.contains("pref_keyboard_layout_" + rawLanguage) ? rawLanguage : "en";
