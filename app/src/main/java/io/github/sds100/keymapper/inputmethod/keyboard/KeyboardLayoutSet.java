@@ -275,7 +275,16 @@ public final class KeyboardLayoutSet {
         builder.setAllowRedundantMoreKes(elementParams.mAllowRedundantMoreKeys);
         
         final android.content.SharedPreferences prefs = DeviceProtectedUtils.getSharedPreferences(mContext);
-        final String language = id.getLocale().getLanguage();
+        final String rawLanguage = (id.getLocale() != null && id.getLocale().getLanguage() != null)
+                ? id.getLocale().getLanguage() : "";
+        final String language;
+        if ("ru".equals(rawLanguage) || "be".equals(rawLanguage) || "uk".equals(rawLanguage)) {
+            language = "ru";
+        } else if ("en".equals(rawLanguage) || "zz".equals(rawLanguage) || TextUtils.isEmpty(rawLanguage)) {
+            language = "en";
+        } else {
+            language = prefs.contains("pref_keyboard_layout_" + rawLanguage) ? rawLanguage : "en";
+        }
         final String layoutVersion = prefs.getString("pref_keyboard_layout_" + language, "v3");
 
         boolean loadedCustom = false;
@@ -345,6 +354,7 @@ public final class KeyboardLayoutSet {
                 if (io.github.sds100.keymapper.inputmethod.keyboard.internal.CustomLayoutLoader.tryLoadCustomLayoutFromString(mContext, kbParams, customXml)) {
                     loadedCustom = true;
                 } else {
+                    Log.e(TAG, "Failed to load custom layout for " + language + ", falling back to default layout");
                     kbParams.clearKeys();
                     builder.load(elementParams.mKeyboardXmlId, id);
                     loadedCustom = true;

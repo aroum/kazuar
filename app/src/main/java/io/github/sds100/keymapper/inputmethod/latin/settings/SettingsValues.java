@@ -301,7 +301,15 @@ public class SettingsValues {
         mEnableMacroReplacements = prefs.getBoolean("pref_enable_macro_replacements", true);
         mKeyboardLayoutRu = prefs.getString("pref_keyboard_layout_ru", "v3");
         mKeyboardLayoutEn = prefs.getString("pref_keyboard_layout_en", "v3");
-        final String lang = mLocale != null && mLocale.getLanguage() != null ? mLocale.getLanguage() : "";
+        final String rawLang = mLocale != null && mLocale.getLanguage() != null ? mLocale.getLanguage() : "";
+        final String lang;
+        if ("ru".equals(rawLang) || "be".equals(rawLang) || "uk".equals(rawLang)) {
+            lang = "ru";
+        } else if ("en".equals(rawLang) || "zz".equals(rawLang) || TextUtils.isEmpty(rawLang)) {
+            lang = "en";
+        } else {
+            lang = prefs.contains("pref_keyboard_layout_" + rawLang) ? rawLang : "en";
+        }
         final String layoutVersion = prefs.getString("pref_keyboard_layout_" + lang, "v3");
         final String rulesJson = prefs.getString("pref_custom_double_tap_rules_" + lang + "_" + layoutVersion, "ru".equals(lang) ? DEFAULT_RULES_JSON : "[]");
         final String cacheKey = lang + "_" + layoutVersion;

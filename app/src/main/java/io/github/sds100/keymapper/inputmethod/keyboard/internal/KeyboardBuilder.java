@@ -594,8 +594,10 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
             if (keyboardLayout != 0) {
                 try {
                     final String entryName = mResources.getResourceEntryName(keyboardLayout);
-                    final String language = (mParams != null && mParams.mId != null && mParams.mId.getLocale() != null)
+                    final String rawLanguage = (mParams != null && mParams.mId != null && mParams.mId.getLocale() != null)
                             ? mParams.mId.getLocale().getLanguage() : "";
+                    final String language = ("ru".equals(rawLanguage) || "be".equals(rawLanguage) || "uk".equals(rawLanguage))
+                            ? "ru" : "en";
                     final SettingsValues settingsValues = Settings.getInstance().getCurrent();
                     final String layoutVersion = "ru".equals(language) ?
                             (settingsValues != null && settingsValues.mKeyboardLayoutRu != null ? settingsValues.mKeyboardLayoutRu : "v3") :

@@ -56,6 +56,8 @@ object CustomLayoutHelper {
 
         var target: String? = null
         val parsedReplaceRules = mutableListOf<Pair<String, String>>()
+        var hasCyrillicKeys = false
+        var hasLatinKeys = false
         try {
             val factory = XmlPullParserFactory.newInstance()
             val parser = factory.newPullParser()
@@ -76,7 +78,7 @@ object CustomLayoutHelper {
                                     attrVal in listOf("usr1", "user1", "user_1", "user-1") -> "usr1"
                                     attrVal in listOf("usr2", "user2", "user_2", "user-2") -> "usr2"
                                     attrVal in listOf("ru", "rus", "russian") -> "ru"
-                                    attrVal in listOf("en", "eng", "english") -> "en"
+                                    attrVal in listOf("en", "eng", "english", "latin", "lat", "qwerty") -> "en"
                                     else -> null
                                 }
                                 if (target != null) break
@@ -88,10 +90,25 @@ object CustomLayoutHelper {
                                     attrVal in listOf("usr1", "user1", "user_1", "user-1") -> "usr1"
                                     attrVal in listOf("usr2", "user2", "user_2", "user-2") -> "usr2"
                                     attrVal.contains("ru") || attrVal.contains("rus") || attrVal.contains("slavic") -> "ru"
-                                    attrVal.contains("en") || attrVal.contains("eng") || attrVal.contains("qwerty") -> "en"
+                                    attrVal.contains("en") || attrVal.contains("eng") || attrVal.contains("qwerty") || attrVal.contains("latin") || attrVal.contains("lat") -> "en"
                                     else -> null
                                 }
                                 if (target != null) break
+                            }
+                        }
+                    }
+                    if ("Key".equals(tagName, ignoreCase = true)) {
+                        for (i in 0 until parser.attributeCount) {
+                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
+                            if (attrName == "keyspec" || attrName == "label") {
+                                val attrVal = parser.getAttributeValue(i) ?: ""
+                                for (ch in attrVal) {
+                                    if (ch in '\u0400'..'\u04FF') {
+                                        hasCyrillicKeys = true
+                                    } else if ((ch in 'a'..'z') || (ch in 'A'..'Z')) {
+                                        hasLatinKeys = true
+                                    }
+                                }
                             }
                         }
                     }
@@ -124,8 +141,10 @@ object CustomLayoutHelper {
                 fileName.contains("usr0") || fileName.contains("user0") || fileName.contains("user_0") || fileName.contains("user-0") -> "usr0"
                 fileName.contains("usr1") || fileName.contains("user1") || fileName.contains("user_1") || fileName.contains("user-1") -> "usr1"
                 fileName.contains("usr2") || fileName.contains("user2") || fileName.contains("user_2") || fileName.contains("user-2") -> "usr2"
-                fileName.contains("ru") || fileName.contains("rus") || fileName.contains("slavic") -> "ru"
-                fileName.contains("en") || fileName.contains("eng") || fileName.contains("qwerty") -> "en"
+                fileName.contains("ru") || fileName.contains("rus") || fileName.contains("slavic") || fileName.contains("рус") -> "ru"
+                fileName.contains("en") || fileName.contains("eng") || fileName.contains("qwerty") || fileName.contains("latin") || fileName.contains("lat") || fileName.contains("англ") || fileName.contains("латин") -> "en"
+                hasCyrillicKeys -> "ru"
+                hasLatinKeys -> "en"
                 trimmed.any { it in '\u0400'..'\u04FF' } -> "ru"
                 else -> null
             }
@@ -196,6 +215,11 @@ object CustomLayoutHelper {
             .putString("pref_custom_layout_$target", xmlContent)
             .putString("pref_keyboard_layout_$target", "custom")
 
+        if (target == "en") {
+            editor.putString("pref_custom_layout_zz", xmlContent)
+            editor.putString("pref_keyboard_layout_zz", "custom")
+        }
+
         if ((target == "ru" || target == "en") && rulesToApply.isNotEmpty()) {
             val rulesKey = "pref_custom_double_tap_rules_${target}_custom"
             val rulesArray = JSONArray()
@@ -221,6 +245,9 @@ object CustomLayoutHelper {
                 }
             }
             editor.putString(rulesKey, rulesArray.toString())
+            if (target == "en") {
+                editor.putString("pref_custom_double_tap_rules_zz_custom", rulesArray.toString())
+            }
         }
 
         editor.apply()

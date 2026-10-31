@@ -81,6 +81,9 @@ public final class LayoutSettingsFragment extends SubScreenFragment {
                     if (index >= 0) {
                         pref.setSummary(pref.getEntries()[index]);
                     }
+                    if ("pref_keyboard_layout_en".equals(key)) {
+                        prefs.edit().putString("pref_keyboard_layout_zz", strVal).apply();
+                    }
                     KeyboardLayoutSet.clearKeyboardCache();
                     return true;
                 }
