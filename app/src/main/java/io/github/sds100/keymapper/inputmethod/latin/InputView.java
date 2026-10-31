@@ -50,6 +50,23 @@ public final class InputView extends FrameLayout {
                 mMainKeyboardView, suggestionStripView);
     }
 
+    public interface OnSizeChangedListener {
+        void onSizeChanged(int w, int h, int oldw, int oldh);
+    }
+    private OnSizeChangedListener mOnSizeChangedListener;
+
+    public void setOnSizeChangedListener(final OnSizeChangedListener listener) {
+        mOnSizeChangedListener = listener;
+    }
+
+    @Override
+    protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (mOnSizeChangedListener != null) {
+            mOnSizeChangedListener.onSizeChanged(w, h, oldw, oldh);
+        }
+    }
+
     public void setKeyboardTopPadding(final int keyboardTopPadding) {
         mKeyboardTopPaddingForwarder.setKeyboardTopPadding(keyboardTopPadding);
     }

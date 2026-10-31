@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Rect;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -213,21 +214,26 @@ public final class ResourceUtils {
         }
         final Resources res = context.getResources();
         final Configuration conf = res.getConfiguration();
+        final DisplayMetrics dm = res.getDisplayMetrics();
         if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
             setHorizontalInsets(0, 0);
-            return res.getDisplayMetrics().widthPixels;
+            return Math.min(dm.widthPixels, dm.heightPixels);
         }
+        final int landscapeTotalWidth = Math.max(dm.widthPixels, dm.heightPixels);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 final WindowManager wm = context.getSystemService(WindowManager.class);
                 if (wm != null) {
                     final WindowMetrics metrics = wm.getCurrentWindowMetrics();
-                    final WindowInsets windowInsets = metrics.getWindowInsets();
-                    final android.graphics.Insets insets = windowInsets.getInsetsIgnoringVisibility(
-                            WindowInsets.Type.navigationBars() | WindowInsets.Type.displayCutout());
-                    setHorizontalInsets(insets.left, insets.right);
-                    final int totalWidth = metrics.getBounds().width();
-                    final int usableWidth = totalWidth - insets.left - insets.right;
+                    final Rect bounds = metrics.getBounds();
+                    // Only trust WindowMetrics insets if metrics bounds have already transitioned to landscape
+                    if (bounds.width() >= bounds.height()) {
+                        final WindowInsets windowInsets = metrics.getWindowInsets();
+                        final android.graphics.Insets insets = windowInsets.getInsetsIgnoringVisibility(
+                                WindowInsets.Type.navigationBars() | WindowInsets.Type.displayCutout());
+                        setHorizontalInsets(insets.left, insets.right);
+                    }
+                    final int usableWidth = landscapeTotalWidth - sHorizontalInsetsLeft - sHorizontalInsetsRight;
                     if (usableWidth > 0) {
                         return usableWidth;
                     }
@@ -235,7 +241,8 @@ public final class ResourceUtils {
             } catch (final Throwable ignored) {
             }
         }
-        return getDefaultKeyboardWidth(res);
+        final int insets = sHorizontalInsetsLeft + sHorizontalInsetsRight;
+        return Math.max(1, landscapeTotalWidth - insets);
     }
 
     public static int getKeyboardWidth(final Context context, final SettingsValues settingsValues) {
@@ -261,14 +268,14 @@ public final class ResourceUtils {
 
     public static int getDefaultKeyboardWidth(final Resources res) {
         final Configuration conf = res.getConfiguration();
+        final DisplayMetrics dm = res.getDisplayMetrics();
         if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
             setHorizontalInsets(0, 0);
-            return res.getDisplayMetrics().widthPixels;
+            return Math.min(dm.widthPixels, dm.heightPixels);
         }
-        final DisplayMetrics dm = res.getDisplayMetrics();
+        final int landscapeTotalWidth = Math.max(dm.widthPixels, dm.heightPixels);
         final int insets = sHorizontalInsetsLeft + sHorizontalInsetsRight;
-        final int width = dm.widthPixels - insets;
-        return Math.max(1, width);
+        return Math.max(1, landscapeTotalWidth - insets);
     }
 
     public static int getKeyboardHeight(final Resources res, final SettingsValues settingsValues) {

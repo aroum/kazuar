@@ -125,12 +125,27 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         return false;
     }
 
+    public void onConfigurationChanged(final Configuration conf) {
+        if (mLatinIME != null && mKeyboardTheme != null) {
+            mThemeContext = new ContextThemeWrapper(mLatinIME, mKeyboardTheme.mStyleId);
+            mCurrentUiMode = conf.uiMode;
+            mKeyboardsPrewarmed = false;
+        }
+    }
+
     public void loadKeyboard(final EditorInfo editorInfo, final SettingsValues settingsValues,
             final int currentAutoCapsState, final int currentRecapitalizeState) {
+        if (mLatinIME != null && mKeyboardTheme != null && mThemeContext != null) {
+            final int currentOrientation = mLatinIME.getResources().getConfiguration().orientation;
+            if (mThemeContext.getResources().getConfiguration().orientation != currentOrientation) {
+                mThemeContext = new ContextThemeWrapper(mLatinIME, mKeyboardTheme.mStyleId);
+                mKeyboardsPrewarmed = false;
+            }
+        }
         final KeyboardLayoutSet.Builder builder = new KeyboardLayoutSet.Builder(
                 mThemeContext, editorInfo);
-        final Resources res = mThemeContext.getResources();
-        final int keyboardWidth = ResourceUtils.getKeyboardWidth(mThemeContext, settingsValues);
+        final Resources res = mLatinIME.getResources();
+        final int keyboardWidth = ResourceUtils.getKeyboardWidth(mLatinIME, settingsValues);
         final int keyboardHeight = ResourceUtils.getKeyboardHeight(res, settingsValues);
         builder.setKeyboardGeometry(keyboardWidth, keyboardHeight);
         builder.setSubtype(mRichImm.getCurrentSubtype());

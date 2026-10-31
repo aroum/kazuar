@@ -809,7 +809,11 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             if (mInputView != null) {
                 mInputView.setPadding(0, 0, 0, 0);
             }
+        } else if (mInputView != null) {
+            mInputView.setPadding(ResourceUtils.getHorizontalInsetsLeft(), 0,
+                    ResourceUtils.getHorizontalInsetsRight(), 0);
         }
+        mKeyboardSwitcher.onConfigurationChanged(conf);
         SettingsValues settingsValues = mSettings.getCurrent();
         final boolean orientationChanged = settingsValues == null
                 || settingsValues.mDisplayOrientation != conf.orientation;
@@ -829,6 +833,11 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
         // KeyboardSwitcher will check by itself if theme update is necessary
         mKeyboardSwitcher.updateKeyboardTheme();
+        if (orientationChanged && mKeyboardSwitcher.getMainKeyboardView() != null) {
+            mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), settingsValues,
+                    getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+            mLastLoadedOrientation = conf.orientation;
+        }
         super.onConfigurationChanged(conf);
     }
 
@@ -856,6 +865,23 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                     ResourceUtils.getHorizontalInsetsRight(), 0);
         }
 
+        if (view instanceof InputView) {
+            ((InputView) view).setOnSizeChangedListener((w, h, oldw, oldh) -> {
+                if (oldw != 0 && w != oldw) {
+                    final SettingsValues currentSettings = mSettings.getCurrent();
+                    if (currentSettings != null && mKeyboardSwitcher.getMainKeyboardView() != null) {
+                        final Keyboard currentKeyboard = mKeyboardSwitcher.getMainKeyboardView().getKeyboard();
+                        final int expectedWidth = ResourceUtils.getKeyboardWidth(this, currentSettings);
+                        if (currentKeyboard == null || Math.abs(currentKeyboard.mOccupiedWidth - expectedWidth) > 50) {
+                            mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), currentSettings,
+                                    getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+                            mLastLoadedOrientation = getResources().getConfiguration().orientation;
+                        }
+                    }
+                }
+            });
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, windowInsets) -> {
             final int orientation = getResources().getConfiguration().orientation;
             if (orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -874,12 +900,13 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             ResourceUtils.setHorizontalInsets(left, right);
             v.setPadding(left, 0, right, 0);
 
-            if (insetsChanged && isInputViewShown()) {
+            final boolean orientationMismatch = (mLastLoadedOrientation != orientation);
+            if (insetsChanged || orientationMismatch) {
                 final SettingsValues currentSettings = mSettings.getCurrent();
                 if (currentSettings != null) {
                     mKeyboardSwitcher.loadKeyboard(getCurrentInputEditorInfo(), currentSettings,
                             getCurrentAutoCapsState(), getCurrentRecapitalizeState());
-                    mLastLoadedOrientation = getResources().getConfiguration().orientation;
+                    mLastLoadedOrientation = orientation;
                 }
             }
             return windowInsets;
@@ -1060,11 +1087,16 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         final boolean orientationChanged = (mLastLoadedOrientation != Configuration.ORIENTATION_UNDEFINED
                 && mLastLoadedOrientation != currentOrientation);
 
-        if (isDifferentTextField || orientationChanged ||
+        final Keyboard currentKeyboard = mainKeyboardView.getKeyboard();
+        final int currentKbWidth = (currentKeyboard != null) ? currentKeyboard.mOccupiedWidth : 0;
+        final int expectedWidth = ResourceUtils.getKeyboardWidth(this, currentSettingsValues);
+        final boolean widthMismatched = (currentKbWidth > 0 && Math.abs(currentKbWidth - expectedWidth) > 50);
+
+        if (isDifferentTextField || orientationChanged || widthMismatched ||
                 (currentSettingsValues != null && !currentSettingsValues.hasSameOrientation(getResources().getConfiguration()))) {
             loadSettings();
         }
-        if (isDifferentTextField || orientationChanged) {
+        if (isDifferentTextField || orientationChanged || widthMismatched) {
             mainKeyboardView.closing();
             currentSettingsValues = mSettings.getCurrent();
 
