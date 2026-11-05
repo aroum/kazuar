@@ -199,9 +199,11 @@ object CustomLayoutHelper {
         callback: Callback? = null
     ) {
         CustomLayoutStore.execute {
+            var pinned: String? = null
             try {
                 val canonical = CustomLayoutStore.target(target)
-                val revision = CustomLayoutStore.prepare(context, xmlContent, canonical)
+                val revision = CustomLayoutStore.prepare(context, xmlContent, canonical, pinRevision = true)
+                pinned = revision
                 val rules = replaceRules ?: parseReplaceRules(xmlContent)
                 val editor = DeviceProtectedUtils.getSharedPreferences(context).edit()
                     .putString("pref_custom_layout_file_$canonical", revision)
@@ -223,6 +225,8 @@ object CustomLayoutHelper {
                 }
             } catch (failure: Exception) {
                 showFailure(context, failure.message)
+            } finally {
+                pinned?.let { CustomLayoutStore.release(it) }
             }
         }
     }

@@ -102,14 +102,17 @@ internal object BackupRepository {
         if (operation == 1008) require(entries.keys.containsAll(
                 listOf("settings.json", "dictionary.json", "history.json"))) { "Incomplete full backup" }
         // All JSON and native write inputs are validated before touching live state.
-        val settings = entries["settings.json"]?.let { CustomLayoutStore.prepareSettings(context, BackupSettingsCodec.decode(jsonObject(it))) }
+        val settingsValues = entries["settings.json"]?.let { BackupSettingsCodec.decode(jsonObject(it)) }
         val dictionary = entries["dictionary.json"]?.let { validateDictionary(jsonArray(it)) }
         val history = entries["history.json"]?.let { HistoryBackup.validate(jsonObject(it)) }
         val transaction = File.createTempFile("restore-", "", context.filesDir).also {
             BackupRestoreJournal.register(it)
             check(it.delete() && it.mkdirs())
         }
+        var preparedSettings: Map<String, Any>? = null
         try {
+            val settings = settingsValues?.let { CustomLayoutStore.prepareSettings(context, it) }
+            preparedSettings = settings
             val staged = File(transaction, "new")
             if (history != null) HistoryBackup.build(history, staged)
             synchronized(PersonalizationHelper.DICTIONARY_IO_LOCK) {
@@ -167,6 +170,7 @@ internal object BackupRepository {
                 }
             }
         } finally {
+            preparedSettings?.let { CustomLayoutStore.releasePrepared(it) }
             if (!File(transaction, "retain").exists()) transaction.deleteRecursively()
             BackupRestoreJournal.unregister(transaction)
         }

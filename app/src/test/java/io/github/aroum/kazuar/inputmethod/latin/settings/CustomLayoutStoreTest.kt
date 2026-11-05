@@ -90,4 +90,26 @@ class CustomLayoutStoreTest {
     fun invalidLayoutInBackupFailsBeforeSettingsCommit() {
         CustomLayoutStore.prepareSettings(context, mapOf("sound_on" to false, "pref_custom_layout_en" to "<Keyboard/>"))
     }
+
+    @Test fun storageCleanupDoesNotDeleteStagedBackupRevisions() {
+        val prepared = CustomLayoutStore.prepareSettings(context, mapOf("pref_custom_layout_en" to xml))
+        val ref = prepared["pref_custom_layout_file_en"] as String
+        val directory = java.io.File(context.createDeviceProtectedStorageContext().filesDir, "custom-layouts")
+        val staged = java.io.File(directory, ref)
+        assertTrue(staged.setLastModified(1))
+        val fillers = (0..32).map { index ->
+            java.io.File(directory, "v1-" + "%064x".format(index) + ".xml").apply {
+                writeBytes(ByteArray(CustomLayoutStore.MAX_BYTES))
+            }
+        }
+        try {
+            CustomLayoutStore.prepare(context, xml.replace("keySpec=\"a\"", "keySpec=\"b\""), "ru")
+            assertTrue("A staged restore must retain its file until preference commit", staged.exists())
+            assertEquals(xml, CustomLayoutStore.exportSettings(context, prepared)["pref_custom_layout_en"])
+        } finally {
+            CustomLayoutStore.releasePrepared(prepared)
+            fillers.forEach { it.delete() }
+        }
+    }
+
 }

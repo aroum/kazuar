@@ -30,6 +30,7 @@ object CustomLayoutStore {
     private val cache = object : LruCache<String, String>(1024 * 1024) {
         override fun sizeOf(key: String, value: String) = value.length * 2
     }
+    private val leases = mutableMapOf<String, Int>()
     private val pending = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     @Volatile private var onReady: Runnable? = null
     private val notifyReady = Runnable {
@@ -61,29 +62,44 @@ object CustomLayoutStore {
     private fun reference(xml: String): String = "v1-" + MessageDigest.getInstance("SHA-256")
             .digest(xml.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) } + ".xml"
 
-    @Synchronized internal fun prepare(context: Context, xml: String, layer: String): String {
+    @Synchronized internal fun prepare(context: Context, xml: String, layer: String, pinRevision: Boolean = false): String {
         val canonical = target(layer)
         val bytes = xml.toByteArray(Charsets.UTF_8)
         require(bytes.size <= MAX_BYTES) { "Layout exceeds 512 KiB" }
         CustomLayoutValidator.validate(context, canonical, xml)
         val ref = reference(xml)
-        val directory = directory(context)
-        check(directory.isDirectory || directory.mkdirs()) { "Cannot create layout directory" }
-        val file = AtomicFile(File(directory, ref))
-        if (!file.baseFile.exists() || runCatching { readReference(context, ref) }.getOrNull() != xml) {
-            reclaim(context, directory, bytes.size)
-            var stream: FileOutputStream? = null
-            try {
-                stream = file.startWrite()
-                stream.write(bytes)
-                file.finishWrite(stream)
-            } catch (failure: Exception) {
-                file.failWrite(stream)
-                throw failure
+        if (pinRevision) leases[ref] = (leases[ref] ?: 0) + 1
+        try {
+            val directory = directory(context)
+            check(directory.isDirectory || directory.mkdirs()) { "Cannot create layout directory" }
+            val file = AtomicFile(File(directory, ref))
+            if (!file.baseFile.exists() || runCatching { readReference(context, ref) }.getOrNull() != xml) {
+                reclaim(context, directory, bytes.size)
+                var stream: FileOutputStream? = null
+                try {
+                    stream = file.startWrite()
+                    stream.write(bytes)
+                    file.finishWrite(stream)
+                } catch (failure: Exception) {
+                    file.failWrite(stream)
+                    throw failure
+                }
             }
+            cache.put(ref, xml)
+            return ref
+        } catch (failure: Exception) {
+            if (pinRevision) release(ref)
+            throw failure
         }
-        cache.put(ref, xml)
-        return ref
+    }
+
+    @Synchronized internal fun release(ref: String) {
+        val count = leases[ref] ?: return
+        if (count <= 1) leases.remove(ref) else leases[ref] = count - 1
+    }
+
+    internal fun releasePrepared(values: Map<String, Any>) {
+        values.filterKeys { isLocalReferenceKey(it) }.values.forEach { ref -> release(ref as String) }
     }
 
     private fun reclaim(context: Context, directory: File, incoming: Int) {
@@ -91,7 +107,7 @@ object CustomLayoutStore {
         val prefs = DeviceProtectedUtils.getSharedPreferences(context)
         val active = targets.mapNotNull { prefs.getString("pref_custom_layout_file_$it", null) }.toSet()
         // Retain recent revisions as well as all live pointers, including staged multi-layout restores.
-        val protectedRevisions = active + files.sortedByDescending { it.lastModified() }.take(7).map { it.name }
+        val protectedRevisions = active + leases.keys + files.sortedByDescending { it.lastModified() }.take(7).map { it.name }
         var total = files.sumOf { it.length() }
         files.sortedBy { it.lastModified() }.filter { it.name !in protectedRevisions }.forEach { file ->
             if (total + incoming > MAX_STORAGE_BYTES) {
@@ -123,12 +139,16 @@ object CustomLayoutStore {
                     val legacy = prefs.getString("pref_custom_layout_$canonical", null)
                             ?: if (canonical == "en") prefs.getString("pref_custom_layout_zz", null) else null
                     if (legacy != null) {
-                        val next = prepare(context, legacy, canonical)
-                        val editor = prefs.edit().putString("pref_custom_layout_file_$canonical", next)
-                                .remove("pref_custom_layout_$canonical")
-                        if (canonical == "en") editor.remove("pref_custom_layout_zz").remove("pref_custom_layout_file_zz")
-                        check(editor.commit()) { "Cannot migrate custom layout" }
-                        available = true
+                        val next = prepare(context, legacy, canonical, pinRevision = true)
+                        try {
+                            val editor = prefs.edit().putString("pref_custom_layout_file_$canonical", next)
+                                    .remove("pref_custom_layout_$canonical")
+                            if (canonical == "en") editor.remove("pref_custom_layout_zz").remove("pref_custom_layout_file_zz")
+                            check(editor.commit()) { "Cannot migrate custom layout" }
+                            available = true
+                        } finally {
+                            release(next)
+                        }
                     }
                 }
             } catch (failure: Exception) {
@@ -168,17 +188,25 @@ object CustomLayoutStore {
     /** Publishes immutable files first; callers commit all resulting pointers in their transaction. */
     internal fun prepareSettings(context: Context, values: Map<String, Any>): Map<String, Any> {
         val result = values.toMutableMap()
-        val imports = values.filterKeys { it.startsWith("pref_custom_layout_") && !it.startsWith("pref_custom_layout_file_") }
-        imports.forEach { (key, value) ->
-            val layer = target(key.removePrefix("pref_custom_layout_"))
-            if (key.endsWith("_zz") && imports.containsKey("pref_custom_layout_en")) {
+        val prepared = mutableListOf<String>()
+        try {
+            val imports = values.filterKeys { it.startsWith("pref_custom_layout_") && !it.startsWith("pref_custom_layout_file_") }
+            imports.forEach { (key, value) ->
+                val layer = target(key.removePrefix("pref_custom_layout_"))
+                if (key.endsWith("_zz") && imports.containsKey("pref_custom_layout_en")) {
+                    result.remove(key)
+                    return@forEach
+                }
+                require(value is String)
+                val ref = prepare(context, value, layer, pinRevision = true)
+                prepared.add(ref)
+                result["pref_custom_layout_file_$layer"] = ref
                 result.remove(key)
-                return@forEach
             }
-            require(value is String)
-            result["pref_custom_layout_file_$layer"] = prepare(context, value, layer)
-            result.remove(key)
+            return result
+        } catch (failure: Exception) {
+            prepared.forEach { release(it) }
+            throw failure
         }
-        return result
     }
 }
