@@ -134,6 +134,10 @@ internal object HistoryBackup {
                             word(item.getString("word"), bos) to bos
                         })
             }
+            val totalCount = parsedWords.sumOf {
+                it.probability.count.toLong() * maxOf(1, it.shortcuts.size)
+            } + parsedNgrams.sumOf { it.probability.count.toLong() }
+            require(totalCount <= Int.MAX_VALUE / 4L) { "History counters exceed safe native limits" }
             Snapshot(locale, parsedWords, parsedNgrams)
         }
     }

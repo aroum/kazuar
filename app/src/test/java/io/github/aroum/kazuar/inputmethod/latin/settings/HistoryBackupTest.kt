@@ -44,4 +44,14 @@ class HistoryBackupTest {
         json.getJSONArray("dictionaries").getJSONObject(0).getJSONArray("ngrams").put(ngram)
         HistoryBackup.validate(json)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun aggregateCountersCannotOverflowNativeIntegers() {
+        val json = backup()
+        val words = json.getJSONArray("dictionaries").getJSONObject(0).getJSONArray("words")
+        val entry = words.getJSONObject(0).put("count", 65535)
+        repeat(9000) { words.put(entry) }
+        HistoryBackup.validate(json)
+    }
+
 }
