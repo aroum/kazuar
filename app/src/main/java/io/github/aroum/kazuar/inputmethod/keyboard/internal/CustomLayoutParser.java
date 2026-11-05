@@ -20,105 +20,105 @@ final class CustomLayoutParser {
         }
     }
     static Layout parse(Context context, KeyboardParams params, XmlPullParser parser) throws Exception {
-            int eventType = parser.getEventType();
-            int currentRow = -1;
+        int eventType = parser.getEventType();
+        int currentRow = -1;
 
-            float defaultKeyWidthPercent = 0.10f;
+        float defaultKeyWidthPercent = 0.10f;
 
-            ArrayList<ArrayList<CustomKeySpec>> rows = new ArrayList<>();
-            ArrayList<Float> rowDefaultWidths = new ArrayList<>();
-            ArrayDeque<SwitchState> switchStack = new ArrayDeque<>();
+        ArrayList<ArrayList<CustomKeySpec>> rows = new ArrayList<>();
+        ArrayList<Float> rowDefaultWidths = new ArrayList<>();
+        ArrayDeque<SwitchState> switchStack = new ArrayDeque<>();
 
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if (eventType == XmlPullParser.START_TAG) {
-                    String tagName = parser.getName();
-                    if ("switch".equalsIgnoreCase(tagName)) {
-                        SwitchState newState = new SwitchState();
-                        newState.isBranchActive = false;
-                        switchStack.push(newState);
-                    } else if ("case".equalsIgnoreCase(tagName)) {
-                        SwitchState state = switchStack.peek();
-                        if (state != null) {
-                            boolean parentActive = isParentActive(switchStack);
-                            if (parentActive && !state.conditionMatched && KeyboardCaseConditions.matchesRaw(params, parser) && matchesOrientation(getAttributeValue(parser, "orientation"), context)) {
-                                state.conditionMatched = true;
-                                state.isBranchActive = true;
-                            } else {
-                                state.isBranchActive = false;
-                            }
-                        }
-                    } else if ("default".equalsIgnoreCase(tagName)) {
-                        SwitchState state = switchStack.peek();
-                        if (state != null) {
-                            boolean parentActive = isParentActive(switchStack);
-                            if (parentActive && !state.conditionMatched) {
-                                state.conditionMatched = true;
-                                state.isBranchActive = true;
-                            } else {
-                                state.isBranchActive = false;
-                            }
-                        }
-                    } else if (isCurrentActive(switchStack)) {
-                        if ("Keyboard".equalsIgnoreCase(tagName) || "merge".equalsIgnoreCase(tagName)) {
-                            String keyWidthAttr = getAttributeValue(parser, "keyWidth");
-                            if (keyWidthAttr != null) {
-                                defaultKeyWidthPercent = parsePercent(keyWidthAttr, 0.10f);
-                            }
-                        } else if ("Row".equalsIgnoreCase(tagName)) {
-                            currentRow = rows.size();
-                            rows.add(new ArrayList<CustomKeySpec>());
-                            float rowWidth = defaultKeyWidthPercent;
-                            String rowKeyWidthAttr = getAttributeValue(parser, "keyWidth");
-                            if (rowKeyWidthAttr != null) {
-                                rowWidth = parsePercent(rowKeyWidthAttr, defaultKeyWidthPercent);
-                            }
-                            rowDefaultWidths.add(rowWidth);
-                        } else if ("Key".equalsIgnoreCase(tagName)) {
-                            if (currentRow >= 0 && currentRow < rows.size()) {
-                                CustomKeySpec spec = new CustomKeySpec();
-                                spec.label = getAttributeValue(parser, "keyLabel", "label", "keySpec");
-                                spec.codes = getAttributeValue(parser, "codes", "code");
-                                spec.keyWidth = getAttributeValue(parser, "keyWidth", "width");
-                                spec.keyIcon = getAttributeValue(parser, "keyIcon", "icon");
-                                spec.longCode = getAttributeValue(parser, "longCode");
-                                spec.moreKeys = getAttributeValue(parser, "moreKeys");
-                                spec.backgroundType = getAttributeValue(parser, "backgroundType");
-                                spec.hint = getAttributeValue(parser, "keyHintLabel", "hintLabel", "hint");
-                                spec.keyStyle = getAttributeValue(parser, "keyStyle", "style");
-                                spec.keyLabelFlags = getAttributeValue(parser, "keyLabelFlags", "labelFlags");
-                                spec.actionKey = getAttributeValue(parser, "actionKey", "dynamicAction");
-                                if (KeyboardCaseConditions.matchesRaw(params, parser)) {
-                                    rows.get(currentRow).add(spec);
-                                }
-                            }
-                        } else if ("Spacer".equalsIgnoreCase(tagName)) {
-                            if (currentRow >= 0 && currentRow < rows.size()) {
-                                CustomKeySpec spec = new CustomKeySpec();
-                                spec.isSpacer = true;
-                                spec.keyWidth = getAttributeValue(parser, "keyWidth", "width");
-                                if (KeyboardCaseConditions.matchesRaw(params, parser)) {
-                                    rows.get(currentRow).add(spec);
-                                }
-                            }
-                        }
-                    }
-                } else if (eventType == XmlPullParser.END_TAG) {
-                    String tagName = parser.getName();
-                    if ("Row".equalsIgnoreCase(tagName)) {
-                        currentRow = -1;
-                    } else if ("switch".equalsIgnoreCase(tagName)) {
-                        if (!switchStack.isEmpty()) {
-                            switchStack.pop();
-                        }
-                    } else if ("case".equalsIgnoreCase(tagName) || "default".equalsIgnoreCase(tagName)) {
-                        SwitchState state = switchStack.peek();
-                        if (state != null) {
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            if (eventType == XmlPullParser.START_TAG) {
+                String tagName = parser.getName();
+                if ("switch".equalsIgnoreCase(tagName)) {
+                    SwitchState newState = new SwitchState();
+                    newState.isBranchActive = false;
+                    switchStack.push(newState);
+                } else if ("case".equalsIgnoreCase(tagName)) {
+                    SwitchState state = switchStack.peek();
+                    if (state != null) {
+                        boolean parentActive = isParentActive(switchStack);
+                        if (parentActive && !state.conditionMatched && KeyboardCaseConditions.matchesRaw(params, parser) && matchesOrientation(getAttributeValue(parser, "orientation"), context)) {
+                            state.conditionMatched = true;
+                            state.isBranchActive = true;
+                        } else {
                             state.isBranchActive = false;
                         }
                     }
+                } else if ("default".equalsIgnoreCase(tagName)) {
+                    SwitchState state = switchStack.peek();
+                    if (state != null) {
+                        boolean parentActive = isParentActive(switchStack);
+                        if (parentActive && !state.conditionMatched) {
+                            state.conditionMatched = true;
+                            state.isBranchActive = true;
+                        } else {
+                            state.isBranchActive = false;
+                        }
+                    }
+                } else if (isCurrentActive(switchStack)) {
+                    if ("Keyboard".equalsIgnoreCase(tagName) || "merge".equalsIgnoreCase(tagName)) {
+                        String keyWidthAttr = getAttributeValue(parser, "keyWidth");
+                        if (keyWidthAttr != null) {
+                            defaultKeyWidthPercent = parsePercent(keyWidthAttr, 0.10f);
+                        }
+                    } else if ("Row".equalsIgnoreCase(tagName)) {
+                        currentRow = rows.size();
+                        rows.add(new ArrayList<CustomKeySpec>());
+                        float rowWidth = defaultKeyWidthPercent;
+                        String rowKeyWidthAttr = getAttributeValue(parser, "keyWidth");
+                        if (rowKeyWidthAttr != null) {
+                            rowWidth = parsePercent(rowKeyWidthAttr, defaultKeyWidthPercent);
+                        }
+                        rowDefaultWidths.add(rowWidth);
+                    } else if ("Key".equalsIgnoreCase(tagName)) {
+                        if (currentRow >= 0 && currentRow < rows.size()) {
+                            CustomKeySpec spec = new CustomKeySpec();
+                            spec.label = getAttributeValue(parser, "keyLabel", "label", "keySpec");
+                            spec.codes = getAttributeValue(parser, "codes", "code");
+                            spec.keyWidth = getAttributeValue(parser, "keyWidth", "width");
+                            spec.keyIcon = getAttributeValue(parser, "keyIcon", "icon");
+                            spec.longCode = getAttributeValue(parser, "longCode");
+                            spec.moreKeys = getAttributeValue(parser, "moreKeys");
+                            spec.backgroundType = getAttributeValue(parser, "backgroundType");
+                            spec.hint = getAttributeValue(parser, "keyHintLabel", "hintLabel", "hint");
+                            spec.keyStyle = getAttributeValue(parser, "keyStyle", "style");
+                            spec.keyLabelFlags = getAttributeValue(parser, "keyLabelFlags", "labelFlags");
+                            spec.actionKey = getAttributeValue(parser, "actionKey", "dynamicAction");
+                            if (KeyboardCaseConditions.matchesRaw(params, parser)) {
+                                rows.get(currentRow).add(spec);
+                            }
+                        }
+                    } else if ("Spacer".equalsIgnoreCase(tagName)) {
+                        if (currentRow >= 0 && currentRow < rows.size()) {
+                            CustomKeySpec spec = new CustomKeySpec();
+                            spec.isSpacer = true;
+                            spec.keyWidth = getAttributeValue(parser, "keyWidth", "width");
+                            if (KeyboardCaseConditions.matchesRaw(params, parser)) {
+                                rows.get(currentRow).add(spec);
+                            }
+                        }
+                    }
                 }
-                eventType = parser.next();
+            } else if (eventType == XmlPullParser.END_TAG) {
+                String tagName = parser.getName();
+                if ("Row".equalsIgnoreCase(tagName)) {
+                    currentRow = -1;
+                } else if ("switch".equalsIgnoreCase(tagName)) {
+                    if (!switchStack.isEmpty()) {
+                        switchStack.pop();
+                    }
+                } else if ("case".equalsIgnoreCase(tagName) || "default".equalsIgnoreCase(tagName)) {
+                    SwitchState state = switchStack.peek();
+                    if (state != null) {
+                        state.isBranchActive = false;
+                    }
+                }
             }
+            eventType = parser.next();
+        }
 
         return new Layout(rows, rowDefaultWidths);
     }

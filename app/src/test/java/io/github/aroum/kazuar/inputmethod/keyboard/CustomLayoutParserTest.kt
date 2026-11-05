@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class CustomLayoutParserTest {
-    private fun keys(xml: String, mode: Int = KeyboardId.MODE_TEXT): List<Key> {
+    private fun keys(xml: String?, mode: Int = KeyboardId.MODE_TEXT): List<Key> {
         val context: Context = RuntimeEnvironment.getApplication()
         SubtypeLocaleUtils.init(context)
         val set = KeyboardLayoutSet.Params().apply {
@@ -37,9 +37,23 @@ class CustomLayoutParserTest {
         }
         val params = KeyboardParams()
         val themed = ContextThemeWrapper(context, KeyboardTheme.getKeyboardTheme(context).mStyleId)
-        KeyboardBuilder(themed, params).loadHeaderOnly(R.xml.kbd_qwerty, KeyboardId(KeyboardId.ELEMENT_ALPHABET, set))
-        CustomLayoutLoader.loadCustomLayoutOrThrow(themed, params, xml)
+        val builder = KeyboardBuilder(themed, params)
+        val id = KeyboardId(KeyboardId.ELEMENT_ALPHABET, set)
+        if (xml == null) builder.load(R.xml.kbd_qwerty, id)
+        else {
+            builder.loadHeaderOnly(R.xml.kbd_qwerty, id)
+            CustomLayoutLoader.loadCustomLayoutOrThrow(themed, params, xml)
+        }
         return params.mSortedKeys.filter { !it.isSpacer }
+    }
+
+    @Test fun compiledKeyboardStillBuildsAcrossTextEmailAndUrlCases() {
+        for (mode in listOf(KeyboardId.MODE_TEXT, KeyboardId.MODE_EMAIL, KeyboardId.MODE_URL)) {
+            val codes = keys(null, mode).map { it.code }
+            assertTrue(codes.contains('q'.code))
+            assertTrue(codes.contains(Constants.CODE_SPACE))
+            assertTrue(codes.contains(Constants.CODE_ENTER))
+        }
     }
 
     @Test fun exactStylesGiveCommandsAndExplicitCodesWin() {

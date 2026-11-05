@@ -57,60 +57,60 @@ final class KeyboardCaseConditions {
     private static boolean matches(KeyboardParams params, Values values) {
         final KeyboardId id = params.mId;
         if (id == null) return true;
-            final boolean keyboardLayoutSetMatched = values.matchString(
-                    R.styleable.Keyboard_Case_keyboardLayoutSet,
-                    id.mSubtype.getKeyboardLayoutSetName());
-            final boolean keyboardLayoutSetElementMatched = values.matchTypedValue(
-                    R.styleable.Keyboard_Case_keyboardLayoutSetElement, id.mElementId,
-                    KeyboardId.elementIdToName(id.mElementId));
-            final boolean keyboardThemeMacthed = values.matchTypedValue(
-                    R.styleable.Keyboard_Case_keyboardTheme, params.mThemeId,
-                    KeyboardTheme.getKeyboardThemeName(params.mThemeId));
-            final boolean modeMatched = values.matchTypedValue(
-                    R.styleable.Keyboard_Case_mode, id.mMode, KeyboardId.modeName(id.mMode));
-            final boolean navigateNextMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_navigateNext, id.navigateNext());
-            final boolean navigatePreviousMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_navigatePrevious, id.navigatePrevious());
-            final boolean passwordInputMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_passwordInput, id.passwordInput());
-            final boolean clobberSettingsKeyMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_clobberSettingsKey, id.mClobberSettingsKey);
-            final boolean hasShortcutKeyMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_hasShortcutKey, id.mHasShortcutKey);
-            final boolean numberRowEnabledMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_numberRowEnabled,
-                    id.mNumberRowEnabled);
-            final boolean languageSwitchKeyEnabledMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_languageSwitchKeyEnabled,
-                    id.mLanguageSwitchKeyEnabled);
-            final boolean emojiKeyEnabledMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_emojiKeyEnabled,
-                    id.mEmojiKeyEnabled);
-            final boolean isMultiLineMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_isMultiLine, id.isMultiLine());
-            final boolean imeActionMatched = values.matchInteger(
-                    R.styleable.Keyboard_Case_imeAction, id.imeAction());
-            final boolean isIconDefinedMatched = values.isIconDefined(
-                    R.styleable.Keyboard_Case_isIconDefined, params.mIconsSet);
-            final Locale locale = id.getLocale();
-            final boolean localeCodeMatched = values.matchString(R.styleable.Keyboard_Case_localeCode, locale.toString());
-            final boolean languageCodeMatched = values.matchString(R.styleable.Keyboard_Case_languageCode, locale.getLanguage());
-            final boolean countryCodeMatched = values.matchString(R.styleable.Keyboard_Case_countryCode, locale.getCountry());
-            // Always match default non-split XML layout so our programmatic split layout
-            // can split any full keyboard layout (including V3, Russian, Custom, etc.) consistently.
-            final boolean splitLayoutMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_isSplitLayout, false);
-            final boolean oneHandedModeEnabledMatched = values.matchBoolean(
-                    R.styleable.Keyboard_Case_oneHandedModeEnabled,
-                    id.mOneHandedModeEnabled);
-            final boolean selected = keyboardLayoutSetMatched && keyboardLayoutSetElementMatched
-                    && keyboardThemeMacthed && modeMatched && navigateNextMatched
-                    && navigatePreviousMatched && passwordInputMatched && clobberSettingsKeyMatched
-                    && hasShortcutKeyMatched && numberRowEnabledMatched  && languageSwitchKeyEnabledMatched
-                    && emojiKeyEnabledMatched && isMultiLineMatched && imeActionMatched && isIconDefinedMatched
-                    && localeCodeMatched && languageCodeMatched && countryCodeMatched
-                    && splitLayoutMatched && oneHandedModeEnabledMatched;
+        final boolean keyboardLayoutSetMatched = values.matchString(
+                R.styleable.Keyboard_Case_keyboardLayoutSet,
+                id.mSubtype.getKeyboardLayoutSetName());
+        final boolean keyboardLayoutSetElementMatched = values.matchTypedValue(
+                R.styleable.Keyboard_Case_keyboardLayoutSetElement, id.mElementId,
+                KeyboardId.elementIdToName(id.mElementId));
+        final boolean keyboardThemeMacthed = values.matchTypedValue(
+                R.styleable.Keyboard_Case_keyboardTheme, params.mThemeId,
+                KeyboardTheme.getKeyboardThemeName(params.mThemeId));
+        final boolean modeMatched = values.matchTypedValue(
+                R.styleable.Keyboard_Case_mode, id.mMode, KeyboardId.modeName(id.mMode));
+        final boolean navigateNextMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_navigateNext, id.navigateNext());
+        final boolean navigatePreviousMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_navigatePrevious, id.navigatePrevious());
+        final boolean passwordInputMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_passwordInput, id.passwordInput());
+        final boolean clobberSettingsKeyMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_clobberSettingsKey, id.mClobberSettingsKey);
+        final boolean hasShortcutKeyMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_hasShortcutKey, id.mHasShortcutKey);
+        final boolean numberRowEnabledMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_numberRowEnabled,
+                id.mNumberRowEnabled);
+        final boolean languageSwitchKeyEnabledMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_languageSwitchKeyEnabled,
+                id.mLanguageSwitchKeyEnabled);
+        final boolean emojiKeyEnabledMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_emojiKeyEnabled,
+                id.mEmojiKeyEnabled);
+        final boolean isMultiLineMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_isMultiLine, id.isMultiLine());
+        final boolean imeActionMatched = values.matchInteger(
+                R.styleable.Keyboard_Case_imeAction, id.imeAction());
+        final boolean isIconDefinedMatched = values.isIconDefined(
+                R.styleable.Keyboard_Case_isIconDefined, params.mIconsSet);
+        final Locale locale = id.getLocale();
+        final boolean localeCodeMatched = values.matchString(R.styleable.Keyboard_Case_localeCode, locale.toString());
+        final boolean languageCodeMatched = values.matchString(R.styleable.Keyboard_Case_languageCode, locale.getLanguage());
+        final boolean countryCodeMatched = values.matchString(R.styleable.Keyboard_Case_countryCode, locale.getCountry());
+        // Always match default non-split XML layout so our programmatic split layout
+        // can split any full keyboard layout (including V3, Russian, Custom, etc.) consistently.
+        final boolean splitLayoutMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_isSplitLayout, false);
+        final boolean oneHandedModeEnabledMatched = values.matchBoolean(
+                R.styleable.Keyboard_Case_oneHandedModeEnabled,
+                id.mOneHandedModeEnabled);
+        final boolean selected = keyboardLayoutSetMatched && keyboardLayoutSetElementMatched
+                && keyboardThemeMacthed && modeMatched && navigateNextMatched
+                && navigatePreviousMatched && passwordInputMatched && clobberSettingsKeyMatched
+                && hasShortcutKeyMatched && numberRowEnabledMatched  && languageSwitchKeyEnabledMatched
+                && emojiKeyEnabledMatched && isMultiLineMatched && imeActionMatched && isIconDefinedMatched
+                && localeCodeMatched && languageCodeMatched && countryCodeMatched
+                && splitLayoutMatched && oneHandedModeEnabledMatched;
 
         return selected;
     }
