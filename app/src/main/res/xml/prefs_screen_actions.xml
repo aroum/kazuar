@@ -14,90 +14,90 @@
      limitations under the License.
 -->
 
-<PreferenceScreen
+<androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/settings_screen_actions"
     android:key="screen_actions">
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_space_bar">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_space_trackpad"
             android:title="@string/space_trackpad"
             android:summary="@string/space_trackpad_summary"
             android:defaultValue="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="prefs_long_press_keyboard_to_change_lang"
             android:title="@string/prefs_long_press_keyboard_to_change_lang"
             android:summary="@string/prefs_long_press_keyboard_to_change_lang_summary"
             android:persistent="true"
             android:defaultValue="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_use_double_space_period"
             android:title="@string/use_double_space_period"
             android:summary="@string/use_double_space_period_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_use_multi_space_punctuation"
             android:title="@string/use_multi_space_punctuation"
             android:summary="@string/use_multi_space_punctuation_summary"
             android:defaultValue="false"
             android:persistent="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_input_automation">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_autospace_after_punctuation"
             android:title="@string/autospace_after_punctuation"
             android:summary="@string/autospace_after_punctuation_summary"
             android:defaultValue="false" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_delete_swipe"
             android:title="@string/delete_swipe"
             android:summary="@string/delete_swipe_summary"
             android:defaultValue="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_actions">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_enable_double_tap_replacements"
             android:title="@string/pref_enable_double_taps_title"
             android:summary="@string/pref_enable_double_taps_summary"
             android:defaultValue="true" />
 
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
+        <androidx.preference.PreferenceScreen
+            android:fragment="io.github.aroum.kazuar.inputmethod.latin.settings.DoubleTapSettingsFragment"
             android:key="screen_double_tap_editor_ru"
             android:title="@string/pref_setup_double_taps_ru"
             android:dependency="pref_enable_double_tap_replacements">
             <extra android:name="lang" android:value="ru" />
-        </PreferenceScreen>
+        </androidx.preference.PreferenceScreen>
 
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DoubleTapSettingsFragment"
+        <androidx.preference.PreferenceScreen
+            android:fragment="io.github.aroum.kazuar.inputmethod.latin.settings.DoubleTapSettingsFragment"
             android:key="screen_double_tap_editor_en"
             android:title="@string/pref_setup_double_taps_en"
             android:dependency="pref_enable_double_tap_replacements">
             <extra android:name="lang" android:value="en" />
-        </PreferenceScreen>
+        </androidx.preference.PreferenceScreen>
 
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.SwipeSettingsFragment"
+        <androidx.preference.PreferenceScreen
+            android:fragment="io.github.aroum.kazuar.inputmethod.latin.settings.SwipeSettingsFragment"
             android:key="screen_swipe_controls"
             android:title="@string/pref_setup_swipe_controls" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

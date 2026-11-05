@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
+<androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:latin="http://schemas.android.com/apk/res-auto"
     android:title="@string/pref_setup_swipe_controls">
 
-    <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+    <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
         android:key="pref_swipe_threshold"
         android:title="@string/pref_swipe_threshold_title"
         android:summary="@string/pref_swipe_threshold_summary"
@@ -12,32 +12,32 @@
         latin:maxValue="80"
         android:defaultValue="40" />
 
-    <ListPreference
+    <androidx.preference.ListPreference
         android:key="pref_swipe_up_action"
         android:title="@string/pref_swipe_up_action_title"
         android:entries="@array/swipe_action_names"
         android:entryValues="@array/swipe_action_values"
         android:defaultValue="-21" />
 
-    <ListPreference
+    <androidx.preference.ListPreference
         android:key="pref_swipe_down_action"
         android:title="@string/pref_swipe_down_action_title"
         android:entries="@array/swipe_action_names"
         android:entryValues="@array/swipe_action_values"
         android:defaultValue="10" />
 
-    <ListPreference
+    <androidx.preference.ListPreference
         android:key="pref_swipe_left_action"
         android:title="@string/pref_swipe_left_action_title"
         android:entries="@array/swipe_action_names"
         android:entryValues="@array/swipe_action_values"
         android:defaultValue="-10" />
 
-    <ListPreference
+    <androidx.preference.ListPreference
         android:key="pref_swipe_right_action"
         android:title="@string/pref_swipe_right_action_title"
         android:entries="@array/swipe_action_names"
         android:entryValues="@array/swipe_action_values"
         android:defaultValue="-341" />
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

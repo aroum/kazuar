@@ -1,13 +1,13 @@
 # Keep classes and methods that have the @UsedForTesting annotation
--keep @io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting class *
+-keep @io.github.aroum.kazuar.inputmethod.annotations.UsedForTesting class *
 -keepclassmembers class * {
-    @io.github.sds100.keymapper.inputmethod.annotations.UsedForTesting *;
+    @io.github.aroum.kazuar.inputmethod.annotations.UsedForTesting *;
 }
 
 # Keep classes and methods that have the @ExternallyReferenced annotation
--keep @io.github.sds100.keymapper.inputmethod.annotations.ExternallyReferenced class *
+-keep @io.github.aroum.kazuar.inputmethod.annotations.ExternallyReferenced class *
 -keepclassmembers class * {
-    @io.github.sds100.keymapper.inputmethod.annotations.ExternallyReferenced *;
+    @io.github.aroum.kazuar.inputmethod.annotations.ExternallyReferenced *;
 }
 
 # Keep native methods
@@ -17,23 +17,23 @@
 
 # Keep classes that are used as a parameter type of methods that are also marked as keep
 # to preserve changing those methods' signature.
--keep class io.github.sds100.keymapper.inputmethod.latin.AssetFileAddress
--keep class io.github.sds100.keymapper.inputmethod.latin.Dictionary
--keep class io.github.sds100.keymapper.inputmethod.latin.NgramContext
--keep class io.github.sds100.keymapper.inputmethod.latin.makedict.ProbabilityInfo
--keep class io.github.sds100.keymapper.inputmethod.latin.utils.LanguageModelParam
+-keep class io.github.aroum.kazuar.inputmethod.latin.AssetFileAddress
+-keep class io.github.aroum.kazuar.inputmethod.latin.Dictionary
+-keep class io.github.aroum.kazuar.inputmethod.latin.NgramContext
+-keep class io.github.aroum.kazuar.inputmethod.latin.makedict.ProbabilityInfo
+-keep class io.github.aroum.kazuar.inputmethod.latin.utils.LanguageModelParam
 
 # Keep classes and members referenced by JNI and core keyboard logic
--keep class io.github.sds100.keymapper.inputmethod.keyboard.KeyboardLayout { *; }
--keep class io.github.sds100.keymapper.inputmethod.keyboard.ProximityInfo { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.BinaryDictionary { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.utils.BinaryDictionaryUtils { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.DicTraverseSession { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.utils.WordInputEventForPersonalization { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.ExpandableBinaryDictionary { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.personalization.UserHistoryDictionary { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.UserBinaryDictionary { *; }
--keep class io.github.sds100.keymapper.inputmethod.latin.ContactsBinaryDictionary { *; }
+-keep class io.github.aroum.kazuar.inputmethod.keyboard.KeyboardLayout { *; }
+-keep class io.github.aroum.kazuar.inputmethod.keyboard.ProximityInfo { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.BinaryDictionary { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.utils.BinaryDictionaryUtils { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.DicTraverseSession { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.utils.WordInputEventForPersonalization { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.ExpandableBinaryDictionary { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.personalization.UserHistoryDictionary { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.UserBinaryDictionary { *; }
+-keep class io.github.aroum.kazuar.inputmethod.latin.ContactsBinaryDictionary { *; }
 
 # Keep InputMethodService and Activity components
 -keep public class * extends android.inputmethodservice.InputMethodService
@@ -61,4 +61,4 @@
 -dontobfuscate
 
 # Keep all Kazuar classes and members
--keep class io.github.sds100.keymapper.** { *; }
+-keep class io.github.aroum.kazuar.** { *; }

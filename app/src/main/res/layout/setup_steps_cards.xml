@@ -38,7 +38,7 @@
             style="@style/setupStepBulletStyle"
             android:text="@string/setup_step3_bullet" />
     </LinearLayout>
-    <io.github.sds100.keymapper.inputmethod.latin.setup.SetupStepIndicatorView
+    <io.github.aroum.kazuar.inputmethod.latin.setup.SetupStepIndicatorView
         android:id="@+id/setup_step_indicator"
         style="@style/setupStepIndicatorStyle" />
     <FrameLayout

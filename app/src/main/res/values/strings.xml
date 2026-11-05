@@ -692,4 +692,7 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
     <string name="error_file_not_xml_layout">File is not an XML layout</string>
     <string name="error_invalid_layout_xml">Invalid layout XML format: %s</string>
     <string name="error_theme_must_start_with_json">Unknown file format. Theme must start with \'{\'.</string>
+    <string name="save_sensitive_clips">Save sensitive clipboard entries</string>
+    <string name="save_sensitive_clips_summary">Include passwords and other entries marked as sensitive in clipboard history</string>
+    <string name="backup_in_progress">Backup operation in progress…</string>
 </resources>

@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
+<androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/settings_screen_backup"
     android:key="screen_backup">
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_backup_category">
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_all_export"
             android:title="@string/pref_backup_all_export"
             android:summary="@string/pref_backup_all_export_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_all_import"
             android:title="@string/pref_backup_all_import"
             android:summary="@string/pref_backup_all_import_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_settings_export"
             android:title="@string/pref_backup_settings_export"
             android:summary="@string/pref_backup_settings_export_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_settings_import"
             android:title="@string/pref_backup_settings_import"
             android:summary="@string/pref_backup_settings_import_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_dict_export"
             android:title="@string/pref_backup_dict_export"
             android:summary="@string/pref_backup_dict_export_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_dict_import"
             android:title="@string/pref_backup_dict_import"
             android:summary="@string/pref_backup_dict_import_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_history_export"
             android:title="@string/pref_backup_history_export"
             android:summary="@string/pref_backup_history_export_summary" />
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_backup_history_import"
             android:title="@string/pref_backup_history_import"
             android:summary="@string/pref_backup_history_import_summary" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

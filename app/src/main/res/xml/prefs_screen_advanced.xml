@@ -14,40 +14,40 @@
      limitations under the License.
 -->
 
-<PreferenceScreen
+<androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:latin="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_screen_advanced"
     android:key="screen_advanced">
 
-    <PreferenceScreen
-        android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.IncognitoModeRulesFragment"
+    <androidx.preference.PreferenceScreen
+        android:fragment="io.github.aroum.kazuar.inputmethod.latin.settings.IncognitoModeRulesFragment"
         android:key="screen_incognito_mode_rules"
         android:title="@string/prefs_incognito_mode_rules_title" />
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_physical_keyboard">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_enable_emoji_alt_physical_key"
             android:title="@string/prefs_enable_emoji_alt_physical_key"
             android:summary="@string/prefs_enable_emoji_alt_physical_key_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_timings">
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_key_longpress_timeout"
             android:title="@string/prefs_key_longpress_timeout_settings"
             latin:minValue="@integer/config_min_longpress_timeout"
             latin:maxValue="@integer/config_max_longpress_timeout"
             latin:stepValue="@integer/config_longpress_timeout_step" />
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_double_tap_timeout"
             android:title="@string/pref_double_tap_timeout_title"
             latin:minValue="100"
@@ -55,7 +55,7 @@
             latin:stepValue="50"
             android:defaultValue="400" />
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_double_swipe_timeout"
             android:title="@string/pref_double_swipe_timeout_title"
             latin:minValue="100"
@@ -63,7 +63,7 @@
             latin:stepValue="50"
             android:defaultValue="700" />
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_key_repeat_interval"
             android:title="@string/pref_key_repeat_delay_title"
             latin:minValue="10"
@@ -71,18 +71,18 @@
             latin:stepValue="5"
             android:defaultValue="50" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/prefs_debug_settings_category">
 
-        <PreferenceScreen
-            android:fragment="io.github.sds100.keymapper.inputmethod.latin.settings.DebugSettingsFragment"
+        <androidx.preference.PreferenceScreen
+            android:fragment="io.github.aroum.kazuar.inputmethod.latin.settings.DebugSettingsFragment"
             android:key="screen_debug"
             android:title="@string/prefs_debug_settings_title"
             android:defaultValue="false"
             android:persistent="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

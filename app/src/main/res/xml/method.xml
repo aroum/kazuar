@@ -21,7 +21,7 @@
 <!-- for the Input Method Manager. -->
 
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-        android:settingsActivity="io.github.sds100.keymapper.inputmethod.latin.settings.SettingsActivity"
+        android:settingsActivity="io.github.aroum.kazuar.inputmethod.latin.settings.SettingsActivity"
         android:isDefault="@bool/im_is_default"
         android:supportsSwitchingToNextInputMethod="true">
     <subtype android:icon="@drawable/ic_ime_switcher_dark"

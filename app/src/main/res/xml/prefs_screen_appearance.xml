@@ -14,99 +14,99 @@
      limitations under the License.
 -->
 
-<PreferenceScreen
+<androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:latin="http://schemas.android.com/apk/res-auto"
     android:key="screen_appearance"
     android:title="@string/settings_screen_appearance">
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_screen_theme">
 
-        <ListPreference
+        <androidx.preference.ListPreference
             android:key="theme_family"
             android:title="@string/theme_family"/>
 
-        <ListPreference
+        <androidx.preference.ListPreference
             android:key="theme_variant"
             android:title="@string/theme_variant"/>
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="theme_key_borders"
             android:title="@string/key_borders"/>
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="theme_auto_day_night"
             android:title="@string/day_night_mode"
             android:summary="@string/day_night_mode_summary"/>
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_key_legends">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_show_main_labels"
             android:title="@string/show_main_labels"
             android:summary="@string/show_main_labels_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_show_hints"
             android:title="@string/show_long_press_hints"
             android:summary="@string/show_long_press_hints_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_show_double_tap_hints"
             android:title="@string/show_double_tap_hints"
             android:summary="@string/show_double_tap_hints_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_display_sizing">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_resize_keyboard"
             android:title="@string/prefs_resize_keyboard"
             android:defaultValue="false"
             android:persistent="true" />
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:dependency="pref_resize_keyboard"
             android:key="pref_keyboard_height_scale"
             android:title="@string/prefs_keyboard_height_scale"
             latin:minValue="50"
             latin:maxValue="150" /> <!-- percentage -->
 
-        <io.github.sds100.keymapper.inputmethod.latin.settings.SeekBarDialogPreference
+        <io.github.aroum.kazuar.inputmethod.latin.settings.SeekBarDialogPreference
             android:key="pref_keyboard_row_gap_scale"
             android:title="@string/prefs_keyboard_row_gap_scale"
             latin:minValue="0"
             latin:maxValue="200" /> <!-- percentage -->
 
-        <ListPreference
+        <androidx.preference.ListPreference
             android:key="pref_icon_style"
             android:title="@string/select_icon_style"
             android:entries="@array/icon_style_names"
             android:entryValues="@array/icon_style_values"
             android:defaultValue="aroum" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_customization">
 
-        <Preference
+        <androidx.preference.Preference
             android:key="pref_load_custom_file"
             android:title="@string/pref_load_custom_file_title"
             android:summary="@string/pref_load_custom_file_summary" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

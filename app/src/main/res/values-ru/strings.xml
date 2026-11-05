@@ -390,4 +390,7 @@
     <string name="error_file_not_xml_layout">Файл не является XML-раскладкой</string>
     <string name="error_invalid_layout_xml">Неверный формат XML-раскладки: %s</string>
     <string name="error_theme_must_start_with_json">Неизвестный формат файла. Тема должна начинаться с \'{\'.</string>
+    <string name="save_sensitive_clips">Сохранять конфиденциальные записи</string>
+    <string name="save_sensitive_clips_summary">Добавлять в историю пароли и другие записи, помеченные как конфиденциальные</string>
+    <string name="backup_in_progress">Работа с резервной копией…</string>
 </resources>

@@ -2,7 +2,7 @@
 
 [Русская версия](layout_format_ru.md)
 
-Custom keyboard layouts use the XML format parsed by [CustomLayoutLoader.java](../app/src/main/java/io/github/sds100/keymapper/inputmethod/keyboard/internal/CustomLayoutLoader.java).
+Custom keyboard layouts use the XML format parsed by [CustomLayoutLoader.java](../app/src/main/java/io/github/aroum/kazuar/inputmethod/keyboard/internal/CustomLayoutLoader.java).
 
 > [!NOTE]
 > **Direct Loading of Internal Layouts**:

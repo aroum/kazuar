@@ -14,43 +14,43 @@
      limitations under the License.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/settings_screen_correction"
     android:key="screen_correction">
 
-    <PreferenceScreen
+    <androidx.preference.PreferenceScreen
             android:key="edit_personal_dictionary"
             android:title="@string/edit_personal_dictionary" />
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_replacements">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_enable_macro_replacements"
             android:title="@string/pref_enable_macro_replacements_title"
             android:summary="@string/pref_enable_macro_replacements_summary"
             android:defaultValue="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_correction">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_block_potentially_offensive"
             android:title="@string/prefs_block_potentially_offensive_title"
             android:summary="@string/prefs_block_potentially_offensive_summary"
             android:defaultValue="@bool/config_block_potentially_offensive"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_auto_correction"
             android:title="@string/auto_correction"
             android:summary="@string/auto_correction_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <ListPreference
+        <androidx.preference.ListPreference
             android:key="pref_key_auto_correction_confidence"
             android:title="@string/auto_correction_confidence"
             android:summary="%s"
@@ -58,52 +58,52 @@
             android:entryValues="@array/auto_correction_threshold_mode_indexes"
             android:defaultValue="@string/auto_correction_threshold_mode_index_modest" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="auto_cap"
             android:title="@string/auto_cap"
             android:summary="@string/auto_cap_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_replace_yo_with_ye"
             android:title="@string/pref_replace_yo_with_ye_title"
             android:summary="@string/pref_replace_yo_with_ye_summary"
             android:defaultValue="false"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_split_space_neighbor_words"
             android:title="@string/pref_split_space_neighbor_words_title"
             android:summary="@string/pref_split_space_neighbor_words_summary"
             android:defaultValue="true"
             android:persistent="true" />
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <androidx.preference.PreferenceCategory
         android:title="@string/settings_category_suggestions">
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="show_suggestions"
             android:summary="@string/prefs_show_suggestions_summary"
             android:title="@string/prefs_show_suggestions"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="pref_key_use_personalized_dicts"
             android:title="@string/use_personalized_dicts"
             android:summary="@string/use_personalized_dicts_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-        <CheckBoxPreference
+        <androidx.preference.CheckBoxPreference
             android:key="next_word_prediction"
             android:title="@string/bigram_prediction"
             android:summary="@string/bigram_prediction_summary"
             android:defaultValue="true"
             android:persistent="true" />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

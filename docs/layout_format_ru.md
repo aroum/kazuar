@@ -2,7 +2,7 @@
 
 [English version](layout_format.md)
 
-Пользовательские клавиатурные раскладки используют формат XML, разбираемый классом [CustomLayoutLoader.java](../app/src/main/java/io/github/sds100/keymapper/inputmethod/keyboard/internal/CustomLayoutLoader.java).
+Пользовательские клавиатурные раскладки используют формат XML, разбираемый классом [CustomLayoutLoader.java](../app/src/main/java/io/github/aroum/kazuar/inputmethod/keyboard/internal/CustomLayoutLoader.java).
 
 > [!NOTE]
 > **Прямая совместимость с внутренними раскладками**:
