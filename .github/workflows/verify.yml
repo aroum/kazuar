@@ -25,6 +25,9 @@ jobs:
           java-version: '17'
           cache: gradle
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Install project SDK and NDK
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529'
       - name: Test Android 13 settings and backup regressions
