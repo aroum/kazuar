@@ -255,12 +255,12 @@ object CustomLayoutHelper {
         target: String,
         rules: List<Pair<String, String>>
     ) {
-        if ((target != "ru" && target != "en") || rules.isEmpty()) return
+        if (target != "ru" && target != "en") return
         val array = JSONArray()
         val existing = mutableMapOf<String, JSONObject>()
         for ((from, to) in rules) {
             if (from.isEmpty()) continue
-            val key = from.substring(0, 1)
+            val key = String(Character.toChars(from.codePointAt(0)))
             val entry = existing[key] ?: JSONObject().put("key", key).also {
                 existing[key] = it
                 array.put(it)

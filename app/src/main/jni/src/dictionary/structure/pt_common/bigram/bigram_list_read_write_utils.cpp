@@ -41,17 +41,22 @@ const BigramListReadWriteUtils::BigramFlags
 /* static */ bool BigramListReadWriteUtils::getBigramEntryPropertiesAndAdvancePosition(
         const ReadOnlyByteArrayView buffer, BigramFlags *const outBigramFlags,
         int *const outTargetPtNodePos, int *const bigramEntryPos) {
-    if (static_cast<int>(buffer.size()) <= *bigramEntryPos) {
-        AKLOGE("Read invalid pos in getBigramEntryPropertiesAndAdvancePosition(). bufSize: %zd, "
-                "bigramEntryPos: %d.", buffer.size(), *bigramEntryPos);
+    // Read into a local cursor: a truncated entry must not advance the caller or publish outputs.
+    const int start = *bigramEntryPos;
+    if (start < 0 || static_cast<size_t>(start) >= buffer.size()) {
         return false;
     }
-    const BigramFlags bigramFlags = ByteArrayUtils::readUint8AndAdvancePosition(buffer.data(),
-            bigramEntryPos);
+    const BigramFlags bigramFlags = buffer.data()[start];
+    const size_t addressSize = (bigramFlags & MASK_ATTRIBUTE_ADDRESS_TYPE) >> 4;
+    if (buffer.size() - static_cast<size_t>(start) - 1 < addressSize) {
+        return false;
+    }
+    int cursor = start + 1;
+    const int targetPos = getBigramAddressAndAdvancePosition(buffer, bigramFlags, &cursor);
+    *bigramEntryPos = cursor;
     if (outBigramFlags) {
         *outBigramFlags = bigramFlags;
     }
-    const int targetPos = getBigramAddressAndAdvancePosition(buffer, bigramFlags, bigramEntryPos);
     if (outTargetPtNodePos) {
         *outTargetPtNodePos = targetPos;
     }

@@ -125,12 +125,12 @@ TEST(TrieMapTest, TestMultiLevel) {
 
     // Use the uniform integer distribution [0, S_INT_MAX].
     std::uniform_int_distribution<int> distribution(0, S_INT_MAX);
-    auto keyRandomNumberGenerator = std::bind(distribution, std::mt19937());
-    auto randomNumberGeneratorForKeySelection = std::bind(distribution, std::mt19937());
+    auto keyRandomNumberGenerator = std::bind(distribution, std::mt19937(0x4B4559u));
+    auto randomNumberGeneratorForKeySelection = std::bind(distribution, std::mt19937(0x53454C45u));
 
     // Use the uniform distribution [0, TrieMap::MAX_VALUE].
     std::uniform_int_distribution<uint64_t> valueDistribution(0, TrieMap::MAX_VALUE);
-    auto valueRandomNumberGenerator = std::bind(valueDistribution, std::mt19937());
+    auto valueRandomNumberGenerator = std::bind(valueDistribution, std::mt19937(0x56414C55u));
 
     for (int i = 0; i < FIRST_LEVEL_ENTRY_COUNT; ++i) {
         const int key = keyRandomNumberGenerator();

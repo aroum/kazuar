@@ -70,7 +70,7 @@ TEST(GeometryUtilsTest, testGetAngleDiff) {
 
 TEST(GeometryUtilsTest, testGetDistanceInt) {
     EXPECT_EQ(0, GeometryUtils::getDistanceInt(0, 0, 0, 0));
-    EXPECT_EQ(0, GeometryUtils::getAngle(100, -10, 100, -10));
+    EXPECT_EQ(0, GeometryUtils::getDistanceInt(100, -10, 100, -10));
 
     EXPECT_EQ(5, GeometryUtils::getDistanceInt(0, 0, 5, 0));
     EXPECT_EQ(5, GeometryUtils::getDistanceInt(0, 0, 3, 4));

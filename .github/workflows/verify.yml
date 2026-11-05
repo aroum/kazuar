@@ -30,6 +30,13 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install project SDK and NDK
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529' 'cmake;3.22.1'
+      - name: Run native dictionary regressions with sanitizers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev
+          cmake -S app/src/main/jni/tests -B "$RUNNER_TEMP/native-tests" -DCMAKE_BUILD_TYPE=Debug
+          cmake --build "$RUNNER_TEMP/native-tests" --parallel 2
+          ctest --test-dir "$RUNNER_TEMP/native-tests" --output-on-failure --output-junit "$RUNNER_TEMP/native-results.xml"
       - name: Verify generated sources follow input edits
         run: python3 tools/check-generated-sources.py
       - name: Test Android 13 settings and backup regressions
@@ -64,6 +71,7 @@ jobs:
         with:
           name: verification-reports-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/native-results.xml
             app/build/reports/tests/
             app/build/test-results/
             app/build/reports/lint-results-debug.*

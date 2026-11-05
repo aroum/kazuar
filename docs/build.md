@@ -9,7 +9,10 @@ all 87 translation units from the former ndk-build build, including the v402
 compatibility readers. Gradle selects the existing NDK r21 and CMake 3.22.1 with
 `c++_static`; changing NDK or page-size support is a separate task. Native test
 sources remain in `jni/tests`; the removed AOSP `mmm` launchers were not usable
-from this standalone Gradle project.
+from this standalone Gradle project. `jni/tests/CMakeLists.txt` now runs format,
+geometry, trie-map and truncated-bigram regression tests on the GitHub Linux runner
+with GoogleTest, AddressSanitizer and UndefinedBehaviorSanitizer. The workflow
+uploads their JUnit report alongside the Android 13 reports.
 
 `app/proguard-rules.pro` contains both project and inherited LatinIME keep rules.
 Release and CI use that file together with the standard Android rules. Resource
