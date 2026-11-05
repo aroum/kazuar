@@ -6,24 +6,26 @@ import org.json.JSONObject
 
 /** JSON uses explicit types so an integral float survives a round trip. */
 internal object BackupSettingsCodec {
-    fun encode(values: Map<String, *>): JSONObject {
+    fun encode(values: Map<String, *>, includeLocal: Boolean = false): JSONObject {
         val entries = JSONObject()
         values.forEach { (key, value) ->
-            val type = BackupPreferenceSchema.typeOf(key) ?: return@forEach
+            val type = BackupPreferenceSchema.typeOf(key)
+                    ?: if (includeLocal && CustomLayoutStore.isLocalReferenceKey(key)) "string" else return@forEach
             val encoded = if (value is Set<*>) JSONArray(value.toList()) else value
             entries.put(key, JSONObject().put("type", type).put("value", encoded))
         }
         return JSONObject().put("format", "kazuar-settings").put("version", 2).put("entries", entries)
     }
 
-    fun decode(json: JSONObject): Map<String, Any> {
+    fun decode(json: JSONObject, allowLocal: Boolean = false): Map<String, Any> {
         val typed = json.optString("format") == "kazuar-settings"
         if (typed) require(json.getInt("version") == 2) { "Unsupported settings version" }
         val entries = if (typed) json.getJSONObject("entries") else json
         require(entries.length() <= 2048) { "Too many settings" }
         val result = linkedMapOf<String, Any>()
         entries.keys().forEach { key ->
-            val type = BackupPreferenceSchema.typeOf(key) ?: return@forEach
+            val type = BackupPreferenceSchema.typeOf(key)
+                    ?: if (allowLocal && CustomLayoutStore.isLocalReferenceKey(key)) "string" else return@forEach
             val raw = if (typed) {
                 val entry = entries.getJSONObject(key)
                 require(entry.getString("type") == type) { "Wrong setting type: $key" }

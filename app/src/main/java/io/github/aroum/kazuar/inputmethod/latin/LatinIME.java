@@ -646,6 +646,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
         mClipboardHistoryManager.onCreate();
         mHandler.onCreate();
+        io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.setOnLayoutsReadyListener(this::loadKeyboard);
+        io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.prefetch(this);
 
         // loadSettings() internally invokes resetDictionaryFacilitatorIfNecessary()
         loadSettings();
@@ -778,6 +780,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public void onDestroy() {
+        io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.setOnLayoutsReadyListener(null);
         mClipboardHistoryManager.onDestroy();
         mDictionaryFacilitator.closeDictionaries();
         mSettings.onDestroy();

@@ -50,15 +50,7 @@
             android:imeSubtypeExtraValue="TrySuppressingImeSwitcher,AsciiCapable,SupportTouchPositionCorrection,EmojiCapable"
             android:isAsciiCapable="true"
     />
-    <subtype android:icon="@drawable/ic_ime_switcher_dark"
-            android:label="@string/subtype_generic"
-            android:subtypeId="0x1dc3a859"
-            android:imeSubtypeLocale="be_BY"
-            android:imeSubtypeMode="keyboard"
-            android:imeSubtypeExtraValue="KeyboardLayoutSet=east_slavic,EmojiCapable"
-            android:isAsciiCapable="false"
-    />
-    <subtype android:icon="@drawable/ic_ime_switcher_dark"
+<subtype android:icon="@drawable/ic_ime_switcher_dark"
             android:label="@string/subtype_generic"
             android:subtypeId="0x763a8752"
             android:imeSubtypeLocale="ru"
@@ -66,15 +58,7 @@
             android:imeSubtypeExtraValue="SupportTouchPositionCorrection,EmojiCapable"
             android:isAsciiCapable="false"
     />
-    <subtype android:icon="@drawable/ic_ime_switcher_dark"
-            android:label="@string/subtype_generic"
-            android:subtypeId="0x3e84492c"
-            android:imeSubtypeLocale="uk"
-            android:imeSubtypeMode="keyboard"
-            android:imeSubtypeExtraValue="KeyboardLayoutSet=east_slavic,EmojiCapable"
-            android:isAsciiCapable="false"
-    />
-    <subtype android:icon="@drawable/ic_ime_switcher_dark"
+<subtype android:icon="@drawable/ic_ime_switcher_dark"
             android:label="@string/subtype_no_language_qwerty"
             android:subtypeId="0xa239ebad"
             android:imeSubtypeLocale="zz"

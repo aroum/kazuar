@@ -206,7 +206,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
                 return;
             }
             loadSettings(mContext, mSettingsValues.mLocale, mSettingsValues.mInputAttributes);
-            if (PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)
+            if ((key != null && key.startsWith("pref_custom_layout_file_")) || PREF_KEYBOARD_LAYOUT_RU.equals(key) || PREF_KEYBOARD_LAYOUT_EN.equals(key)
                     || "pref_custom_layout_ru".equals(key) || "pref_custom_layout_en".equals(key)
                     || "pref_keyboard_layout_editing".equals(key) || "pref_custom_layout_editing".equals(key)
                     || "pref_keyboard_layout_num".equals(key) || "pref_custom_layout_num".equals(key)

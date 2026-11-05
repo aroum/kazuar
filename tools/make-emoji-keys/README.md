@@ -8,7 +8,7 @@ Basically data is generated in three steps:
 
 ### Generate emoji-categories.xml
 
-A gradle task called 'makeEmoji' builds and runs this tool to generate android resouce file which. Path to openboard's res directory is automatically set so the file is ready to be bundled at build.
+A gradle task called 'makeEmoji' builds and runs this tool to generate android resouce file which. The output goes to this module's `build/generated/res` directory. The app's `preBuild` task runs the generator automatically, and this directory is registered as an Android resource source.
 
 ### Update to latest emoji version
 

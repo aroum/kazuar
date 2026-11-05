@@ -2,22 +2,25 @@ apply plugin: 'java'
 
 version 'unspecified'
 
+// Only these language tables become app code. Default resources provide English fallback.
+sourceSets.main.resources {
+    include 'values/**', 'values-en*/**', 'values-ru*/**', 'io/**'
+}
+
 jar {
-    manifest {
-        attributes["Main-Class"] = 'com.android.inputmethod.keyboard.tools.MakeKeyboardText'
-    }
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    manifest { attributes['Main-Class'] = 'com.android.inputmethod.keyboard.tools.MakeKeyboardText' }
 }
 
-task makeText(type: JavaExec, dependsOn: ['jar']) {
-    main = '-jar'
-    args jar.archiveFile.get()
-    args '-java'
-    args project.rootProject.project('app').projectDir.path + File.separator + 'src' +
-            File.separator + 'main' + File.separator + 'java'
-}
-
-repositories {
-    mavenCentral()
+def outputDirectory = layout.buildDirectory.dir('generated/java')
+tasks.register('makeText', JavaExec) {
+    dependsOn tasks.named('jar')
+    inputs.file(tasks.named('jar').flatMap { it.archiveFile })
+    outputs.dir(outputDirectory)
+    classpath = files(tasks.named('jar').flatMap { it.archiveFile })
+    mainClass.set('com.android.inputmethod.keyboard.tools.MakeKeyboardText')
+    args '-java', outputDirectory.get().asFile.absolutePath
 }
 
 java {

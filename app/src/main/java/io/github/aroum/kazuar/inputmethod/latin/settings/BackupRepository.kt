@@ -57,7 +57,7 @@ internal object BackupRepository {
     private fun export(context: Context, prefs: SharedPreferences, uri: Uri, operation: Int) {
         val entries = linkedMapOf<String, ByteArray>()
         if (operation == 1001 || operation == 1007) {
-            entries["settings.json"] = BackupSettingsCodec.encode(prefs.all).toString(4).toByteArray(Charsets.UTF_8)
+            entries["settings.json"] = BackupSettingsCodec.encode(CustomLayoutStore.exportSettings(context, prefs.all)).toString(4).toByteArray(Charsets.UTF_8)
         }
         if (operation == 1003 || operation == 1007) {
             entries["dictionary.json"] = exportDictionary(context).toString(4).toByteArray(Charsets.UTF_8)
@@ -102,7 +102,7 @@ internal object BackupRepository {
         if (operation == 1008) require(entries.keys.containsAll(
                 listOf("settings.json", "dictionary.json", "history.json"))) { "Incomplete full backup" }
         // All JSON and native write inputs are validated before touching live state.
-        val settings = entries["settings.json"]?.let { BackupSettingsCodec.decode(jsonObject(it)) }
+        val settings = entries["settings.json"]?.let { CustomLayoutStore.prepareSettings(context, BackupSettingsCodec.decode(jsonObject(it))) }
         val dictionary = entries["dictionary.json"]?.let { validateDictionary(jsonArray(it)) }
         val history = entries["history.json"]?.let { HistoryBackup.validate(jsonObject(it)) }
         val transaction = File.createTempFile("restore-", "", context.filesDir).also {
@@ -175,6 +175,11 @@ internal object BackupRepository {
     internal fun writePreferences(prefs: SharedPreferences, values: Map<String, *>, clear: Boolean = false) {
         val editor = prefs.edit()
         if (clear) editor.clear()
+        values.keys.filter { CustomLayoutStore.isLocalReferenceKey(it) }.forEach { key ->
+            val layer = key.removePrefix("pref_custom_layout_file_")
+            editor.remove("pref_custom_layout_$layer")
+            if (layer == "en") editor.remove("pref_custom_layout_zz").remove("pref_custom_layout_file_zz")
+        }
         values.forEach { (key, value) ->
             when (value) {
                 is Boolean -> editor.putBoolean(key, value)

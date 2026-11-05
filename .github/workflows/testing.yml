@@ -56,7 +56,7 @@ jobs:
           fi
           for i in {1..5}; do
             yes | $SDKMANAGER --licenses > /dev/null 2>&1 || true
-            yes | $SDKMANAGER "ndk;21.4.7075529" && break
+            yes | $SDKMANAGER "ndk;21.4.7075529" "cmake;3.22.1" && break
             echo "NDK download failed, retrying in 5 seconds..."
             sleep 5
           done

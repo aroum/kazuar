@@ -39,18 +39,30 @@ object CustomLayoutHelper {
 
     @JvmStatic
     fun handleLoadedLayout(context: Context, uri: Uri, callback: Callback? = null) {
-        val content = try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                inputStream.bufferedReader(Charsets.UTF_8).readText()
-            } ?: throw Exception(context.getString(R.string.error_cannot_open_file_stream))
-        } catch (e: Exception) {
-            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
-            return
+        CustomLayoutStore.execute {
+            try {
+                val content = context.contentResolver.openInputStream(uri)?.use { input ->
+                    CustomLayoutStore.readBounded(input)
+                } ?: throw IllegalArgumentException(context.getString(R.string.error_cannot_open_file_stream))
+                require(content.toByteArray(Charsets.UTF_8).size <= CustomLayoutStore.MAX_BYTES)
+                io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomLayoutLoader.validateStructure(content.trim().removePrefix("\uFEFF").trim())
+                parseLoadedLayout(context, content, getFileName(context, uri), callback)
+            } catch (failure: Exception) {
+                showFailure(context, failure.message)
+            }
         }
+    }
 
+    private fun showFailure(context: Context, message: String?) {
+        CustomLayoutStore.post {
+            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, message ?: ""), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun parseLoadedLayout(context: Context, content: String, filename: String?, callback: Callback?) {
         val trimmed = content.trim().removePrefix("\uFEFF").trim()
         if (!trimmed.startsWith("<")) {
-            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, context.getString(R.string.error_file_not_xml_layout)), Toast.LENGTH_LONG).show()
+            showFailure(context, context.getString(R.string.error_file_not_xml_layout))
             return
         }
 
@@ -128,12 +140,12 @@ object CustomLayoutHelper {
                 eventType = parser.next()
             }
         } catch (e: Exception) {
-            Toast.makeText(context, context.getString(R.string.toast_file_load_failed, context.getString(R.string.error_invalid_layout_xml, e.message ?: "")), Toast.LENGTH_LONG).show()
+            showFailure(context, context.getString(R.string.error_invalid_layout_xml, e.message ?: ""))
             return
         }
 
         if (target == null) {
-            val fileName = getFileName(context, uri)?.lowercase(Locale.ROOT) ?: ""
+            val fileName = filename?.lowercase(Locale.ROOT) ?: ""
             target = when {
                 fileName.contains("editing") || fileName.contains("edit") || fileName.contains("arrow")
                         || fileName.contains("стрелк") || fileName.contains("редактир") -> "editing"
@@ -154,23 +166,26 @@ object CustomLayoutHelper {
             try {
                 applyCustomLayout(context, trimmed, target, parsedReplaceRules, callback)
             } catch (e: Exception) {
-                Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
+                showFailure(context, e.message)
             }
         } else {
             val targets = arrayOf("ru", "en", "editing", "num", "usr0", "usr1", "usr2")
             val options = targets.map { getTargetDisplayName(context, it) }.toTypedArray()
-            AlertDialog.Builder(context)
+            CustomLayoutStore.post {
+              if (context is android.app.Activity && (context.isFinishing || context.isDestroyed)) return@post
+              AlertDialog.Builder(context)
                 .setTitle(R.string.dialog_select_layout_target)
                 .setItems(options) { _, which ->
                     val selectedTarget = targets[which]
                     try {
                         applyCustomLayout(context, trimmed, selectedTarget, parsedReplaceRules, callback)
                     } catch (e: Exception) {
-                        Toast.makeText(context, context.getString(R.string.toast_file_load_failed, e.message), Toast.LENGTH_LONG).show()
+                        showFailure(context, e.message)
                     }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
+            }
         }
     }
 
@@ -183,80 +198,73 @@ object CustomLayoutHelper {
         replaceRules: List<Pair<String, String>>? = null,
         callback: Callback? = null
     ) {
-        val rulesToApply = replaceRules ?: run {
-            val rules = mutableListOf<Pair<String, String>>()
-            val factory = XmlPullParserFactory.newInstance()
-            val parser = factory.newPullParser()
-            parser.setInput(StringReader(xmlContent))
-            var eventType = parser.eventType
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if (eventType == XmlPullParser.START_TAG) {
-                    val tagName = parser.name
-                    if ("Replace".equals(tagName, ignoreCase = true)) {
-                        var from: String? = null
-                        var to: String? = null
-                        for (i in 0 until parser.attributeCount) {
-                            val attrName = parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)
-                            if (attrName == "from") from = parser.getAttributeValue(i)
-                            else if (attrName == "to") to = parser.getAttributeValue(i)
-                        }
-                        if (from != null && to != null) {
-                            rules.add(Pair(from, to))
-                        }
+        CustomLayoutStore.execute {
+            try {
+                val canonical = CustomLayoutStore.target(target)
+                val revision = CustomLayoutStore.prepare(context, xmlContent, canonical)
+                val rules = replaceRules ?: parseReplaceRules(xmlContent)
+                val editor = DeviceProtectedUtils.getSharedPreferences(context).edit()
+                    .putString("pref_custom_layout_file_$canonical", revision)
+                    .remove("pref_custom_layout_$canonical")
+                    .putString("pref_keyboard_layout_$canonical", "custom")
+                if (canonical == "en") {
+                    editor.remove("pref_custom_layout_zz").remove("pref_custom_layout_file_zz")
+                    editor.putString("pref_keyboard_layout_zz", "custom")
+                }
+                saveReplaceRules(editor, canonical, rules)
+                check(editor.commit()) { "Cannot save custom layout selection" }
+                CustomLayoutStore.post {
+                    KeyboardLayoutSet.clearKeyboardCache()
+                    if (context !is android.app.Activity || (!context.isFinishing && !context.isDestroyed)) {
+                        val name = getTargetDisplayName(context, canonical)
+                        Toast.makeText(context, context.getString(R.string.toast_custom_layout_loaded, name), Toast.LENGTH_SHORT).show()
+                        callback?.onLayoutLoaded(canonical)
                     }
                 }
-                eventType = parser.next()
+            } catch (failure: Exception) {
+                showFailure(context, failure.message)
             }
-            rules
         }
+    }
 
-        val prefs = DeviceProtectedUtils.getSharedPreferences(context)
-        val editor = prefs.edit()
-            .putString("pref_custom_layout_$target", xmlContent)
-            .putString("pref_keyboard_layout_$target", "custom")
-
-        if (target == "en") {
-            editor.putString("pref_custom_layout_zz", xmlContent)
-            editor.putString("pref_keyboard_layout_zz", "custom")
-        }
-
-        if ((target == "ru" || target == "en") && rulesToApply.isNotEmpty()) {
-            val rulesKey = "pref_custom_double_tap_rules_${target}_custom"
-            val rulesArray = JSONArray()
-            val existingKeys = mutableMapOf<String, JSONObject>()
-
-            for (rule in rulesToApply) {
-                val fromStr = rule.first
-                val toStr = rule.second
-                if (fromStr.isNotEmpty()) {
-                    val keyChar = fromStr.substring(0, 1)
-                    if (existingKeys.containsKey(keyChar)) {
-                        val obj = existingKeys[keyChar]!!
-                        obj.put("replacement", toStr)
-                        obj.put("enabled", true)
-                    } else {
-                        val obj = JSONObject()
-                        obj.put("key", keyChar)
-                        obj.put("replacement", toStr)
-                        obj.put("enabled", true)
-                        rulesArray.put(obj)
-                        existingKeys[keyChar] = obj
-                    }
+    private fun parseReplaceRules(xml: String): List<Pair<String, String>> {
+        val rules = mutableListOf<Pair<String, String>>()
+        val parser = XmlPullParserFactory.newInstance().newPullParser()
+        parser.setInput(StringReader(xml))
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType != XmlPullParser.START_TAG || !"Replace".equals(parser.name, ignoreCase = true)) continue
+            var from: String? = null
+            var to: String? = null
+            for (i in 0 until parser.attributeCount) {
+                when (parser.getAttributeName(i).substringAfter(':').lowercase(Locale.ROOT)) {
+                    "from" -> from = parser.getAttributeValue(i)
+                    "to" -> to = parser.getAttributeValue(i)
                 }
             }
-            editor.putString(rulesKey, rulesArray.toString())
-            if (target == "en") {
-                editor.putString("pref_custom_double_tap_rules_zz_custom", rulesArray.toString())
-            }
+            if (from != null && to != null) rules.add(Pair(from, to))
         }
+        return rules
+    }
 
-        editor.apply()
-        KeyboardLayoutSet.clearKeyboardCache()
-
-        val displayName = getTargetDisplayName(context, target)
-        Toast.makeText(context, context.getString(R.string.toast_custom_layout_loaded, displayName), Toast.LENGTH_SHORT).show()
-
-        callback?.onLayoutLoaded(target)
+    private fun saveReplaceRules(
+        editor: android.content.SharedPreferences.Editor,
+        target: String,
+        rules: List<Pair<String, String>>
+    ) {
+        if ((target != "ru" && target != "en") || rules.isEmpty()) return
+        val array = JSONArray()
+        val existing = mutableMapOf<String, JSONObject>()
+        for ((from, to) in rules) {
+            if (from.isEmpty()) continue
+            val key = from.substring(0, 1)
+            val entry = existing[key] ?: JSONObject().put("key", key).also {
+                existing[key] = it
+                array.put(it)
+            }
+            entry.put("replacement", to).put("enabled", true)
+        }
+        editor.putString("pref_custom_double_tap_rules_${target}_custom", array.toString())
+        if (target == "en") editor.putString("pref_custom_double_tap_rules_zz_custom", array.toString())
     }
 
     fun getTargetDisplayName(context: Context, target: String): String {

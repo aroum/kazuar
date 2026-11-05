@@ -29,18 +29,22 @@ jobs:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
       - name: Install project SDK and NDK
-        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529'
+        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529' 'cmake;3.22.1'
+      - name: Verify generated sources follow input edits
+        run: python3 tools/check-generated-sources.py
       - name: Test Android 13 settings and backup regressions
         run: ./gradlew :app:testDebugUnitTest --stacktrace --console=plain
       - name: Build APKs and native libraries for all configured ABIs
-        run: ./gradlew :app:assembleDebug --stacktrace --console=plain
+        run: ./gradlew :app:assembleDebug :app:assembleCi --stacktrace --console=plain
       - name: Run Android lint
         run: ./gradlew :app:lintDebug --console=plain
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: kazuar-debug-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          name: kazuar-apks-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/ci/*.apk
           if-no-files-found: error
           retention-days: 7
       - name: Upload test and lint reports

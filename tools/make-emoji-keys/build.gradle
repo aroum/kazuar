@@ -4,37 +4,33 @@ apply plugin: 'kotlin'
 version 'unspecified'
 
 jar {
-    manifest {
-        attributes["Main-Class"] = 'com/majeur/inputmethod/tools/emoji/MakeEmojiKeys'
-    }
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest { attributes['Main-Class'] = 'com.majeur.inputmethod.tools.emoji.MakeEmojiKeys' }
     from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    from("src/main/ressources")
-
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
 }
 
-task makeEmoji(type: JavaExec, dependsOn: ['jar']) {
-    main = '-jar'
-    args jar.archiveFile.get()
-    args '-res'
-    args project.rootProject.project('app').projectDir.path + File.separator + 'src' +
-            File.separator + 'main' + File.separator + 'res'
+def outputDirectory = layout.buildDirectory.dir('generated/res')
+tasks.register('makeEmoji', JavaExec) {
+    dependsOn tasks.named('jar')
+    inputs.file(tasks.named('jar').flatMap { it.archiveFile })
+    outputs.dir(outputDirectory)
+    classpath = files(tasks.named('jar').flatMap { it.archiveFile })
+    mainClass.set('com.majeur.inputmethod.tools.emoji.MakeEmojiKeys')
+    args '-res', outputDirectory.get().asFile.absolutePath
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-}
-
-
-
+repositories { mavenCentral() }
+dependencies { implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" }
 java {
     sourceCompatibility JavaVersion.VERSION_17
     targetCompatibility JavaVersion.VERSION_17
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions.jvmTarget = '17'
 }

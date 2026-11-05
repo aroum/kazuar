@@ -290,7 +290,7 @@ public final class KeyboardLayoutSet {
         boolean loadedCustom = false;
         if (id.mElementId == KeyboardId.ELEMENT_EDITING) {
             final String layoutEditingVersion = prefs.getString("pref_keyboard_layout_editing", "default");
-            final String customXml = prefs.getString("pref_custom_layout_editing", null);
+            final String customXml = io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.read(mContext, "editing");
             if ("custom".equals(layoutEditingVersion) && customXml != null && !customXml.trim().isEmpty()) {
                 builder.loadHeaderOnly(R.xml.kbd_editing, id);
                 final KeyboardParams kbParams = builder.getParams();
@@ -317,7 +317,7 @@ public final class KeyboardLayoutSet {
                 userKey = "usr2";
             }
             final String layoutUserVersion = prefs.getString("pref_keyboard_layout_" + userKey, "empty");
-            final String customXml = prefs.getString("pref_custom_layout_" + userKey, null);
+            final String customXml = io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.read(mContext, userKey);
             if ("custom".equals(layoutUserVersion) && customXml != null && !customXml.trim().isEmpty()) {
                 builder.loadHeaderOnly(R.xml.kbd_user_empty, id);
                 final KeyboardParams kbParams = builder.getParams();
@@ -334,7 +334,7 @@ public final class KeyboardLayoutSet {
             }
         } else if (id.mElementId == KeyboardId.ELEMENT_NUMBER) {
             final String layoutNumVersion = prefs.getString("pref_keyboard_layout_num", "default");
-            final String customXml = prefs.getString("pref_custom_layout_num", null);
+            final String customXml = io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.read(mContext, "num");
             if ("custom".equals(layoutNumVersion) && customXml != null && !customXml.trim().isEmpty()) {
                 builder.loadHeaderOnly(R.xml.kbd_number, id);
                 final KeyboardParams kbParams = builder.getParams();
@@ -347,7 +347,7 @@ public final class KeyboardLayoutSet {
                 }
             }
         } else if ("custom".equals(layoutVersion) && id.isAlphabetKeyboard()) {
-            final String customXml = prefs.getString("pref_custom_layout_" + language, null);
+            final String customXml = io.github.aroum.kazuar.inputmethod.latin.settings.CustomLayoutStore.read(mContext, language);
             if (customXml != null && !customXml.trim().isEmpty()) {
                 builder.loadHeaderOnly(elementParams.mKeyboardXmlId, id);
                 final KeyboardParams kbParams = builder.getParams();

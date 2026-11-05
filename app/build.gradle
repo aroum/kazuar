@@ -11,6 +11,10 @@ android {
         applicationId "io.github.aroum.kazuar.inputmethod.latin"
         minSdkVersion 19
         targetSdkVersion 34
+        externalNativeBuild {
+            cmake { arguments '-DANDROID_STL=c++_static' }
+        }
+        resourceConfigurations += ['en', 'ru']
         versionCode 32
         def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.18')
         versionName appVersionName
@@ -59,7 +63,7 @@ android {
             jniDebuggable false
             renderscriptDebuggable false
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             versionNameSuffix "-debug"
@@ -69,15 +73,16 @@ android {
             shrinkResources false
             debuggable = false
 
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/main/proguard.flags'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
 
 
     externalNativeBuild {
-        ndkBuild {
-            path 'src/main/jni/Android.mk'
+        cmake {
+            path 'src/main/jni/CMakeLists.txt'
+            version '3.22.1'
         }
     }
 
@@ -98,6 +103,13 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    sourceSets {
+        main {
+            java.srcDir project(':tools:make-keyboard-text').layout.buildDirectory.dir('generated/java')
+            res.srcDir project(':tools:make-emoji-keys').layout.buildDirectory.dir('generated/res')
+        }
     }
 
     androidResources {
@@ -129,4 +141,9 @@ dependencies {
 
 repositories {
     mavenCentral()
+}
+
+// Generation precedes Kotlin/Java compilation and Android resource merging.
+tasks.named('preBuild').configure {
+    dependsOn ':tools:make-keyboard-text:makeText', ':tools:make-emoji-keys:makeEmoji'
 }

@@ -25,7 +25,6 @@ internal object BackupPreferenceSchema {
         "pref_double_swipe_timeout" to "int",
         "pref_double_tap_timeout" to "int",
         "pref_enable_clipboard_history" to "boolean",
-        "pref_enable_cloud_sync" to "boolean",
         "pref_enable_double_tap_replacements" to "boolean",
         "pref_enable_emoji_alt_physical_key" to "boolean",
         "pref_enable_macro_replacements" to "boolean",
@@ -105,6 +104,7 @@ internal object BackupPreferenceSchema {
 
     fun typeOf(key: String): String? = types[key] ?: when {
         key.matches(Regex("incognito_ignore_[a-z0-9_]+(?:\\.[a-z0-9_]+)+")) -> "boolean"
+        key.matches(Regex("pref_keyboard_layout_(ru|en|zz|editing|num|usr[012])")) -> "string"
         key.matches(Regex("pref_custom_layout_(ru|en|zz|editing|num|usr[012]|symbols|symbols_shift|number|phone|phone_symbols|pin)")) -> "string"
         key.matches(Regex("pref_custom_double_tap_rules_(ru|en|zz)_(v[234]|custom)")) -> "string"
         key.matches(Regex("emoji_category_last_typed_id[0-9]{1,3}")) -> "int"

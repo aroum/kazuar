@@ -16,7 +16,7 @@ internal object BackupRestoreJournal {
     fun register(root: File) { active.add(root.absolutePath) }
     fun unregister(root: File) { active.remove(root.absolutePath) }
     fun begin(root: File, prefs: SharedPreferences, changed: Set<String>, oldFiles: List<String>, newFiles: List<String>) {
-        val json = JSONObject().put("settings", BackupSettingsCodec.encode(prefs.all))
+        val json = JSONObject().put("settings", BackupSettingsCodec.encode(prefs.all, includeLocal = true))
                 .put("changed", JSONArray(changed.toList()))
                 .put("oldFiles", JSONArray(oldFiles)).put("newFiles", JSONArray(newFiles))
         val file = AtomicFile(File(root, "journal.json"))
@@ -72,7 +72,7 @@ internal object BackupRestoreJournal {
                     val editor = prefs.edit()
                     json.getJSONArray("changed").strings().forEach { editor.remove(it) }
                     check(editor.commit())
-                    BackupRepository.writePreferences(prefs, BackupSettingsCodec.decode(json.getJSONObject("settings")))
+                    BackupRepository.writePreferences(prefs, BackupSettingsCodec.decode(json.getJSONObject("settings"), allowLocal = true))
                     check(root.deleteRecursively())
                 }
     }
