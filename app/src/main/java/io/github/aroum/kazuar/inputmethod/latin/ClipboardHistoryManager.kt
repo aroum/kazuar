@@ -30,6 +30,7 @@ class ClipboardHistoryManager(
     }
 
     private var lastSourceTimestamp: Long? = null
+    private var lastSourceContent: String? = null
 
     fun onCreate() {
         val storage = latinIME.applicationContext
@@ -79,13 +80,15 @@ class ClipboardHistoryManager(
             } else false
             if (sensitive && !prefs.getBoolean(Settings.PREF_SAVE_SENSITIVE_CLIPS, false)) return
             val sourceTimestamp = ClipboardManagerCompat.getClipTimestamp(clipData)
-            if (sourceTimestamp != null && sourceTimestamp == lastSourceTimestamp) return
 
             val content = clipItem.coerceToText(latinIME)
             if (TextUtils.isEmpty(content)) return
+            if (sourceTimestamp != null && sourceTimestamp == lastSourceTimestamp &&
+                    content.toString() == lastSourceContent) return
 
             val entry = ClipboardHistoryEntry(nextEntryTimestamp(), content)
             lastSourceTimestamp = sourceTimestamp
+            lastSourceContent = content.toString()
             historyEntries.add(entry)
             sortHistoryEntries()
 
