@@ -267,6 +267,18 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         }
     }
 
+    public void onCustomLayoutsReady() {
+        final Keyboard current = getKeyboard();
+        final KeyboardSwitchState state = getKeyboardSwitchState();
+        if (current == null || mKeyboardLayoutSet == null
+                || state == KeyboardSwitchState.HIDDEN
+                || state == KeyboardSwitchState.EMOJI
+                || state == KeyboardSwitchState.CLIPBOARD) {
+            return;
+        }
+        setKeyboard(current.mId.mElementId, state);
+    }
+
     private void setKeyboard(
             @Nonnull final int keyboardId,
             @Nonnull final KeyboardSwitchState toggleState) {
