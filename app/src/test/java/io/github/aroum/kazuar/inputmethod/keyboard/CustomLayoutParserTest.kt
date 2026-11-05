@@ -52,7 +52,7 @@ class CustomLayoutParserTest {
             val codes = keys(null, mode).map { it.code }
             assertTrue(codes.contains('q'.code))
             assertTrue(codes.contains(Constants.CODE_SPACE))
-            assertTrue(codes.contains(Constants.CODE_ENTER))
+            assertTrue(codes.contains(Constants.CODE_DELETE))
         }
     }
 
