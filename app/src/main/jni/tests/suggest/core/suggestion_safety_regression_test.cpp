@@ -35,6 +35,9 @@ class SuggestionSafetyTestPeer {
     static void cost(DicNode *node, float cost) {
         node->addCost(cost, 0, false, 1, ErrorTypeUtils::NOT_AN_ERROR);
     }
+    static void saveFirstWord(DicNode *node) {
+        node->saveNormalizedCompoundDistanceAfterFirstWordIfNoneYet();
+    }
     static int confidence(const DicNode *node) {
         return SuggestionsOutputUtils::computeFirstWordConfidence(node);
     }
@@ -253,7 +256,7 @@ TEST(SuggestionSafetyTest, ShortcutScoreIsReducedOnceAndWhitelistKeepsMaximum) {
 TEST(SuggestionSafetyTest, NonFiniteFirstWordConfidenceDisablesCommit) {
     DicNode node; node.initAsRoot(0, WordIdArrayView());
     SuggestionSafetyTestPeer::cost(&node, std::nanf(""));
-    node.saveNormalizedCompoundDistanceAfterFirstWordIfNoneYet();
+    SuggestionSafetyTestPeer::saveFirstWord(&node);
     EXPECT_EQ(NOT_A_FIRST_WORD_CONFIDENCE, SuggestionSafetyTestPeer::confidence(&node));
 }
 TEST(SuggestionSafetyTest, ShortJniArraysDoNotTriggerOutOfBoundsRegionReads) {
@@ -325,7 +328,7 @@ TEST(SuggestionSafetyTest, CyclicSerializedTrieBitmapHasBoundedDepth) {
     bytes[131] = 1; bytes[134] = 1;
     bytes[138] = 1; bytes[141] = 1; // Entry one points to itself.
     TrieMap map(ReadWriteByteArrayView(bytes.data(), bytes.size()));
-    EXPECT_FALSE(map.get(0).mIsValid); EXPECT_FALSE(map.put(0, 123)); EXPECT_FALSE(map.remove(0));
+    EXPECT_FALSE(map.getRoot(0).mIsValid); EXPECT_FALSE(map.putRoot(0, 123)); EXPECT_FALSE(map.remove(0, map.getRootBitmapEntryIndex()));
 }
 TEST(SuggestionSafetyTest, NodePropertiesLimitContextAndDepthBeforeCopying) {
     int ids[100]; std::fill(ids, ids + 100, 42);
