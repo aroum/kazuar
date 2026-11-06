@@ -76,6 +76,9 @@ static inline void profile(const CorrectionType correctionType, DicNode *const n
         const CorrectionType correctionType, const DicTraverseSession *const traverseSession,
         const DicNode *const parentDicNode, DicNode *const dicNode,
         MultiBigramMap *const multiBigramMap) {
+    int pointerId = 0;
+    if (correctionType == CT_TRANSPOSITION
+            && !traverseSession->isOnlyOnePointerUsed(&pointerId)) return;
     const int inputSize = traverseSession->getInputSize();
     DicNode_InputStateG inputStateG;
     inputStateG.mNeedsToUpdateInputStateG = false; // Don't use input info by default
@@ -89,7 +92,7 @@ static inline void profile(const CorrectionType correctionType, DicNode *const n
     if (inputStateG.mNeedsToUpdateInputStateG) {
         dicNode->updateInputIndexG(&inputStateG);
     } else {
-        dicNode->forwardInputIndex(0, getForwardInputCount(correctionType),
+        dicNode->forwardInputIndex(pointerId, getForwardInputCount(correctionType),
                 (correctionType == CT_TRANSPOSITION));
     }
     dicNode->addCost(spatialCost, languageCost, weighting->needsToNormalizeCompoundDistance(),

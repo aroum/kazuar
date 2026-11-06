@@ -70,8 +70,7 @@ class MultiBigramMap {
         BloomFilter mBloomFilter;
     };
 
-    void addBigramsForWord(const DictionaryStructureWithBufferPolicy *const structurePolicy,
-            const WordIdArrayView prevWordIds);
+
 
     int readBigramProbabilityFromBinaryDictionary(
             const DictionaryStructureWithBufferPolicy *const structurePolicy,

@@ -30,6 +30,8 @@ class SuggestOptions;
 class SuggestionResults;
 
 class SuggestionsOutputUtils {
+    friend class SuggestionSafetyTestPeer;
+
  public:
     /**
      * Returns true if we should block the incoming word, in the context of the user's

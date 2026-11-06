@@ -48,9 +48,11 @@ namespace latinime {
         // The base-lower input is used to ignore case errors and accent errors.
         const int baseLowerCodePoint = CharUtils::toBaseLowerCase(codePoint);
         for (const DicNode &dicNode : current) {
-            if (dicNode.isInDigraph() && dicNode.getNodeCodePoint() == baseLowerCodePoint) {
-                next.emplace_back(dicNode);
-                next.back().advanceDigraphIndex();
+            if (dicNode.isInDigraph()) {
+                if (dicNode.getNodeCodePoint() == baseLowerCodePoint) {
+                    next.emplace_back(dicNode);
+                    next.back().advanceDigraphIndex();
+                }
                 continue;
             }
             processChildDicNodes(dictionaryStructurePolicy, baseLowerCodePoint, &dicNode, &next, &remainingWork);
@@ -61,7 +63,7 @@ namespace latinime {
 
     int maxProbability = NOT_A_PROBABILITY;
     for (const DicNode &dicNode : current) {
-        if (!dicNode.isTerminalDicNode()) {
+        if (dicNode.isInDigraph() || !dicNode.isTerminalDicNode()) {
             continue;
         }
         const WordAttributes wordAttributes =

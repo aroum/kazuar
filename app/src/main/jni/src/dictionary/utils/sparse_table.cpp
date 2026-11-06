@@ -60,10 +60,10 @@ bool SparseTable::set(const int id, const uint32_t value) {
     if (indexPos > INT_MAX - INDEX_SIZE) return false;
     if (indexPos + INDEX_SIZE > oldIndexTail
             && !mIndexTableBuffer->extend(indexPos + INDEX_SIZE - oldIndexTail)) return false;
-    if (!mContentTableBuffer->extend(static_cast<int>(blockBytes))) return false;
     for (int pos = oldIndexTail; pos <= indexPos; pos += INDEX_SIZE) {
         if (!mIndexTableBuffer->writeUint(NOT_EXIST, INDEX_SIZE, pos)) return false;
     }
+    if (!mContentTableBuffer->extend(static_cast<int>(blockBytes))) return false;
     const int index = getIndexFromContentTablePos(contentTail);
     for (int pos = contentTail; pos < contentTail + blockBytes; pos += mDataSize) {
         if (!mContentTableBuffer->writeUint(NOT_EXIST, mDataSize, pos)) return false;
@@ -84,7 +84,9 @@ int SparseTable::getPosInIndexTable(const int id) const {
 
 int SparseTable::getPosInContentTable(const int id, const int index) const {
     if (id < 0 || index < 0 || mBlockSize <= 0 || mDataSize < 1 || mDataSize > 4) return -1;
-    const int64_t pos = (static_cast<int64_t>(index) * mBlockSize + id % mBlockSize) * mDataSize;
+    const int64_t blockBytes = static_cast<int64_t>(mBlockSize) * mDataSize;
+    if (blockBytes > INT_MAX || index > INT_MAX / blockBytes) return -1;
+    const int64_t pos = static_cast<int64_t>(index) * blockBytes + (id % mBlockSize) * static_cast<int64_t>(mDataSize);
     return pos <= INT_MAX - mDataSize ? static_cast<int>(pos) : -1;
 }
 

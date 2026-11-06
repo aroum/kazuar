@@ -200,7 +200,7 @@ const int SuggestionsOutputUtils::MIN_LEN_FOR_MULTI_WORD_AUTOCORRECT = 16;
     // Get the number of spaces in the first suggestion
     const int spaceCount = std::max(0, std::min(MAX_WORD_LENGTH, terminalDicNode->getTotalNodeSpaceCount()));
     // Get the number of characters in the first suggestion
-    const int length = std::max(0, std::min(MAX_WORD_LENGTH, terminalDicNode->getTotalNodeCodePointCount()));
+    const int length = std::max(0, std::min<int>(MAX_WORD_LENGTH, terminalDicNode->getTotalNodeCodePointCount()));
     // Get the distance for the first word of the suggestion
     const float distance = terminalDicNode->getNormalizedCompoundDistanceAfterFirstWord();
 

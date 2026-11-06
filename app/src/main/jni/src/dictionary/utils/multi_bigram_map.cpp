@@ -82,12 +82,6 @@ void MultiBigramMap::BigramMap::onVisitEntry(const int ngramProbability, const i
     mBloomFilter.setInFilter(targetWordId);
 }
 
-void MultiBigramMap::addBigramsForWord(
-        const DictionaryStructureWithBufferPolicy *const structurePolicy,
-        const WordIdArrayView prevWordIds) {
-    mBigramMaps[prevWordIds[0]].init(structurePolicy, prevWordIds);
-}
-
 int MultiBigramMap::readBigramProbabilityFromBinaryDictionary(
         const DictionaryStructureWithBufferPolicy *const structurePolicy,
         const WordIdArrayView prevWordIds, const int nextWordId, const int unigramProbability) {

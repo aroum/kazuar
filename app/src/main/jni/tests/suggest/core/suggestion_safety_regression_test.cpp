@@ -7,6 +7,17 @@
 #include <set>
 #include <unistd.h>
 #include "dictionary/utils/probability_utils.h"
+#include "dictionary/utils/forgetting_curve_utils.h"
+#include "dictionary/utils/trie_map.h"
+#include "dictionary/header/header_policy.h"
+#include "dictionary/header/header_read_write_utils.h"
+#include "dictionary/structure/dictionary_structure_with_buffer_policy_factory.h"
+#include "dictionary/property/unigram_property.h"
+#include "dictionary/utils/binary_dictionary_shortcut_iterator.h"
+#include "dictionary/interface/dictionary_shortcuts_structure_policy.h"
+#include "suggest/core/result/suggestions_output_utils.h"
+#include "suggest/core/result/suggestion_results.h"
+#include "suggest/core/dictionary/dictionary_utils.h"
 #include "dictionary/utils/byte_array_utils.h"
 #include "dictionary/utils/mmapped_buffer.h"
 #include "dictionary/utils/sparse_table.h"
@@ -19,7 +30,61 @@
 #include "suggest/core/session/dic_traverse_session.h"
 
 namespace latinime {
+class SuggestionSafetyTestPeer {
+ public:
+    static void cost(DicNode *node, float cost) {
+        node->addCost(cost, 0, false, 1, ErrorTypeUtils::NOT_AN_ERROR);
+    }
+    static int confidence(const DicNode *node) {
+        return SuggestionsOutputUtils::computeFirstWordConfidence(node);
+    }
+    static void shortcuts(BinaryDictionaryShortcutIterator *it, int score, bool same,
+            SuggestionResults *results) {
+        SuggestionsOutputUtils::outputShortcuts(it, score, same, results);
+    }
+};
 namespace {
+struct JniArrayData {
+    std::vector<int> ints;
+    std::vector<float> floats;
+    explicit JniArrayData(std::vector<int> values) : ints(values) {}
+};
+class FakeJni {
+ public:
+    FakeJni() : table(), env() {
+        table.GetArrayLength = [](JNIEnv *, jarray array) -> jsize {
+            EXPECT_NE(nullptr, array);
+            if (!array) return 0;
+            const auto *data = reinterpret_cast<JniArrayData *>(array);
+            return data->floats.empty() ? data->ints.size() : data->floats.size();
+        };
+        table.GetIntArrayRegion = [](JNIEnv *, jintArray array, jsize start, jsize count, jint *out) {
+            const auto &data = reinterpret_cast<JniArrayData *>(array)->ints;
+            ASSERT_GE(start, 0); ASSERT_LE(start + count, data.size());
+            std::copy(data.begin() + start, data.begin() + start + count, out);
+        };
+        table.GetFloatArrayRegion = [](JNIEnv *, jfloatArray array, jsize start, jsize count, jfloat *out) {
+            const auto &data = reinterpret_cast<JniArrayData *>(array)->floats;
+            ASSERT_GE(start, 0); ASSERT_LE(start + count, data.size());
+            std::copy(data.begin() + start, data.begin() + start + count, out);
+        };
+        table.FindClass = [](JNIEnv *, const char *) -> jclass { return nullptr; };
+        table.ExceptionClear = [](JNIEnv *) {};
+        env.functions = &table;
+    }
+    JNINativeInterface_ table;
+    JNIEnv env;
+};
+class TestShortcuts : public DictionaryShortcutsStructurePolicy {
+ public:
+    explicit TestShortcuts(bool whitelist) : white(whitelist) {}
+    int getStartPos(int pos) const override { return pos; }
+    void getNextShortcut(int, int *out, int *count, bool *whitelist, bool *next, int *) const override {
+        out[0] = 'x'; *count = 1; *whitelist = white; *next = false;
+    }
+    bool skipAllShortcuts(int *) const override { return true; }
+    bool white;
+};
 TEST(SuggestionSafetyTest, ProbabilityEncodingHandlesNonFiniteAndOutOfRangeInputs) {
     EXPECT_EQ(0, ProbabilityUtils::encodeRawProbability(-1));
     EXPECT_EQ(0, ProbabilityUtils::encodeRawProbability(std::nanf("")));
@@ -62,10 +127,10 @@ TEST(SuggestionSafetyTest, MmapRejectsRangesBeyondTheOpenedFile) {
     EXPECT_FALSE(MmappedBuffer::openBuffer(path, 5, 2, false));
     EXPECT_FALSE(MmappedBuffer::openBuffer(path, INT_MAX, INT_MAX, false));
     auto mapped = MmappedBuffer::openBuffer(path, 1, 5, true); ASSERT_TRUE(mapped);
-    EXPECT_EQ('b', mapped->getReadOnlyByteArrayView()[0]);
-    mapped->getReadWriteByteArrayView()[0] = 'x';
+    EXPECT_EQ('b', mapped->getReadOnlyByteArrayView().data()[0]);
+    mapped->getReadWriteByteArrayView().data()[0] = 'x';
     mapped.reset(); mapped = MmappedBuffer::openBuffer(path, false);
-    EXPECT_EQ('b', mapped->getReadOnlyByteArrayView()[1]); // MAP_PRIVATE
+    EXPECT_EQ('b', mapped->getReadOnlyByteArrayView().data()[1]); // MAP_PRIVATE
     unlink(path);
 }
 TEST(SuggestionSafetyTest, OutputStateDoesNotWriteSpaceBeyondFullWord) {
@@ -88,7 +153,7 @@ TEST(SuggestionSafetyTest, InputStateInitializesAndRejectsInvalidPointers) {
     }
     input.forwardInputIndex(0, INT_MAX); input.forwardInputIndex(0, 1);
     EXPECT_EQ(INT_MAX, input.getInputIndex(0));
-    DicTraverseSession session; EXPECT_FALSE(session.getProximityInfoState(-1)->isUsed());
+    DicTraverseSession session(nullptr, nullptr, false); EXPECT_FALSE(session.getProximityInfoState(-1)->isUsed());
 }
 TEST(SuggestionSafetyTest, RootContextUsesOnlyInitializedPreviousWordIds) {
     DicNode root, first, next; root.initAsRoot(0, WordIdArrayView());
@@ -157,6 +222,110 @@ TEST(SuggestionSafetyTest, EmptySuggestedWordsDoNotThrowOrReadInvalidRanges) {
     EXPECT_EQ(nullptr, empty.getCodePoint()); EXPECT_EQ(0, empty.getCodePointCount());
     int point = 'a'; SuggestedWord invalid(&point, -1, 0, 0, 0, 0);
     EXPECT_EQ(0, invalid.getCodePointCount());
+}
+
+TEST(SuggestionSafetyTest, ComparatorIsStrictForNearbyDistancesAndNaNs) {
+    DicNode root, a, b, c; root.initAsRoot(0, WordIdArrayView());
+    const int x[] = {'z'}, y[] = {'m'}, z[] = {'a'};
+    a.initAsChild(&root, NOT_A_DICT_POS, 1, CodePointArrayView(x, 1));
+    b.initAsChild(&root, NOT_A_DICT_POS, 2, CodePointArrayView(y, 1));
+    c.initAsChild(&root, NOT_A_DICT_POS, 3, CodePointArrayView(z, 1));
+    SuggestionSafetyTestPeer::cost(&a, 0);
+    SuggestionSafetyTestPeer::cost(&b, 0.00000075f);
+    SuggestionSafetyTestPeer::cost(&c, 0.0000015f);
+    EXPECT_TRUE(a.compare(&b)); EXPECT_TRUE(b.compare(&c)); EXPECT_TRUE(a.compare(&c));
+    EXPECT_FALSE(a.compare(&a));
+    SuggestionSafetyTestPeer::cost(&c, std::nanf(""));
+    EXPECT_TRUE(a.compare(&c)); EXPECT_FALSE(c.compare(&a)); EXPECT_FALSE(c.compare(&c));
+}
+TEST(SuggestionSafetyTest, ShortcutScoreIsReducedOnceAndWhitelistKeepsMaximum) {
+    for (int base : {S_INT_MIN, 0, 12345, S_INT_MAX}) {
+        for (bool white : {false, true}) {
+            TestShortcuts policy(white); BinaryDictionaryShortcutIterator it(&policy, 0);
+            SuggestionResults results(4);
+            SuggestionSafetyTestPeer::shortcuts(&it, base, true, &results);
+            ASSERT_EQ(1, results.getSuggestionCount()); int scores[4] = {};
+            results.getSortedScores(scores);
+            EXPECT_EQ(white ? S_INT_MAX : std::max(S_INT_MIN + 1, base) - 1, scores[0]);
+        }
+    }
+}
+TEST(SuggestionSafetyTest, NonFiniteFirstWordConfidenceDisablesCommit) {
+    DicNode node; node.initAsRoot(0, WordIdArrayView());
+    SuggestionSafetyTestPeer::cost(&node, std::nanf(""));
+    node.saveNormalizedCompoundDistanceAfterFirstWordIfNoneYet();
+    EXPECT_EQ(NOT_A_FIRST_WORD_CONFIDENCE, SuggestionSafetyTestPeer::confidence(&node));
+}
+TEST(SuggestionSafetyTest, ShortJniArraysDoNotTriggerOutOfBoundsRegionReads) {
+    FakeJni jni;
+    JniArrayData proximity(std::vector<int>(3 * 2 * MAX_PROXIMITY_CHARS_SIZE, KEYCODE_SPACE));
+    JniArrayData shortKeys(std::vector<int>{10});
+    ProximityInfo info(&jni.env, 300, 200, 3, 2, 10, 10,
+            reinterpret_cast<jintArray>(&proximity), 2,
+            reinterpret_cast<jintArray>(&shortKeys), reinterpret_cast<jintArray>(&shortKeys),
+            reinterpret_cast<jintArray>(&shortKeys), reinterpret_cast<jintArray>(&shortKeys),
+            reinterpret_cast<jintArray>(&shortKeys), nullptr, nullptr, nullptr);
+    EXPECT_FALSE(info.hasTouchPositionCorrectionData());
+    EXPECT_TRUE(info.hasSpaceProximity(299, 199));
+    EXPECT_FALSE(info.hasSpaceProximity(300, 199)); EXPECT_FALSE(info.hasSpaceProximity(0, 200));
+    ProximityInfo invalid(&jni.env, 300, 200, 3, 2, 10, 10,
+            reinterpret_cast<jintArray>(&shortKeys), 2, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr);
+    EXPECT_FALSE(invalid.hasSpaceProximity(10, 10));
+}
+TEST(SuggestionSafetyTest, UnderflowingKeyDensitiesHaveFiniteNormalizedFallback) {
+    FakeJni jni; JniArrayData proximity(std::vector<int>(MAX_PROXIMITY_CHARS_SIZE, 'a'));
+    JniArrayData coords(std::vector<int>{0, 10}), widths(std::vector<int>{10, 10}), codes(std::vector<int>{'a', 'b'});
+    ProximityInfo info(&jni.env, 100, 100, 1, 1, 10, 10, reinterpret_cast<jintArray>(&proximity), 2,
+            reinterpret_cast<jintArray>(&coords), reinterpret_cast<jintArray>(&coords),
+            reinterpret_cast<jintArray>(&widths), reinterpret_cast<jintArray>(&widths),
+            reinterpret_cast<jintArray>(&codes), nullptr, nullptr, nullptr);
+    std::vector<int> points{1000000}, length{0}; std::vector<float> speeds{1}, distances{1, 1};
+    std::vector<std::unordered_map<int, float>> probabilities;
+    ProximityInfoStateUtils::updateAlignPointProbabilities(1, 10, 2, 0, 1, &points, &points,
+            &speeds, &length, &distances, &info, &probabilities);
+    float sum = 0; for (const auto &entry : probabilities[0]) { EXPECT_TRUE(std::isfinite(entry.second)); sum += entry.second; }
+    EXPECT_NEAR(1.0f, sum, 0.0001f);
+}
+TEST(SuggestionSafetyTest, ExactMatchesHandleDigraphsAndIntentionalOmissions) {
+    for (int version : {402, 403}) {
+        DictionaryHeaderStructurePolicy::AttributeMap attrs;
+        HeaderReadWriteUtils::setBoolAttribute(&attrs, "REQUIRES_GERMAN_UMLAUT_PROCESSING", true);
+        auto policy = DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(version, {'e','n'}, &attrs);
+        ASSERT_TRUE(policy);
+        const std::vector<int> umlaut{0xE4, 'b'}, apostrophe{'c', '\'', 'd'};
+        UnigramProperty property(false, false, false, 200, HistoricalInfo(), {});
+        ASSERT_TRUE(policy->addUnigramEntry(CodePointArrayView(umlaut.data(), umlaut.size()), &property));
+        ASSERT_TRUE(policy->addUnigramEntry(CodePointArrayView(apostrophe.data(), apostrophe.size()), &property));
+        const int full[] = {'a', 'e', 'b'}, missing[] = {'a','b'}, wrong[] = {'a','x','b'}, omitted[] = {'c','d'};
+        EXPECT_NE(NOT_A_PROBABILITY, DictionaryUtils::getMaxProbabilityOfExactMatches(policy.get(), CodePointArrayView(full, 3)));
+        EXPECT_NE(NOT_A_PROBABILITY, DictionaryUtils::getMaxProbabilityOfExactMatches(policy.get(), CodePointArrayView(missing, 2))); // Accent folding.
+        EXPECT_EQ(NOT_A_PROBABILITY, DictionaryUtils::getMaxProbabilityOfExactMatches(policy.get(), CodePointArrayView(wrong, 3)));
+        EXPECT_NE(NOT_A_PROBABILITY, DictionaryUtils::getMaxProbabilityOfExactMatches(policy.get(), CodePointArrayView(omitted, 2)));
+        FakeJni jni; Dictionary dict(&jni.env, std::move(policy));
+        DicTraverseSession session(nullptr, nullptr, false); session.init(&dict, nullptr, nullptr);
+        EXPECT_TRUE(session.getPrevWordIds().empty());
+    }
+}
+TEST(SuggestionSafetyTest, ForgettingTablesCoverEveryVisibleLevelWithoutInvalidWeights) {
+    TimeKeeper::setCurrentTime();
+    for (int table = 0; table < 4; ++table) {
+        DictionaryHeaderStructurePolicy::AttributeMap attrs;
+        HeaderReadWriteUtils::setIntAttribute(&attrs, "FORGETTING_CURVE_PROBABILITY_VALUES_TABLE_ID", table);
+        HeaderPolicy header(FormatUtils::VERSION_403, {'e','n'}, &attrs);
+        for (int level = 2; level <= 15; ++level) {
+            HistoricalInfo history(TimeKeeper::peekCurrentTime(), level, 0);
+            int probability = ForgettingCurveUtils::decodeProbability(&history, &header);
+            EXPECT_GE(probability, 1); EXPECT_LE(probability, MAX_PROBABILITY);
+        }
+    }
+}
+TEST(SuggestionSafetyTest, CyclicSerializedTrieBitmapHasBoundedDepth) {
+    std::vector<uint8_t> bytes(142, 0); // Root at 128: bitmap bit zero, child index one.
+    bytes[131] = 1; bytes[134] = 1;
+    bytes[138] = 1; bytes[141] = 1; // Entry one points to itself.
+    TrieMap map(ReadWriteByteArrayView(bytes.data(), bytes.size()));
+    EXPECT_FALSE(map.get(0).mIsValid); EXPECT_FALSE(map.put(0, 123)); EXPECT_FALSE(map.remove(0));
 }
 } // namespace
 } // namespace latinime

@@ -82,6 +82,8 @@ class DicNode {
     // This is an exception to explicitly hide DicNode::addCost() from all classes but Weighting.
     friend class Weighting;
 
+    friend class SuggestionSafetyTestPeer;
+
  public:
 #if DEBUG_DICT
     DicNodeProfiler mProfiler;
