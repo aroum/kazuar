@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "dictionary/utils/file_utils.h"
@@ -30,15 +31,27 @@ namespace latinime {
 /* static */ MmappedBuffer::MmappedBufferPtr MmappedBuffer::openBuffer(
         const char *const path, const int bufferOffset, const int bufferSize,
         const bool isUpdatable) {
+    if (!path || bufferOffset < 0 || bufferSize < 0) return nullptr;
     const int mmapFd = open(path, O_RDONLY);
     if (mmapFd < 0) {
         AKLOGE("DICT: Can't open the source. path=%s errno=%d", path, errno);
         return nullptr;
     }
-    const int pagesize = sysconf(_SC_PAGESIZE);
+    struct stat st;
+    const long pagesize = sysconf(_SC_PAGESIZE);
+    if (fstat(mmapFd, &st) != 0 || !S_ISREG(st.st_mode) || pagesize <= 0
+            || st.st_size < bufferOffset || bufferSize > st.st_size - bufferOffset) {
+        close(mmapFd);
+        return nullptr;
+    }
+    if (bufferSize == 0) {
+        close(mmapFd);
+        return MmappedBufferPtr(new MmappedBuffer(isUpdatable));
+    }
     const int offset = bufferOffset % pagesize;
-    int alignedOffset = bufferOffset - offset;
-    int alignedSize = bufferSize + offset;
+    const int alignedOffset = bufferOffset - offset;
+    if (bufferSize > INT_MAX - offset) { close(mmapFd); return nullptr; }
+    const int alignedSize = bufferSize + offset;
     const int protMode = isUpdatable ? PROT_READ | PROT_WRITE : PROT_READ;
     void *const mmappedBuffer = mmap(0, alignedSize, protMode, MAP_PRIVATE, mmapFd,
             alignedOffset);
@@ -50,6 +63,7 @@ namespace latinime {
     uint8_t *const buffer = static_cast<uint8_t *>(mmappedBuffer) + offset;
     if (!buffer) {
         AKLOGE("DICT: buffer is null");
+        munmap(mmappedBuffer, alignedSize);
         close(mmapFd);
         return nullptr;
     }
@@ -59,11 +73,12 @@ namespace latinime {
 
 /* static */ MmappedBuffer::MmappedBufferPtr MmappedBuffer::openBuffer(
         const char *const path, const bool isUpdatable) {
+    if (!path) return nullptr;
     const int fileSize = FileUtils::getFileSize(path);
     if (fileSize == -1) {
         return nullptr;
     } else if (fileSize == 0) {
-        return MmappedBufferPtr(new MmappedBuffer(isUpdatable));
+        return openBuffer(path, 0, 0, isUpdatable);
     } else {
         return openBuffer(path, 0 /* bufferOffset */, fileSize, isUpdatable);
     }
@@ -71,11 +86,12 @@ namespace latinime {
 
 /* static */ MmappedBuffer::MmappedBufferPtr MmappedBuffer::openBuffer(
         const char *const dirPath, const char *const fileName, const bool isUpdatable) {
+    if (!dirPath || !fileName) return nullptr;
     const int filePathBufferSize = PATH_MAX + 1 /* terminator */;
     char filePath[filePathBufferSize];
     const int filePathLength = snprintf(filePath, filePathBufferSize, "%s%s", dirPath,
             fileName);
-    if (filePathLength >= filePathBufferSize) {
+    if (filePathLength < 0 || filePathLength >= filePathBufferSize) {
         return nullptr;
     }
     return openBuffer(filePath, isUpdatable);

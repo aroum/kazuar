@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include "defines.h"
+#include "suggest/core/layout/geometry_utils.h"
 
 namespace latinime {
 
@@ -29,16 +30,20 @@ class NormalDistribution {
     NormalDistribution(const float u, const float sigma)
             : mU(u),
               mPreComputedNonExpPart(1.0f / sqrtf(2.0f * M_PI_F
-                      * GeometryUtils::SQUARE_FLOAT(sigma))),
-              mPreComputedExponentPart(-1.0f / (2.0f * GeometryUtils::SQUARE_FLOAT(sigma))) {}
+                      * GeometryUtils::SQUARE_FLOAT(validSigma(sigma)))),
+              mPreComputedExponentPart(-1.0f / (2.0f * GeometryUtils::SQUARE_FLOAT(validSigma(sigma)))) {}
 
     float getProbabilityDensity(const float x) const {
+        if (!std::isfinite(x) || !std::isfinite(mU)) return 0.0f;
         const float shiftedX = x - mU;
         return mPreComputedNonExpPart
                 * expf(mPreComputedExponentPart * GeometryUtils::SQUARE_FLOAT(shiftedX));
     }
 
  private:
+    static float validSigma(float sigma) {
+        return std::isfinite(sigma) && sigma >= 0.001f ? sigma : 0.001f;
+    }
     DISALLOW_IMPLICIT_CONSTRUCTORS(NormalDistribution);
 
     const float mU; // mean value

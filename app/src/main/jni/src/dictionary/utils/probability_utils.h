@@ -52,6 +52,8 @@ class ProbabilityUtils {
 
     // Encode probability using the same way as we are doing for main dictionaries.
     static AK_FORCE_INLINE int encodeRawProbability(const float rawProbability) {
+        if (!(rawProbability > 0.0f)) return 0; // Includes NaN.
+        if (rawProbability >= 1.0f) return MAX_PROBABILITY;
         const float probability = static_cast<float>(MAX_PROBABILITY)
                 + log2f(rawProbability) * PROBABILITY_ENCODING_SCALER;
         if (probability < 0.0f) {

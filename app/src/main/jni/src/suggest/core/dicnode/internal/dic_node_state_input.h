@@ -17,6 +17,8 @@
 #ifndef LATINIME_DIC_NODE_STATE_INPUT_H
 #define LATINIME_DIC_NODE_STATE_INPUT_H
 
+#include <climits>
+#include <algorithm>
 #include "defines.h"
 
 namespace latinime {
@@ -24,8 +26,8 @@ namespace latinime {
 // TODO: Have a .cpp for this class
 class DicNodeStateInput {
  public:
-    DicNodeStateInput() {}
-    ~DicNodeStateInput() {}
+    DicNodeStateInput() { init(); }
+    ~DicNodeStateInput() { init(); }
 
     void init() {
         for (int i = 0; i < MAX_POINTER_COUNT_G; i++) {
@@ -48,7 +50,8 @@ class DicNodeStateInput {
 
     void updateInputIndexG(const int pointerId, const int inputIndex,
             const int prevCodePoint, const float terminalDiffCost, const float rawLength) {
-        mInputIndex[pointerId] = inputIndex;
+        if (pointerId < 0 || pointerId >= MAX_POINTER_COUNT_G) return;
+        mInputIndex[pointerId] = std::max(0, inputIndex);
         mPrevCodePoint[pointerId] = prevCodePoint;
         mTerminalDiffCost[pointerId] = terminalDiffCost;
     }
@@ -59,10 +62,13 @@ class DicNodeStateInput {
 
     // For transposition
     void setPrevCodePoint(const int pointerId, const int c) {
+        if (pointerId < 0 || pointerId >= MAX_POINTER_COUNT_G) return;
         mPrevCodePoint[pointerId] = c;
     }
 
     void forwardInputIndex(const int pointerId, const int val) {
+        if (pointerId < 0 || pointerId >= MAX_POINTER_COUNT_G) return;
+        if (val < 0 || val > INT_MAX - std::max(0, mInputIndex[pointerId])) return;
         if (mInputIndex[pointerId] < 0) {
             mInputIndex[pointerId] = val;
         } else {
@@ -72,15 +78,15 @@ class DicNodeStateInput {
 
     int getInputIndex(const int pointerId) const {
         // when "inputIndex" exceeds "inputSize", auto-completion needs to be done
-        return mInputIndex[pointerId];
+        return pointerId >= 0 && pointerId < MAX_POINTER_COUNT_G ? mInputIndex[pointerId] : INT_MAX;
     }
 
     int getPrevCodePoint(const int pointerId) const {
-        return mPrevCodePoint[pointerId];
+        return pointerId >= 0 && pointerId < MAX_POINTER_COUNT_G ? mPrevCodePoint[pointerId] : NOT_A_CODE_POINT;
     }
 
     float getTerminalDiffCost(const int pointerId) const {
-        return mTerminalDiffCost[pointerId];
+        return pointerId >= 0 && pointerId < MAX_POINTER_COUNT_G ? mTerminalDiffCost[pointerId] : static_cast<float>(MAX_VALUE_FOR_WEIGHTING);
     }
 
  private:

@@ -39,7 +39,7 @@
 #else
 #define PROF_SPACE_SUBSTITUTION(profiler)
 #define PROF_SPACE_OMISSION(profiler)
-#define PROF_ADDITONAL_PROXIMITY(profiler)
+#define PROF_ADDITIONAL_PROXIMITY(profiler)
 #define PROF_SUBSTITUTION(profiler)
 #define PROF_OMISSION(profiler)
 #define PROF_INSERTION(profiler)
@@ -150,6 +150,7 @@ class DicNodeProfiler {
         mProfTransposition = 0;
         mProfNearestKey = 0;
         mProfTerminal = 0;
+        mProfTerminalInsertion = 0;
         mProfNewWord = 0;
         mProfNewWordBigram = 0;
     }
@@ -166,6 +167,7 @@ class DicNodeProfiler {
         mProfTransposition = profiler->mProfTransposition;
         mProfNearestKey = profiler->mProfNearestKey;
         mProfTerminal = profiler->mProfTerminal;
+        mProfTerminalInsertion = profiler->mProfTerminalInsertion;
         mProfNewWord = profiler->mProfNewWord;
         mProfNewWordBigram = profiler->mProfNewWordBigram;
     }

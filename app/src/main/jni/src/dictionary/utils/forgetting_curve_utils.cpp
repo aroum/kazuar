@@ -193,8 +193,8 @@ ForgettingCurveUtils::ProbabilityTable::ProbabilityTable() : mTables() {
         mTables[tableId].resize(MAX_LEVEL + 1);
         for (int level = 0; level <= MAX_LEVEL; ++level) {
             mTables[tableId][level].resize(MAX_ELAPSED_TIME_STEP_COUNT + 1);
-            const float initialProbability = getBaseProbabilityForLevel(tableId, level);
-            const float endProbability = getBaseProbabilityForLevel(tableId, level - 1);
+            const float initialProbability = std::max(1, getBaseProbabilityForLevel(tableId, level));
+            const float endProbability = std::max(1, getBaseProbabilityForLevel(tableId, level - 1));
             for (int timeStepCount = 0; timeStepCount <= MAX_ELAPSED_TIME_STEP_COUNT;
                     ++timeStepCount) {
                 if (level < MIN_VISIBLE_LEVEL) {

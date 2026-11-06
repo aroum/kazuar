@@ -62,7 +62,7 @@ class MmappedBuffer {
     // Empty file. We have to handle an empty file as a valid part of a dictionary.
     AK_FORCE_INLINE MmappedBuffer(const bool isUpdatable)
             : mByteArrayView(), mMmappedBuffer(nullptr), mAlignedSize(0),
-              mMmapFd(0), mIsUpdatable(isUpdatable) {}
+              mMmapFd(-1), mIsUpdatable(isUpdatable) {}
 
     DISALLOW_IMPLICIT_CONSTRUCTORS(MmappedBuffer);
 

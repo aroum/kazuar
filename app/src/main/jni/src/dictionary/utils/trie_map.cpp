@@ -250,6 +250,9 @@ int TrieMap::allocateTable(const int entryCount) {
 
 int TrieMap::getTerminalEntryIndex(const uint32_t key, const uint32_t hashedKey,
         const Entry &bitmapEntry, const int level) const {
+    if (level < 0 || level > 31 / NUM_OF_BITS_USED_FOR_ONE_LEVEL) {
+        return INVALID_INDEX;
+    }
     const int label = getLabel(hashedKey, level);
     if (!exists(bitmapEntry.getBitmap(), label)) {
         return INVALID_INDEX;
@@ -310,6 +313,9 @@ const TrieMap::Result TrieMap::getInternal(const uint32_t key, const uint32_t ha
  */
 bool TrieMap::putInternal(const uint32_t key, const uint64_t value, const uint32_t hashedKey,
         const int bitmapEntryIndex, const Entry &bitmapEntry, const int level) {
+    if (level < 0 || level > 31 / NUM_OF_BITS_USED_FOR_ONE_LEVEL) {
+        return false;
+    }
     const int label = getLabel(hashedKey, level);
     const uint32_t bitmap = bitmapEntry.getBitmap();
     const int mapIndex = bitmapEntry.getTableIndex();
@@ -349,6 +355,7 @@ bool TrieMap::putInternal(const uint32_t key, const uint64_t value, const uint32
 bool TrieMap::addNewEntryByResolvingConflict(const uint32_t key, const uint64_t value,
         const uint32_t hashedKey, const Entry &conflictedEntry, const int conflictedEntryIndex,
         const int level) {
+    if (level < 0 || level + 1 > 31 / NUM_OF_BITS_USED_FOR_ONE_LEVEL) return false;
     const int conflictedKeyNextLabel =
             getLabel(getBitShuffledKey(conflictedEntry.getKey()), level + 1);
     const int nextLabel = getLabel(hashedKey, level + 1);

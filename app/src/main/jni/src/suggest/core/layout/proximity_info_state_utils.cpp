@@ -138,7 +138,9 @@ namespace latinime {
 
 /* static */ const int *ProximityInfoStateUtils::getProximityCodePointsAt(
         const int *const inputProximities, const int index) {
-    return inputProximities + (index * MAX_PROXIMITY_CHARS_SIZE);
+    static const std::vector<int> empty(MAX_PROXIMITY_CHARS_SIZE, NOT_A_CODE_POINT);
+    return inputProximities && index >= 0 && index < MAX_WORD_LENGTH
+            ? inputProximities + (index * MAX_PROXIMITY_CHARS_SIZE) : empty.data();
 }
 
 /* static */ int ProximityInfoStateUtils::getPrimaryCodePointAt(const int *const inputProximities,
@@ -148,8 +150,9 @@ namespace latinime {
 
 /* static */ void ProximityInfoStateUtils::initPrimaryInputWord(const int inputSize,
         const int *const inputProximities, int *primaryInputWord) {
+    if (!primaryInputWord) return;
     memset(primaryInputWord, 0, sizeof(primaryInputWord[0]) * MAX_WORD_LENGTH);
-    for (int i = 0; i < inputSize; ++i) {
+    for (int i = 0; i < std::min(std::max(0, inputSize), MAX_WORD_LENGTH - 1); ++i) {
         primaryInputWord[i] = getPrimaryCodePointAt(inputProximities, i);
     }
 }
@@ -224,14 +227,24 @@ namespace latinime {
         const std::vector<int> *const sampledInputIndice, std::vector<float> *sampledSpeedRates,
         std::vector<float> *sampledDirections) {
     // Relative speed calculation.
-    const int sumDuration = sampledInputTimes->back() - sampledInputTimes->front();
+    if (sampledInputSize <= 0 || sampledInputTimes->empty() || sampledLengthCache->empty()) {
+        sampledSpeedRates->clear();
+        sampledDirections->clear();
+        return 1.0f;
+    }
+    const int64_t sumDuration = static_cast<int64_t>(sampledInputTimes->back()) - sampledInputTimes->front();
     const int sumLength = sampledLengthCache->back() - sampledLengthCache->front();
-    const float averageSpeed = static_cast<float>(sumLength) / static_cast<float>(sumDuration);
+    const float averageSpeed = sumLength > 0 && sumDuration > 0
+            ? static_cast<float>(sumLength) / sumDuration : 1.0f;
     sampledSpeedRates->resize(sampledInputSize);
     for (int i = lastSavedInputSize; i < sampledInputSize; ++i) {
         const int index = (*sampledInputIndice)[i];
-        int length = 0;
-        int duration = 0;
+        if (!times || !xCoordinates || !yCoordinates || index < 0 || index >= inputSize) {
+            (*sampledSpeedRates)[i] = 1.0f;
+            continue;
+        }
+        int64_t length = 0;
+        int64_t duration = 0;
 
         // Calculate velocity by using distances and durations of
         // ProximityInfoParams::NUM_POINTS_FOR_SPEED_CALCULATION points for both forward and
@@ -244,7 +257,7 @@ namespace latinime {
             }
             length += GeometryUtils::getDistanceInt(xCoordinates[j], yCoordinates[j],
                     xCoordinates[j + 1], yCoordinates[j + 1]);
-            duration += times[j + 1] - times[j];
+            duration += static_cast<int64_t>(times[j + 1]) - times[j];
         }
         const int backwardNumPoints = std::max(0,
                 index - ProximityInfoParams::NUM_POINTS_FOR_SPEED_CALCULATION);
@@ -255,9 +268,9 @@ namespace latinime {
             // TODO: use mSampledLengthCache instead?
             length += GeometryUtils::getDistanceInt(xCoordinates[j], yCoordinates[j],
                     xCoordinates[j + 1], yCoordinates[j + 1]);
-            duration += times[j + 1] - times[j];
+            duration += static_cast<int64_t>(times[j + 1]) - times[j];
         }
-        if (duration == 0 || sumDuration == 0) {
+        if (duration <= 0 || sumDuration <= 0 || sumLength <= 0) {
             // Cannot calculate speed; thus, it gives an average value (1.0);
             (*sampledSpeedRates)[i] = 1.0f;
         } else {
@@ -285,9 +298,11 @@ namespace latinime {
     }
     beelineSpeedPercentiles->resize(sampledInputSize);
     for (int i = 0; i < sampledInputSize; ++i) {
-        (*beelineSpeedPercentiles)[i] = static_cast<int>(calculateBeelineSpeedRate(
-                mostCommonKeyWidth, averageSpeed, i, inputSize, xCoordinates, yCoordinates, times,
-                sampledInputSize, sampledInputXs, sampledInputYs, inputIndice) * MAX_PERCENTILE);
+        const float rate = calculateBeelineSpeedRate(mostCommonKeyWidth, averageSpeed, i,
+                inputSize, xCoordinates, yCoordinates, times, sampledInputSize, sampledInputXs,
+                sampledInputYs, inputIndice);
+        const float percentile = std::isfinite(rate) ? std::max(0.0f, std::min(rate, 1000.0f)) : 1.0f;
+        (*beelineSpeedPercentiles)[i] = static_cast<int>(percentile * MAX_PERCENTILE);
     }
 }
 
@@ -478,7 +493,8 @@ namespace latinime {
         const std::vector<int> *const sampledInputXs,
         const std::vector<int> *const sampledInputYs,
         const std::vector<int> *const sampledInputIndices) {
-    if (sampledInputSize <= 0 || averageSpeed < 0.001f) {
+    if (!times || !xCoordinates || !yCoordinates || id < 0 || id >= sampledInputSize
+            || sampledInputSize <= 0 || !std::isfinite(averageSpeed) || averageSpeed < 0.001f) {
         if (DEBUG_SAMPLING_POINTS) {
             AKLOGI("--- invalid state: cancel. size = %d, ave = %f",
                     sampledInputSize, averageSpeed);
@@ -490,12 +506,11 @@ namespace latinime {
     const int x0 = (*sampledInputXs)[id];
     const int y0 = (*sampledInputYs)[id];
     const int actualInputIndex = (*sampledInputIndices)[id];
-    int tempTime = 0;
+    if (actualInputIndex < 0 || actualInputIndex >= inputSize) return 1.0f;
     int tempBeelineDistance = 0;
     int start = actualInputIndex;
     // lookup forward
     while (start > 0 && tempBeelineDistance < lookupRadius) {
-        tempTime += times[start] - times[start - 1];
         --start;
         tempBeelineDistance = GeometryUtils::getDistanceInt(x0, y0, xCoordinates[start],
                 yCoordinates[start]);
@@ -504,12 +519,10 @@ namespace latinime {
     if (start > 0 && start < actualInputIndex) {
         ++start;
     }
-    tempTime= 0;
     tempBeelineDistance = 0;
     int end = actualInputIndex;
     // lookup backward
     while (end < (inputSize - 1) && tempBeelineDistance < lookupRadius) {
-        tempTime += times[end + 1] - times[end];
         ++end;
         tempBeelineDistance = GeometryUtils::getDistanceInt(x0, y0, xCoordinates[end],
                 yCoordinates[end]);
@@ -531,15 +544,15 @@ namespace latinime {
     const int x3 = xCoordinates[end];
     const int y3 = yCoordinates[end];
     const int beelineDistance = GeometryUtils::getDistanceInt(x2, y2, x3, y3);
-    int adjustedStartTime = times[start];
+    int64_t adjustedStartTime = times[start];
     if (start == 0 && actualInputIndex == 0 && inputSize > 1) {
         adjustedStartTime += ProximityInfoParams::FIRST_POINT_TIME_OFFSET_MILLIS;
     }
-    int adjustedEndTime = times[end];
+    int64_t adjustedEndTime = times[end];
     if (end == (inputSize - 1) && inputSize > 1) {
         adjustedEndTime -= ProximityInfoParams::FIRST_POINT_TIME_OFFSET_MILLIS;
     }
-    const int time = adjustedEndTime - adjustedStartTime;
+    const int64_t time = adjustedEndTime - adjustedStartTime;
     if (time <= 0) {
         return 1.0f;
     }
@@ -749,8 +762,10 @@ namespace latinime {
                             NOT_A_COORDINATE /* referencePointX */, true /* isGeometric */),
                     proximityInfo->getKeyCenterYOfKeyIdG(j,
                             NOT_A_COORDINATE /* referencePointY */, true /* isGeometric */));
-            const float probability = inputCharProbability * probabilityDensity
-                    / sumOfProbabilityDensities;
+            const float probability = std::isfinite(sumOfProbabilityDensities)
+                    && sumOfProbabilityDensities > 0.0f
+                    ? inputCharProbability * probabilityDensity / sumOfProbabilityDensities
+                    : inputCharProbability / std::max(1, keyCount);
             (*charProbabilities)[i][j] = probability;
         }
     }

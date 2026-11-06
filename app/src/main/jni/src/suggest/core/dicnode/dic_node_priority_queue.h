@@ -30,8 +30,7 @@ namespace latinime {
 class DicNodePriorityQueue {
  public:
     AK_FORCE_INLINE explicit DicNodePriorityQueue(const int capacity)
-            : mMaxSize(capacity), mDicNodesQueue(), mDicNodePool(capacity) {
-        clear();
+            : mMaxSize(std::max(0, std::min(capacity, 65536))), mDicNodesQueue(), mDicNodePool(mMaxSize + 1) {
     }
 
     // Non virtual inline destructor -- never inherit this class
@@ -46,7 +45,9 @@ class DicNodePriorityQueue {
     }
 
     AK_FORCE_INLINE void setMaxSize(const int maxSize) {
-        mMaxSize = maxSize;
+        mMaxSize = std::max(0, std::min(maxSize, 65536));
+        while (getSize() > mMaxSize) copyPop(nullptr);
+        mDicNodePool.ensureCapacity(mMaxSize + 1);
     }
 
     AK_FORCE_INLINE void clear() {
@@ -54,7 +55,7 @@ class DicNodePriorityQueue {
     }
 
     AK_FORCE_INLINE void clearAndResize(const int maxSize) {
-        mMaxSize = maxSize;
+        mMaxSize = std::max(0, std::min(maxSize, 65536));
         while (!mDicNodesQueue.empty()) {
             mDicNodesQueue.pop();
         }
@@ -62,6 +63,7 @@ class DicNodePriorityQueue {
     }
 
     AK_FORCE_INLINE void copyPush(const DicNode *const dicNode) {
+        if (!dicNode || mMaxSize == 0) return;
         DicNode *const pooledDicNode = newDicNode(dicNode);
         if (!pooledDicNode) {
             return;

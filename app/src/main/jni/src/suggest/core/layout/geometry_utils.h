@@ -18,11 +18,15 @@
 #define LATINIME_GEOMETRY_UTILS_H
 
 #include <cmath>
+#include <climits>
+#include <algorithm>
 
 #include "defines.h"
 
-#define ROUND_FLOAT_10000(f) ((f) < 1000.0f && (f) > 0.001f) \
-        ? (floorf((f) * 10000.0f) / 10000.0f) : (f)
+// Keep the legacy spelling while evaluating the argument only once.
+inline float ROUND_FLOAT_10000(const float value) {
+    return value < 1000.0f && value > 0.001f ? floorf(value * 10000.0f) / 10000.0f : value;
+}
 
 namespace latinime {
 
@@ -31,8 +35,8 @@ class GeometryUtils {
     static inline float SQUARE_FLOAT(const float x) { return x * x; }
 
     static AK_FORCE_INLINE float getAngle(const int x1, const int y1, const int x2, const int y2) {
-        const int dx = x1 - x2;
-        const int dy = y1 - y2;
+        const float dx = static_cast<float>(x1) - x2;
+        const float dy = static_cast<float>(y1) - y2;
         if (dx == 0 && dy == 0) return 0.0f;
         return atan2f(static_cast<float>(dy), static_cast<float>(dx));
     }
@@ -51,7 +55,8 @@ class GeometryUtils {
 
     static AK_FORCE_INLINE int getDistanceInt(const int x1, const int y1, const int x2,
             const int y2) {
-        return static_cast<int>(hypotf(static_cast<float>(x1 - x2), static_cast<float>(y1 - y2)));
+        const double distance = hypot(static_cast<double>(x1) - x2, static_cast<double>(y1) - y2);
+        return distance >= INT_MAX ? INT_MAX : static_cast<int>(distance);
     }
 
  private:

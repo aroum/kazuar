@@ -18,6 +18,8 @@
 #define LATINIME_PROXIMITY_INFO_UTILS_H
 
 #include <cmath>
+#include <climits>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -51,20 +53,21 @@ class ProximityInfoUtils {
             const int inputSize, const int *const keyXCoordinates,
             const int *const keyYCoordinates, const int *const keyWidths, const int *keyHeights,
             const int *const proximityCharsArray, const int cellHeight, const int cellWidth,
-            const int gridWidth, const int mostCommonKeyWidth, const int keyCount,
+            const int gridWidth, const int gridHeight, const int mostCommonKeyWidth, const int keyCount,
             const std::vector<int> *locale,
             const std::unordered_map<int, int> *const codeToKeyMap, int *inputProximities) {
+        if (!inputCodes || !inputProximities || inputSize < 0 || inputSize >= MAX_WORD_LENGTH) return;
         // Initialize
         // - mInputCodes
         // - mNormalizedSquaredDistances
         // TODO: Merge
         for (int i = 0; i < inputSize; ++i) {
             const int primaryKey = inputCodes[i];
-            const int x = inputXCoordinates[i];
-            const int y = inputYCoordinates[i];
+            const int x = inputXCoordinates ? inputXCoordinates[i] : NOT_A_COORDINATE;
+            const int y = inputYCoordinates ? inputYCoordinates[i] : NOT_A_COORDINATE;
             int *proximities = &inputProximities[i * MAX_PROXIMITY_CHARS_SIZE];
             calculateProximities(keyXCoordinates, keyYCoordinates, keyWidths, keyHeights,
-                    proximityCharsArray, cellHeight, cellWidth, gridWidth, mostCommonKeyWidth,
+                    proximityCharsArray, cellHeight, cellWidth, gridWidth, gridHeight, mostCommonKeyWidth,
                     keyCount, x, y, primaryKey, locale, codeToKeyMap, proximities);
         }
 
@@ -82,8 +85,14 @@ class ProximityInfoUtils {
     }
 
     static AK_FORCE_INLINE int getStartIndexFromCoordinates(const int x, const int y,
-            const int cellHeight, const int cellWidth, const int gridWidth) {
-        return ((y / cellHeight) * gridWidth + (x / cellWidth)) * MAX_PROXIMITY_CHARS_SIZE;
+            const int cellHeight, const int cellWidth, const int gridWidth, const int gridHeight) {
+        if (x < 0 || y < 0 || cellWidth <= 0 || cellHeight <= 0 || gridWidth <= 0
+                || gridHeight <= 0 || x / cellWidth >= gridWidth || y / cellHeight >= gridHeight) {
+            return NOT_AN_INDEX;
+        }
+        const int64_t index = (static_cast<int64_t>(y / cellHeight) * gridWidth + x / cellWidth)
+                * MAX_PROXIMITY_CHARS_SIZE;
+        return index <= INT_MAX - MAX_PROXIMITY_CHARS_SIZE ? static_cast<int>(index) : NOT_AN_INDEX;
     }
 
     static inline float getSquaredDistanceFloat(const float x1, const float y1, const float x2,
@@ -143,10 +152,10 @@ class ProximityInfoUtils {
     static AK_FORCE_INLINE void calculateProximities(const int *const keyXCoordinates,
             const int *const keyYCoordinates, const int *const keyWidths, const int *keyHeights,
             const int *const proximityCharsArray, const int cellHeight, const int cellWidth,
-            const int gridWidth, const int mostCommonKeyWidth, const int keyCount,
+            const int gridWidth, const int gridHeight, const int mostCommonKeyWidth, const int keyCount,
             const int x, const int y, const int primaryKey, const std::vector<int> *locale,
             const std::unordered_map<int, int> *const codeToKeyMap, int *proximities) {
-        const int mostCommonKeyWidthSquare = mostCommonKeyWidth * mostCommonKeyWidth;
+        const int64_t mostCommonKeyWidthSquare = static_cast<int64_t>(mostCommonKeyWidth) * mostCommonKeyWidth;
         int insertPos = 0;
         proximities[insertPos++] = primaryKey;
         if (x == NOT_A_COORDINATE || y == NOT_A_COORDINATE) {
@@ -155,7 +164,7 @@ class ProximityInfoUtils {
             }
             return;
         }
-        const int startIndex = getStartIndexFromCoordinates(x, y, cellHeight, cellWidth, gridWidth);
+        const int startIndex = getStartIndexFromCoordinates(x, y, cellHeight, cellWidth, gridWidth, gridHeight);
         if (startIndex >= 0) {
             for (int i = 0; i < MAX_PROXIMITY_CHARS_SIZE; ++i) {
                 const int c = proximityCharsArray[startIndex + i];
@@ -228,9 +237,9 @@ class ProximityInfoUtils {
         const int bottom = top + keyHeights[keyId];
         const int edgeX = x < left ? left : (x > right ? right : x);
         const int edgeY = y < top ? top : (y > bottom ? bottom : y);
-        const int dx = x - edgeX;
-        const int dy = y - edgeY;
-        return dx * dx + dy * dy;
+        const double dx = static_cast<double>(x) - edgeX;
+        const double dy = static_cast<double>(y) - edgeY;
+        return dx * dx + dy * dy >= INT_MAX ? INT_MAX : static_cast<int>(dx * dx + dy * dy);
     }
 };
 } // namespace latinime

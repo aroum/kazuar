@@ -44,11 +44,11 @@ class ProximityInfo {
     bool hasSweetSpotData(const int keyIndex) const {
         // When there are no calibration data for a key,
         // the radius of the key is assigned to zero.
-        return mSweetSpotRadii[keyIndex] > 0.0f;
+        return keyIndex >= 0 && keyIndex < KEY_COUNT && mSweetSpotRadii[keyIndex] > 0.0f;
     }
-    float getSweetSpotRadiiAt(int keyIndex) const { return mSweetSpotRadii[keyIndex]; }
-    float getSweetSpotCenterXAt(int keyIndex) const { return mSweetSpotCenterXs[keyIndex]; }
-    float getSweetSpotCenterYAt(int keyIndex) const { return mSweetSpotCenterYs[keyIndex]; }
+    float getSweetSpotRadiiAt(int keyIndex) const { return keyIndex >= 0 && keyIndex < KEY_COUNT ? mSweetSpotRadii[keyIndex] : 0.0f; }
+    float getSweetSpotCenterXAt(int keyIndex) const { return keyIndex >= 0 && keyIndex < KEY_COUNT ? mSweetSpotCenterXs[keyIndex] : 0.0f; }
+    float getSweetSpotCenterYAt(int keyIndex) const { return keyIndex >= 0 && keyIndex < KEY_COUNT ? mSweetSpotCenterYs[keyIndex] : 0.0f; }
     bool hasTouchPositionCorrectionData() const { return HAS_TOUCH_POSITION_CORRECTION_DATA; }
     int getMostCommonKeyWidth() const { return MOST_COMMON_KEY_WIDTH; }
     int getMostCommonKeyWidthSquare() const { return MOST_COMMON_KEY_WIDTH_SQUARE; }
@@ -75,7 +75,7 @@ class ProximityInfo {
             const int inputSize, int *allInputCodes, const std::vector<int> *locale) const {
         ProximityInfoUtils::initializeProximities(inputCodes, inputXCoordinates, inputYCoordinates,
                 inputSize, mKeyXCoordinates, mKeyYCoordinates, mKeyWidths, mKeyHeights,
-                mProximityCharsArray, CELL_HEIGHT, CELL_WIDTH, GRID_WIDTH, MOST_COMMON_KEY_WIDTH,
+                mProximityCharsArray, CELL_HEIGHT, CELL_WIDTH, GRID_WIDTH, GRID_HEIGHT, MOST_COMMON_KEY_WIDTH,
                 KEY_COUNT, locale, &mLowerCodePointToKeyMap, allInputCodes);
     }
 
@@ -103,7 +103,7 @@ class ProximityInfo {
     const int KEYBOARD_WIDTH;
     const int KEYBOARD_HEIGHT;
     const float KEYBOARD_HYPOTENUSE;
-    const bool HAS_TOUCH_POSITION_CORRECTION_DATA;
+    bool HAS_TOUCH_POSITION_CORRECTION_DATA;
     int *mProximityCharsArray;
     int mKeyXCoordinates[MAX_KEY_COUNT_IN_A_KEYBOARD];
     int mKeyYCoordinates[MAX_KEY_COUNT_IN_A_KEYBOARD];

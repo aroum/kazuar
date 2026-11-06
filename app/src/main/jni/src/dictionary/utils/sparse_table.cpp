@@ -15,6 +15,7 @@
  */
 
 #include "dictionary/utils/sparse_table.h"
+#include <climits>
 
 namespace latinime {
 
@@ -22,80 +23,69 @@ const int SparseTable::NOT_EXIST = -1;
 const int SparseTable::INDEX_SIZE = 4;
 
 bool SparseTable::contains(const int id) const {
-    const int readingPos = getPosInIndexTable(id);
-    if (id < 0 || mIndexTableBuffer->getTailPosition() <= readingPos) {
-        return false;
-    }
-    const int index = mIndexTableBuffer->readUint(INDEX_SIZE, readingPos);
-    return index != NOT_EXIST;
+    const int pos = getPosInIndexTable(id);
+    uint32_t index;
+    return pos >= 0 && mIndexTableBuffer && mContentTableBuffer
+            && mIndexTableBuffer->tryReadUint(INDEX_SIZE, pos, &index)
+            && index <= INT_MAX && getPosInContentTable(id, index) >= 0
+            && static_cast<int64_t>(getPosInContentTable(0, index))
+                    + static_cast<int64_t>(mBlockSize) * mDataSize
+                    <= mContentTableBuffer->getTailPosition();
 }
 
 uint32_t SparseTable::get(const int id) const {
-    const int indexTableReadingPos = getPosInIndexTable(id);
-    const int index = mIndexTableBuffer->readUint(INDEX_SIZE, indexTableReadingPos);
-    const int contentTableReadingPos = getPosInContentTable(id, index);
-    if (contentTableReadingPos < 0
-            || contentTableReadingPos >= mContentTableBuffer->getTailPosition()) {
-        AKLOGE("contentTableReadingPos(%d) is invalid. id: %d, index: %d",
-                contentTableReadingPos, id, index);
+    if (!contains(id)) return NOT_A_DICT_POS;
+    const int index = mIndexTableBuffer->readUint(INDEX_SIZE, getPosInIndexTable(id));
+    uint32_t value;
+    if (!mContentTableBuffer->tryReadUint(mDataSize, getPosInContentTable(id, index), &value)) {
         return NOT_A_DICT_POS;
     }
-    const int contentValue = mContentTableBuffer->readUint(mDataSize, contentTableReadingPos);
-    return contentValue == NOT_EXIST ? NOT_A_DICT_POS : contentValue;
+    const uint32_t empty = 0xFFFFFFFFu >> ((4 - mDataSize) * 8);
+    return value == empty ? static_cast<uint32_t>(NOT_A_DICT_POS) : value;
 }
 
 bool SparseTable::set(const int id, const uint32_t value) {
-    const int posInIndexTable = getPosInIndexTable(id);
-    // Extends the index table if needed.
-    int tailPos = mIndexTableBuffer->getTailPosition();
-    while (tailPos <= posInIndexTable) {
-        if (!mIndexTableBuffer->writeUintAndAdvancePosition(NOT_EXIST, INDEX_SIZE, &tailPos)) {
-            AKLOGE("cannot extend index table. tailPos: %d to: %d", tailPos, posInIndexTable);
-            return false;
-        }
-    }
+    const int indexPos = getPosInIndexTable(id);
+    if (indexPos < 0 || !mIndexTableBuffer || !mContentTableBuffer
+            || mIndexTableBuffer->getTailPosition() % INDEX_SIZE != 0) return false;
     if (contains(id)) {
-        // The entry is already in the content table.
-        const int index = mIndexTableBuffer->readUint(INDEX_SIZE, posInIndexTable);
-        if (!mContentTableBuffer->writeUint(value, mDataSize, getPosInContentTable(id, index))) {
-            AKLOGE("cannot update value %d. pos: %d, tailPos: %d, mDataSize: %d", value,
-                    getPosInContentTable(id, index), mContentTableBuffer->getTailPosition(),
-                    mDataSize);
-            return false;
-        }
-        return true;
+        const int index = mIndexTableBuffer->readUint(INDEX_SIZE, indexPos);
+        return mContentTableBuffer->writeUint(value, mDataSize, getPosInContentTable(id, index));
     }
-    // The entry is not in the content table.
-    // Create new entry in the content table.
-    const int index = getIndexFromContentTablePos(mContentTableBuffer->getTailPosition());
-    if (!mIndexTableBuffer->writeUint(index, INDEX_SIZE, posInIndexTable)) {
-        AKLOGE("cannot write index %d. pos %d", index, posInIndexTable);
-        return false;
+    const int64_t blockBytes = static_cast<int64_t>(mBlockSize) * mDataSize;
+    const int contentTail = mContentTableBuffer->getTailPosition();
+    if (contentTail % blockBytes || blockBytes > INT_MAX - contentTail) return false;
+    // Reserve complete ranges before publishing an index. Huge sparse IDs fail promptly.
+    const int oldIndexTail = mIndexTableBuffer->getTailPosition();
+    if (indexPos > INT_MAX - INDEX_SIZE) return false;
+    if (indexPos + INDEX_SIZE > oldIndexTail
+            && !mIndexTableBuffer->extend(indexPos + INDEX_SIZE - oldIndexTail)) return false;
+    if (!mContentTableBuffer->extend(static_cast<int>(blockBytes))) return false;
+    for (int pos = oldIndexTail; pos <= indexPos; pos += INDEX_SIZE) {
+        if (!mIndexTableBuffer->writeUint(NOT_EXIST, INDEX_SIZE, pos)) return false;
     }
-    // Write a new block that containing the entry to be set.
-    int writingPos = getPosInContentTable(0 /* id */, index);
-    for (int i = 0; i < mBlockSize; ++i) {
-        if (!mContentTableBuffer->writeUintAndAdvancePosition(NOT_EXIST, mDataSize,
-                &writingPos)) {
-            AKLOGE("cannot write content table to extend. writingPos: %d, tailPos: %d, "
-                    "mDataSize: %d", writingPos, mContentTableBuffer->getTailPosition(), mDataSize);
-            return false;
-        }
+    const int index = getIndexFromContentTablePos(contentTail);
+    for (int pos = contentTail; pos < contentTail + blockBytes; pos += mDataSize) {
+        if (!mContentTableBuffer->writeUint(NOT_EXIST, mDataSize, pos)) return false;
     }
-    return mContentTableBuffer->writeUint(value, mDataSize, getPosInContentTable(id, index));
+    return mContentTableBuffer->writeUint(value, mDataSize, getPosInContentTable(id, index))
+            && mIndexTableBuffer->writeUint(index, INDEX_SIZE, indexPos);
 }
 
-int SparseTable::getIndexFromContentTablePos(const int contentTablePos) const {
-    return contentTablePos / mDataSize / mBlockSize;
+int SparseTable::getIndexFromContentTablePos(const int pos) const {
+    return mDataSize > 0 && mBlockSize > 0 ? pos / mDataSize / mBlockSize : -1;
 }
 
 int SparseTable::getPosInIndexTable(const int id) const {
-    return (id / mBlockSize) * INDEX_SIZE;
+    if (id < 0 || mBlockSize <= 0 || mDataSize < 1 || mDataSize > 4) return -1;
+    const int64_t pos = static_cast<int64_t>(id / mBlockSize) * INDEX_SIZE;
+    return pos <= INT_MAX - INDEX_SIZE ? static_cast<int>(pos) : -1;
 }
 
 int SparseTable::getPosInContentTable(const int id, const int index) const {
-    const int offset = id % mBlockSize;
-    return (index * mBlockSize + offset) * mDataSize;
+    if (id < 0 || index < 0 || mBlockSize <= 0 || mDataSize < 1 || mDataSize > 4) return -1;
+    const int64_t pos = (static_cast<int64_t>(index) * mBlockSize + id % mBlockSize) * mDataSize;
+    return pos <= INT_MAX - mDataSize ? static_cast<int>(pos) : -1;
 }
 
 } // namespace latinime

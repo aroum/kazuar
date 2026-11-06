@@ -17,6 +17,8 @@
 #ifndef LATINIME_DIC_NODE_H
 #define LATINIME_DIC_NODE_H
 
+#include <functional>
+#include <cmath>
 #include "defines.h"
 #include "suggest/core/dicnode/dic_node_profiler.h"
 #include "suggest/core/dicnode/dic_node_utils.h"
@@ -114,12 +116,17 @@ class DicNode {
 
     // Init for root with previous word
     void initAsRootWithPreviousWord(const DicNode *const dicNode, const int rootPtNodeArrayPos) {
+        if (dicNode->getTotalNodeCodePointCount() >= MAX_WORD_LENGTH - 1) {
+            initAsRoot(NOT_A_DICT_POS, WordIdArrayView());
+            return;
+        }
         mIsCachedForNextSuggestion = dicNode->mIsCachedForNextSuggestion;
-        WordIdArray<MAX_PREV_WORD_COUNT_FOR_N_GRAM> newPrevWordIds;
+        WordIdArray<MAX_PREV_WORD_COUNT_FOR_N_GRAM> newPrevWordIds{};
         newPrevWordIds[0] = dicNode->mDicNodeProperties.getWordId();
         dicNode->getPrevWordIds().limit(newPrevWordIds.size() - 1)
                 .copyToArray(&newPrevWordIds, 1 /* offset */);
-        mDicNodeProperties.init(rootPtNodeArrayPos, WordIdArrayView::fromArray(newPrevWordIds));
+        mDicNodeProperties.init(rootPtNodeArrayPos, WordIdArrayView::fromArray(newPrevWordIds)
+                .limit(std::min(newPrevWordIds.size(), dicNode->getPrevWordIds().size() + 1)));
         mDicNodeState.initAsRootWithPreviousWord(&dicNode->mDicNodeState,
                 dicNode->mDicNodeProperties.getDepth());
         PROF_NODE_COPY(&dicNode->mProfiler, mProfiler);
@@ -137,6 +144,16 @@ class DicNode {
 
     void initAsChild(const DicNode *const dicNode, const int childrenPtNodeArrayPos,
             const int wordId, const CodePointArrayView mergedCodePoints) {
+        if (mergedCodePoints.empty() || mergedCodePoints.size() > MAX_WORD_LENGTH
+                || dicNode->getTotalNodeCodePointCount() >= MAX_WORD_LENGTH
+                || mergedCodePoints.size() > static_cast<size_t>(MAX_WORD_LENGTH
+                        - dicNode->mDicNodeState.mDicNodeStateOutput.getPrevWordsLength()
+                        - dicNode->mDicNodeProperties.getLeavingDepth())
+                || mergedCodePoints.size() > static_cast<size_t>(MAX_WORD_LENGTH
+                        - dicNode->mDicNodeProperties.getLeavingDepth())) {
+            initAsRoot(NOT_A_DICT_POS, WordIdArrayView());
+            return;
+        }
         uint16_t newDepth = static_cast<uint16_t>(dicNode->getNodeCodePointCount() + 1);
         mIsCachedForNextSuggestion = dicNode->mIsCachedForNextSuggestion;
         const uint16_t newLeavingDepth = static_cast<uint16_t>(
@@ -351,7 +368,7 @@ class DicNode {
 
     // TODO: remove
     // TODO: rename getNextInputIndex
-    int16_t getInputIndex(int pointerId) const {
+    int getInputIndex(int pointerId) const {
         return mDicNodeState.mDicNodeStateInput.getInputIndex(pointerId);
     }
 
@@ -419,14 +436,12 @@ class DicNode {
         if (leftExactMatch != rightExactMatch) {
             return leftExactMatch;
         }
-        const float diff =
-                right->getNormalizedCompoundDistance() - getNormalizedCompoundDistance();
-        static const float MIN_DIFF = 0.000001f;
-        if (diff > MIN_DIFF) {
-            return true;
-        } else if (diff < -MIN_DIFF) {
-            return false;
-        }
+        const float leftDistance = getNormalizedCompoundDistance();
+        const float rightDistance = right->getNormalizedCompoundDistance();
+        // NaN sorts after all numerical distances, with the same tie breakers as equality.
+        if (std::isnan(leftDistance) != std::isnan(rightDistance)) return !std::isnan(leftDistance);
+        if (leftDistance < rightDistance) return true;
+        if (leftDistance > rightDistance) return false;
         const int depth = getNodeCodePointCount();
         const int depthDiff = right->getNodeCodePointCount() - depth;
         if (depthDiff != 0) {
@@ -441,7 +456,7 @@ class DicNode {
             }
         }
         // Compare pointer values here for stable comparison
-        return this > right;
+        return std::less<const DicNode *>()(right, this);
     }
 
  private:
@@ -485,7 +500,7 @@ class DicNode {
         }
         mDicNodeState.mDicNodeStateInput.forwardInputIndex(pointerId, count);
         if (overwritesPrevCodePointByNodeCodePoint) {
-            mDicNodeState.mDicNodeStateInput.setPrevCodePoint(0, getNodeCodePoint());
+            mDicNodeState.mDicNodeStateInput.setPrevCodePoint(pointerId, getNodeCodePoint());
         }
     }
 

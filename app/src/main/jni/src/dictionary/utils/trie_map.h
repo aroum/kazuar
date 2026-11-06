@@ -345,7 +345,8 @@ class TrieMap {
     }
 
     AK_FORCE_INLINE int getLabel(const uint32_t hashedKey, const int level) const {
-        return (hashedKey >> (level * NUM_OF_BITS_USED_FOR_ONE_LEVEL)) & LABEL_MASK;
+        return level >= 0 && level <= 31 / NUM_OF_BITS_USED_FOR_ONE_LEVEL
+                ? (hashedKey >> (level * NUM_OF_BITS_USED_FOR_ONE_LEVEL)) & LABEL_MASK : 0;
     }
 
     AK_FORCE_INLINE uint32_t readField0(const int entryIndex) const {

@@ -46,8 +46,9 @@ int MultiBigramMap::getBigramProbability(
                 unigramProbability);
     }
     if (mBigramMaps.size() < MAX_CACHED_PREV_WORDS_IN_BIGRAM_MAP) {
-        addBigramsForWord(structurePolicy, prevWordIds);
-        return mBigramMaps[prevWordIds[0]].getBigramProbability(structurePolicy,
+        const auto inserted = mBigramMaps.emplace(prevWordIds[0], BigramMap());
+        inserted.first->second.init(structurePolicy, prevWordIds);
+        return inserted.first->second.getBigramProbability(structurePolicy,
                 nextWordId, unigramProbability);
     }
     return readBigramProbabilityFromBinaryDictionary(structurePolicy, prevWordIds,

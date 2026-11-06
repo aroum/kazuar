@@ -42,12 +42,16 @@ class SuggestedWord {
     SuggestedWord(const int *const codePoints, const int codePointCount,
             const int score, const int type, const int indexToPartialCommit,
             const int autoCommitFirstWordConfidence)
-            : mCodePoints(codePoints, codePoints + codePointCount), mScore(score),
+            : mCodePoints(), mScore(score),
               mType(type), mIndexToPartialCommit(indexToPartialCommit),
-              mAutoCommitFirstWordConfidence(autoCommitFirstWordConfidence) {}
+              mAutoCommitFirstWordConfidence(autoCommitFirstWordConfidence) {
+        if (codePoints && codePointCount > 0 && codePointCount <= MAX_WORD_LENGTH) {
+            mCodePoints.assign(codePoints, codePoints + codePointCount);
+        }
+    }
 
     const int *getCodePoint() const {
-        return &mCodePoints.at(0);
+        return mCodePoints.empty() ? nullptr : mCodePoints.data();
     }
 
     int getCodePointCount() const {

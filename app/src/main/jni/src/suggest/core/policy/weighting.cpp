@@ -146,6 +146,7 @@ static inline void profile(const CorrectionType correctionType, DicNode *const n
     switch(correctionType) {
     case CT_OMISSION:
         return 0.0f;
+    case CT_ADDITIONAL_PROXIMITY:
     case CT_SUBSTITUTION:
         return 0.0f;
     case CT_NEW_WORD_SPACE_OMISSION:

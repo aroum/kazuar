@@ -35,8 +35,8 @@ void DicTraverseSession::init(const Dictionary *const dictionary,
     mMultiWordCostMultiplier = getDictionaryStructurePolicy()->getHeaderStructurePolicy()
             ->getMultiWordCostMultiplier();
     mSuggestOptions = suggestOptions;
-    mPrevWordIdCount = ngramContext->getPrevWordIds(getDictionaryStructurePolicy(),
-            &mPrevWordIdArray, true /* tryLowerCaseSearch */).size();
+    mPrevWordIdCount = ngramContext ? ngramContext->getPrevWordIds(getDictionaryStructurePolicy(),
+            &mPrevWordIdArray, true /* tryLowerCaseSearch */).size() : 0;
 }
 
 void DicTraverseSession::setupForGetSuggestions(const ProximityInfo *pInfo,
@@ -44,9 +44,9 @@ void DicTraverseSession::setupForGetSuggestions(const ProximityInfo *pInfo,
         const int *const inputYs, const int *const times, const int *const pointerIds,
         const float maxSpatialDistance, const int maxPointerCount) {
     mProximityInfo = pInfo;
-    mMaxPointerCount = maxPointerCount;
+    mMaxPointerCount = std::max(1, std::min(maxPointerCount, MAX_POINTER_COUNT_G));
     initializeProximityInfoStates(inputCodePoints, inputXs, inputYs, times, pointerIds, inputSize,
-            maxSpatialDistance, maxPointerCount);
+            maxSpatialDistance, mMaxPointerCount);
 }
 
 const DictionaryStructureWithBufferPolicy *DicTraverseSession::getDictionaryStructurePolicy()

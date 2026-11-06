@@ -83,7 +83,8 @@ class DicTraverseSession {
     DicNodesCache *getDicTraverseCache() { return &mDicNodesCache; }
     MultiBigramMap *getMultiBigramMap() { return &mMultiBigramMap; }
     const ProximityInfoState *getProximityInfoState(int id) const {
-        return &mProximityInfoStates[id];
+        static const ProximityInfoState emptyState;
+        return id >= 0 && id < MAX_POINTER_COUNT_G ? &mProximityInfoStates[id] : &emptyState;
     }
     int getInputSize() const { return mInputSize; }
 

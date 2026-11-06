@@ -39,7 +39,7 @@ class DictionaryUtils {
     static void processChildDicNodes(
             const DictionaryStructureWithBufferPolicy *const dictionaryStructurePolicy,
             const int inputCodePoint, const DicNode *const parentDicNode,
-            std::vector<DicNode> *const outDicNodes);
+            std::vector<DicNode> *const outDicNodes, int *const remainingWork);
 };
 } // namespace latinime
 #endif // LATINIME_DICTIONARY_UTILS_H

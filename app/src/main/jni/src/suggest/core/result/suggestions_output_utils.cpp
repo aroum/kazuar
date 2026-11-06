@@ -62,7 +62,7 @@ const int SuggestionsOutputUtils::MIN_LEN_FOR_MULTI_WORD_AUTOCORRECT = 16;
                     && !terminals.empty() && terminals.front().hasMultipleWords());
     // TODO: have partial commit work even with multiple pointers.
     const bool outputSecondWordFirstLetterInputIndex =
-            traverseSession->isOnlyOnePointerUsed(0 /* pointerId */);
+            traverseSession->isOnlyOnePointerUsed(nullptr /* pointerId */);
     const bool boostExactMatches = traverseSession->getDictionaryStructurePolicy()->
             getHeaderStructurePolicy()->shouldBoostExactMatches();
 
@@ -198,9 +198,9 @@ const int SuggestionsOutputUtils::MIN_LEN_FOR_MULTI_WORD_AUTOCORRECT = 16;
 /* static */ int SuggestionsOutputUtils::computeFirstWordConfidence(
         const DicNode *const terminalDicNode) {
     // Get the number of spaces in the first suggestion
-    const int spaceCount = terminalDicNode->getTotalNodeSpaceCount();
+    const int spaceCount = std::max(0, std::min(MAX_WORD_LENGTH, terminalDicNode->getTotalNodeSpaceCount()));
     // Get the number of characters in the first suggestion
-    const int length = terminalDicNode->getTotalNodeCodePointCount();
+    const int length = std::max(0, std::min(MAX_WORD_LENGTH, terminalDicNode->getTotalNodeCodePointCount()));
     // Get the distance for the first word of the suggestion
     const float distance = terminalDicNode->getNormalizedCompoundDistanceAfterFirstWord();
 
@@ -227,6 +227,7 @@ const int SuggestionsOutputUtils::MIN_LEN_FOR_MULTI_WORD_AUTOCORRECT = 16;
     // The smaller the edit distance, the higher the contribution. MIN_EXPECTED_DISTANCE means 0
     // contribution, while MAX_EXPECTED_DISTANCE means full contribution according to the
     // weight of the distance. Clamp to avoid overflows.
+    if (!std::isfinite(distance)) return NOT_A_FIRST_WORD_CONFIDENCE;
     const float clampedDistance = distance < MIN_EXPECTED_DISTANCE ? MIN_EXPECTED_DISTANCE
             : distance > MAX_EXPECTED_DISTANCE ? MAX_EXPECTED_DISTANCE : distance;
     const int distanceContribution = DISTANCE_WEIGHT_FOR_AUTO_COMMIT
@@ -269,7 +270,7 @@ const int SuggestionsOutputUtils::MIN_LEN_FOR_MULTI_WORD_AUTOCORRECT = 16;
             kind = Dictionary::KIND_SHORTCUT;
         }
         outSuggestionResults->addSuggestion(shortcutTarget, shortcutTargetStringLength,
-                std::max(S_INT_MIN + 1, shortcutScore) - 1, kind, NOT_AN_INDEX,
+                shortcutScore, kind, NOT_AN_INDEX,
                 NOT_A_FIRST_WORD_CONFIDENCE);
     }
 }

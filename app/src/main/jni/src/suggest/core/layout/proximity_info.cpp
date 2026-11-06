@@ -33,7 +33,7 @@ namespace latinime {
 
 static AK_FORCE_INLINE void safeGetOrFillZeroIntArrayRegion(JNIEnv *env, jintArray jArray,
         jsize len, jint *buffer) {
-    if (jArray && buffer) {
+    if (env && jArray && buffer && env->GetArrayLength(jArray) >= len) {
         env->GetIntArrayRegion(jArray, 0, len, buffer);
     } else if (buffer) {
         memset(buffer, 0, len * sizeof(buffer[0]));
@@ -42,7 +42,7 @@ static AK_FORCE_INLINE void safeGetOrFillZeroIntArrayRegion(JNIEnv *env, jintArr
 
 static AK_FORCE_INLINE void safeGetOrFillZeroFloatArrayRegion(JNIEnv *env, jfloatArray jArray,
         jsize len, jfloat *buffer) {
-    if (jArray && buffer) {
+    if (env && jArray && buffer && env->GetArrayLength(jArray) >= len) {
         env->GetFloatArrayRegion(jArray, 0, len, buffer);
     } else if (buffer) {
         memset(buffer, 0, len * sizeof(buffer[0]));
@@ -56,28 +56,36 @@ ProximityInfo::ProximityInfo(JNIEnv *env, const int keyboardWidth, const int key
         const jintArray keyWidths, const jintArray keyHeights, const jintArray keyCharCodes,
         const jfloatArray sweetSpotCenterXs, const jfloatArray sweetSpotCenterYs,
         const jfloatArray sweetSpotRadii)
-        : GRID_WIDTH(gridWidth), GRID_HEIGHT(gridHeight), MOST_COMMON_KEY_WIDTH(mostCommonKeyWidth),
-          MOST_COMMON_KEY_WIDTH_SQUARE(mostCommonKeyWidth * mostCommonKeyWidth),
-          NORMALIZED_SQUARED_MOST_COMMON_KEY_HYPOTENUSE(1.0f +
-                  GeometryUtils::SQUARE_FLOAT(static_cast<float>(mostCommonKeyHeight) /
-                          static_cast<float>(mostCommonKeyWidth))),
-          CELL_WIDTH((keyboardWidth + gridWidth - 1) / gridWidth),
-          CELL_HEIGHT((keyboardHeight + gridHeight - 1) / gridHeight),
-          KEY_COUNT(std::min(keyCount, MAX_KEY_COUNT_IN_A_KEYBOARD)),
-          KEYBOARD_WIDTH(keyboardWidth), KEYBOARD_HEIGHT(keyboardHeight),
+        : GRID_WIDTH(std::max(1, std::min(gridWidth, 128))),
+          GRID_HEIGHT(std::max(1, std::min(gridHeight, 128))),
+          MOST_COMMON_KEY_WIDTH(std::max(1, std::min(mostCommonKeyWidth, 32767))),
+          MOST_COMMON_KEY_WIDTH_SQUARE(MOST_COMMON_KEY_WIDTH * MOST_COMMON_KEY_WIDTH),
+          NORMALIZED_SQUARED_MOST_COMMON_KEY_HYPOTENUSE(1.0f + GeometryUtils::SQUARE_FLOAT(
+                  static_cast<float>(std::max(1, std::min(mostCommonKeyHeight, 32767)))
+                          / MOST_COMMON_KEY_WIDTH)),
+          CELL_WIDTH((std::max(1, std::min(keyboardWidth, 32767)) + GRID_WIDTH - 1) / GRID_WIDTH),
+          CELL_HEIGHT((std::max(1, std::min(keyboardHeight, 32767)) + GRID_HEIGHT - 1) / GRID_HEIGHT),
+          KEY_COUNT(std::max(0, std::min(keyCount, MAX_KEY_COUNT_IN_A_KEYBOARD))),
+          KEYBOARD_WIDTH(std::max(1, std::min(keyboardWidth, 32767))),
+          KEYBOARD_HEIGHT(std::max(1, std::min(keyboardHeight, 32767))),
           KEYBOARD_HYPOTENUSE(hypotf(KEYBOARD_WIDTH, KEYBOARD_HEIGHT)),
-          HAS_TOUCH_POSITION_CORRECTION_DATA(keyCount > 0 && keyXCoordinates && keyYCoordinates
-                  && keyWidths && keyHeights && keyCharCodes && sweetSpotCenterXs
-                  && sweetSpotCenterYs && sweetSpotRadii),
-          mProximityCharsArray(new int[GRID_WIDTH * GRID_HEIGHT * MAX_PROXIMITY_CHARS_SIZE
-                  /* proximityCharsLength */]),
-          mLowerCodePointToKeyMap() {
-    /* Let's check the input array length here to make sure */
-    const jsize proximityCharsLength = env->GetArrayLength(proximityChars);
-    if (proximityCharsLength != GRID_WIDTH * GRID_HEIGHT * MAX_PROXIMITY_CHARS_SIZE) {
-        AKLOGE("Invalid proximityCharsLength: %d", proximityCharsLength);
-        ASSERT(false);
+          HAS_TOUCH_POSITION_CORRECTION_DATA(false),
+          mProximityCharsArray(new int[GRID_WIDTH * GRID_HEIGHT * MAX_PROXIMITY_CHARS_SIZE]()),
+          mKeyXCoordinates(), mKeyYCoordinates(), mKeyWidths(), mKeyHeights(), mKeyCodePoints(),
+          mSweetSpotCenterXs(), mSweetSpotCenterYs(), mSweetSpotCenterYsG(), mSweetSpotRadii(),
+          mLowerCodePointToKeyMap(), mKeyIndexToOriginalCodePoint(), mKeyIndexToLowerCodePointG(),
+          mCenterXsG(), mCenterYsG(), mKeyKeyDistancesG() {
+    const jsize proximityCharsLength = GRID_WIDTH * GRID_HEIGHT * MAX_PROXIMITY_CHARS_SIZE;
+    if (!env || !proximityChars || gridWidth != GRID_WIDTH || gridHeight != GRID_HEIGHT
+            || env->GetArrayLength(proximityChars) != proximityCharsLength) {
+        initializeG();
         return;
+    }
+    HAS_TOUCH_POSITION_CORRECTION_DATA = KEY_COUNT > 0;
+    const jarray arrays[] = {keyXCoordinates, keyYCoordinates, keyWidths, keyHeights, keyCharCodes,
+            sweetSpotCenterXs, sweetSpotCenterYs, sweetSpotRadii};
+    for (const auto array : arrays) {
+        if (!array || env->GetArrayLength(array) < KEY_COUNT) HAS_TOUCH_POSITION_CORRECTION_DATA = false;
     }
     if (DEBUG_PROXIMITY_INFO) {
         AKLOGI("Create proximity info array %d", proximityCharsLength);
@@ -92,6 +100,19 @@ ProximityInfo::ProximityInfo(JNIEnv *env, const int keyboardWidth, const int key
     safeGetOrFillZeroFloatArrayRegion(env, sweetSpotCenterXs, KEY_COUNT, mSweetSpotCenterXs);
     safeGetOrFillZeroFloatArrayRegion(env, sweetSpotCenterYs, KEY_COUNT, mSweetSpotCenterYs);
     safeGetOrFillZeroFloatArrayRegion(env, sweetSpotRadii, KEY_COUNT, mSweetSpotRadii);
+    for (int i = 0; i < KEY_COUNT; ++i) {
+        mKeyXCoordinates[i] = std::max(-32767, std::min(32767, mKeyXCoordinates[i]));
+        mKeyYCoordinates[i] = std::max(-32767, std::min(32767, mKeyYCoordinates[i]));
+        mKeyWidths[i] = std::max(0, std::min(32767, mKeyWidths[i]));
+        mKeyHeights[i] = std::max(0, std::min(32767, mKeyHeights[i]));
+        if (!std::isfinite(mSweetSpotCenterXs[i]) || !std::isfinite(mSweetSpotCenterYs[i])
+                || fabsf(mSweetSpotCenterXs[i]) > 32767 || fabsf(mSweetSpotCenterYs[i]) > 32767
+                || !std::isfinite(mSweetSpotRadii[i]) || mSweetSpotRadii[i] <= 0) {
+            mSweetSpotCenterXs[i] = mKeyXCoordinates[i] + mKeyWidths[i] / 2;
+            mSweetSpotCenterYs[i] = mKeyYCoordinates[i] + mKeyHeights[i] / 2;
+            mSweetSpotRadii[i] = 0;
+        }
+    }
     initializeG();
 }
 
@@ -100,7 +121,7 @@ ProximityInfo::~ProximityInfo() {
 }
 
 bool ProximityInfo::hasSpaceProximity(const int x, const int y) const {
-    if (x < 0 || y < 0) {
+    if (x < 0 || y < 0 || x >= KEYBOARD_WIDTH || y >= KEYBOARD_HEIGHT) {
         if (DEBUG_DICT) {
             AKLOGI("HasSpaceProximity: Illegal coordinates (%d, %d)", x, y);
             // TODO: Enable this assertion.
@@ -110,7 +131,8 @@ bool ProximityInfo::hasSpaceProximity(const int x, const int y) const {
     }
 
     const int startIndex = ProximityInfoUtils::getStartIndexFromCoordinates(x, y,
-            CELL_HEIGHT, CELL_WIDTH, GRID_WIDTH);
+            CELL_HEIGHT, CELL_WIDTH, GRID_WIDTH, GRID_HEIGHT);
+    if (startIndex < 0) return false;
     if (DEBUG_PROXIMITY_INFO) {
         AKLOGI("hasSpaceProximity: index %d, %d, %d", startIndex, x, y);
     }
@@ -194,7 +216,7 @@ void ProximityInfo::initializeG() {
 // geometric input.
 int ProximityInfo::getKeyCenterXOfKeyIdG(
         const int keyId, const int referencePointX, const bool isGeometric) const {
-    if (keyId < 0) {
+    if (keyId < 0 || keyId >= KEY_COUNT) {
         return 0;
     }
     int centerX = (hasTouchPositionCorrectionData()) ? static_cast<int>(mSweetSpotCenterXs[keyId])
@@ -221,7 +243,7 @@ int ProximityInfo::getKeyCenterXOfKeyIdG(
 int ProximityInfo::getKeyCenterYOfKeyIdG(
         const int keyId, const int referencePointY, const bool isGeometric) const {
     // TODO: Remove "isGeometric" and have separate "proximity_info"s for gesture and typing.
-    if (keyId < 0) {
+    if (keyId < 0 || keyId >= KEY_COUNT) {
         return 0;
     }
     int centerY;
@@ -243,7 +265,7 @@ int ProximityInfo::getKeyCenterYOfKeyIdG(
 }
 
 int ProximityInfo::getKeyKeyDistanceG(const int keyId0, const int keyId1) const {
-    if (keyId0 >= 0 && keyId1 >= 0) {
+    if (keyId0 >= 0 && keyId0 < KEY_COUNT && keyId1 >= 0 && keyId1 < KEY_COUNT) {
         return mKeyKeyDistancesG[keyId0][keyId1];
     }
     return MAX_VALUE_FOR_WEIGHTING;

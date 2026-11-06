@@ -32,7 +32,7 @@ class DicNodeProperties {
  public:
     AK_FORCE_INLINE DicNodeProperties()
             : mChildrenPtNodeArrayPos(NOT_A_DICT_POS), mDicNodeCodePoint(NOT_A_CODE_POINT),
-              mWordId(NOT_A_WORD_ID), mDepth(0), mLeavingDepth(0), mPrevWordCount(0) {}
+              mWordId(NOT_A_WORD_ID), mDepth(0), mLeavingDepth(0), mPrevWordIds(), mPrevWordCount(0) {}
 
     ~DicNodeProperties() {}
 
@@ -42,10 +42,10 @@ class DicNodeProperties {
         mChildrenPtNodeArrayPos = childrenPos;
         mDicNodeCodePoint = nodeCodePoint;
         mWordId = wordId;
-        mDepth = depth;
-        mLeavingDepth = leavingDepth;
+        mDepth = std::min<int>(depth, MAX_WORD_LENGTH);
+        mLeavingDepth = std::max<int>(mDepth, std::min<int>(leavingDepth, MAX_WORD_LENGTH));
         prevWordIds.copyToArray(&mPrevWordIds, 0 /* offset */);
-        mPrevWordCount = prevWordIds.size();
+        mPrevWordCount = std::min(prevWordIds.size(), mPrevWordIds.size());
     }
 
     // Init for root with prevWordsPtNodePos which is used for n-gram
@@ -56,7 +56,7 @@ class DicNodeProperties {
         mDepth = 0;
         mLeavingDepth = 0;
         prevWordIds.copyToArray(&mPrevWordIds, 0 /* offset */);
-        mPrevWordCount = prevWordIds.size();
+        mPrevWordCount = std::min(prevWordIds.size(), mPrevWordIds.size());
     }
 
     void initByCopy(const DicNodeProperties *const dicNodeProp) {
@@ -75,7 +75,7 @@ class DicNodeProperties {
         mChildrenPtNodeArrayPos = dicNodeProp->mChildrenPtNodeArrayPos;
         mDicNodeCodePoint = codePoint; // Overwrite the node char of a passing child
         mWordId = dicNodeProp->mWordId;
-        mDepth = dicNodeProp->mDepth + 1; // Increment the depth of a passing child
+        mDepth = std::min<int>(MAX_WORD_LENGTH, dicNodeProp->mDepth + 1); // Increment the depth of a passing child
         mLeavingDepth = dicNodeProp->mLeavingDepth;
         const WordIdArrayView prevWordIdArrayView = dicNodeProp->getPrevWordIds();
         prevWordIdArrayView.copyToArray(&mPrevWordIds, 0 /* offset */);

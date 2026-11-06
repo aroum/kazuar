@@ -336,7 +336,8 @@ void Suggest::processDicNodeAsOmission(
  */
 void Suggest::processDicNodeAsInsertion(DicTraverseSession *traverseSession,
         DicNode *dicNode) const {
-    const int16_t pointIndex = dicNode->getInputIndex(0);
+    const int pointIndex = dicNode->getInputIndex(0);
+    if (pointIndex < 0 || pointIndex >= traverseSession->getProximityInfoState(0)->size() - 1) return;
     DicNodeVector childDicNodes;
     DicNodeUtils::getAllChildDicNodes(dicNode, traverseSession->getDictionaryStructurePolicy(),
             &childDicNodes);
@@ -358,7 +359,8 @@ void Suggest::processDicNodeAsInsertion(DicTraverseSession *traverseSession,
  */
 void Suggest::processDicNodeAsTransposition(DicTraverseSession *traverseSession,
         DicNode *dicNode) const {
-    const int16_t pointIndex = dicNode->getInputIndex(0);
+    const int pointIndex = dicNode->getInputIndex(0);
+    if (pointIndex < 0 || pointIndex >= traverseSession->getProximityInfoState(0)->size() - 1) return;
     DicNodeVector childDicNodes1;
     DicNodeVector childDicNodes2;
     DicNodeUtils::getAllChildDicNodes(dicNode, traverseSession->getDictionaryStructurePolicy(),

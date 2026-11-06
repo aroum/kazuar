@@ -30,7 +30,7 @@ namespace latinime {
 class DicNodeStateOutput {
  public:
     DicNodeStateOutput()
-            : mOutputtedCodePointCount(0), mCurrentWordStart(0), mPrevWordCount(0),
+            : mOutputtedCodePointCount(0), mOutputCodePoints(), mCurrentWordStart(0), mPrevWordCount(0),
               mPrevWordsLength(0), mPrevWordStart(0), mSecondWordFirstInputIndex(NOT_AN_INDEX) {}
 
     ~DicNodeStateOutput() {}
@@ -48,6 +48,11 @@ class DicNodeStateOutput {
 
     // Init for next word.
     void init(const DicNodeStateOutput *const stateOutput) {
+        if (stateOutput->mOutputtedCodePointCount >= MAX_WORD_LENGTH) {
+            initByCopy(stateOutput);
+            mCurrentWordStart = MAX_WORD_LENGTH;
+            return;
+        }
         mOutputtedCodePointCount = stateOutput->mOutputtedCodePointCount + 1;
         memmove(mOutputCodePoints, stateOutput->mOutputCodePoints,
                 stateOutput->mOutputtedCodePointCount * sizeof(mOutputCodePoints[0]));
@@ -76,7 +81,7 @@ class DicNodeStateOutput {
 
     void addMergedNodeCodePoints(const uint16_t mergedNodeCodePointCount,
             const int *const mergedNodeCodePoints) {
-        if (mergedNodeCodePoints) {
+        if (mergedNodeCodePoints && mOutputtedCodePointCount < MAX_WORD_LENGTH) {
             const int additionalCodePointCount = std::min(
                     static_cast<int>(mergedNodeCodePointCount),
                     MAX_WORD_LENGTH - mOutputtedCodePointCount);
@@ -91,7 +96,8 @@ class DicNodeStateOutput {
     }
 
     int getCurrentWordCodePointAt(const int index) const {
-        return mOutputCodePoints[mCurrentWordStart + index];
+        return index >= 0 && index < mOutputtedCodePointCount - mCurrentWordStart
+                ? mOutputCodePoints[mCurrentWordStart + index] : NOT_A_CODE_POINT;
     }
 
     const int *getCodePointBuf() const {
@@ -120,7 +126,7 @@ class DicNodeStateOutput {
     }
 
     int getOutputCodePointAt(const int id) const {
-        return mOutputCodePoints[id];
+        return id >= 0 && id < mOutputtedCodePointCount ? mOutputCodePoints[id] : NOT_A_CODE_POINT;
     }
 
  private:

@@ -12,9 +12,14 @@ add_library(native_regression_core STATIC ${production_sources})
 target_include_directories(native_regression_core PUBLIC ../src ${JNI_INCLUDE_DIRS})
 target_compile_features(native_regression_core PRIVATE cxx_std_11)
 target_compile_options(native_regression_core PRIVATE -ffunction-sections -fdata-sections
-    -fsanitize=address,undefined -fno-omit-frame-pointer)
+    -fsanitize=address,undefined,float-cast-overflow -fno-omit-frame-pointer)
 enable_testing()
 add_executable(native_regressions
+    suggest/core/suggestion_safety_regression_test.cpp
+    suggest/core/dicnode/dic_node_pool_test.cpp
+    suggest/core/layout/normal_distribution_2d_test.cpp
+    dictionary/utils/sparse_table_test.cpp
+    dictionary/utils/probability_utils_test.cpp
     dictionary/utils/format_utils_test.cpp
     dictionary/utils/byte_array_utils_test.cpp
     dictionary/utils/buffer_with_extendable_buffer_test.cpp
@@ -34,8 +39,8 @@ target_include_directories(native_regressions PRIVATE ../src)
 target_compile_features(native_regressions PRIVATE cxx_std_11)
 # Unused dictionary file-writing entry points are not part of these in-memory tests.
 target_compile_options(native_regressions PRIVATE -ffunction-sections -fdata-sections
-    -fsanitize=address,undefined -fno-omit-frame-pointer)
-target_link_options(native_regressions PRIVATE -Wl,--gc-sections -fsanitize=address,undefined)
+    -fsanitize=address,undefined,float-cast-overflow -fno-omit-frame-pointer)
+target_link_options(native_regressions PRIVATE -Wl,--gc-sections -fsanitize=address,undefined,float-cast-overflow)
 target_link_libraries(native_regressions PRIVATE GTest::gtest_main native_regression_core dl)
 include(GoogleTest)
 gtest_discover_tests(native_regressions PROPERTIES TIMEOUT 60)

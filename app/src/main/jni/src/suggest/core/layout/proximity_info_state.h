@@ -63,7 +63,8 @@ class ProximityInfoState {
     AK_FORCE_INLINE ~ProximityInfoState() {}
 
     inline int getPrimaryCodePointAt(const int index) const {
-        return getProximityCodePointsAt(index)[0];
+        return index >= 0 && index < mSampledInputSize && index < MAX_WORD_LENGTH
+                ? getProximityCodePointsAt(index)[0] : NOT_A_CODE_POINT;
     }
 
     int getPrimaryOriginalCodePointAt(const int index) const;
@@ -84,9 +85,10 @@ class ProximityInfoState {
     }
 
     AK_FORCE_INLINE bool existsCodePointInProximityAt(const int index, const int c) const {
+        if (index < 0 || index >= mSampledInputSize || index >= MAX_WORD_LENGTH) return false;
         const int *codePoints = getProximityCodePointsAt(index);
         int i = 0;
-        while (codePoints[i] > 0 && i < MAX_PROXIMITY_CHARS_SIZE) {
+        while (i < MAX_PROXIMITY_CHARS_SIZE && codePoints[i] > 0) {
             if (codePoints[i++] == c) {
                 return true;
             }

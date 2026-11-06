@@ -38,11 +38,19 @@ class DicNodePool {
             // No need to reset.
             return;
         }
-        mDicNodes.resize(capacity);
-        mDicNodes.shrink_to_fit();
+        mDicNodes.resize(std::max(0, capacity));
+        mCheckedOut.clear();
         mPooledDicNodes.clear();
         for (auto &dicNode : mDicNodes) {
             mPooledDicNodes.emplace_back(&dicNode);
+        }
+    }
+
+    // deque keeps checked-out node addresses stable while growing.
+    void ensureCapacity(const int capacity) {
+        while (static_cast<int>(mDicNodes.size()) < capacity) {
+            mDicNodes.emplace_back();
+            mPooledDicNodes.push_back(&mDicNodes.back());
         }
     }
 
@@ -53,13 +61,14 @@ class DicNodePool {
         }
         DicNode *const dicNode = mPooledDicNodes.back();
         mPooledDicNodes.pop_back();
+        mCheckedOut.insert(dicNode);
         return dicNode;
     }
 
     // Return an instance that has been removed from the pool by getInstance() to the pool. The
     // instance must not be used after returning without getInstance().
     void placeBackInstance(DicNode *dicNode) {
-        mPooledDicNodes.emplace_back(dicNode);
+        if (dicNode && mCheckedOut.erase(dicNode)) mPooledDicNodes.emplace_back(dicNode);
     }
 
     void dump() const {
@@ -80,7 +89,8 @@ class DicNodePool {
  private:
     DISALLOW_IMPLICIT_CONSTRUCTORS(DicNodePool);
 
-    std::vector<DicNode> mDicNodes;
+    std::deque<DicNode> mDicNodes;
+    std::unordered_set<DicNode *> mCheckedOut;
     std::deque<DicNode*> mPooledDicNodes;
 };
 } // namespace latinime

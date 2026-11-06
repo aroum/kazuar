@@ -43,8 +43,19 @@ void ProximityInfoState::initInputParams(const int pointerId, const float maxPoi
         const ProximityInfo *proximityInfo, const int *const inputCodes, const int inputSize,
         const int *const xCoordinates, const int *const yCoordinates, const int *const times,
         const int *const pointerIds, const bool isGeometric, const std::vector<int> *locale) {
-    ASSERT(isGeometric || (inputSize < MAX_WORD_LENGTH));
-    mIsContinuousSuggestionPossible = (mHasBeenUpdatedByGeometricInput != isGeometric) ?
+    if (!proximityInfo || inputSize < 0 || (!isGeometric && (inputSize >= MAX_WORD_LENGTH
+            || !inputCodes)) || pointerId < 0 || pointerId >= MAX_POINTER_COUNT_G
+            || (isGeometric && (!xCoordinates || !yCoordinates || !pointerIds))) {
+        mSampledInputSize = 0;
+        mIsContinuousSuggestionPossible = false;
+        mHasBeenUpdatedByGeometricInput = !isGeometric;
+        mTouchPositionCorrectionEnabled = false;
+        mProximityInfo = proximityInfo;
+        std::fill(mInputProximities, mInputProximities + MAX_WORD_LENGTH * MAX_PROXIMITY_CHARS_SIZE,
+                NOT_A_CODE_POINT);
+        return;
+    }
+    mIsContinuousSuggestionPossible = (!xCoordinates || !yCoordinates || !times || mHasBeenUpdatedByGeometricInput != isGeometric) ?
             false : ProximityInfoStateUtils::checkAndReturnIsContinuousSuggestionPossible(
                     inputSize, xCoordinates, yCoordinates, times, mSampledInputSize,
                     &mSampledInputXs, &mSampledInputYs, &mSampledTimes, &mSampledInputIndice);
@@ -59,8 +70,8 @@ void ProximityInfoState::initInputParams(const int pointerId, const float maxPoi
     mKeyCount = proximityInfo->getKeyCount();
     mCellHeight = proximityInfo->getCellHeight();
     mCellWidth = proximityInfo->getCellWidth();
-    mGridHeight = proximityInfo->getGridWidth();
-    mGridWidth = proximityInfo->getGridHeight();
+    mGridHeight = proximityInfo->getGridHeight();
+    mGridWidth = proximityInfo->getGridWidth();
 
     memset(mInputProximities, 0, sizeof(mInputProximities));
 
@@ -199,6 +210,7 @@ float ProximityInfoState::getPointToKeyByIdLength(
 // to the non-accented version.
 ProximityType ProximityInfoState::getProximityType(const int index, const int codePoint,
         const bool checkProximityChars, int *proximityIndex) const {
+    if (index < 0 || index >= mSampledInputSize || index >= MAX_WORD_LENGTH) return UNRELATED_CHAR;
     const int *currentCodePoints = getProximityCodePointsAt(index);
     const int firstCodePoint = currentCodePoints[0];
     const int baseLowerC = CharUtils::toBaseLowerCase(codePoint);

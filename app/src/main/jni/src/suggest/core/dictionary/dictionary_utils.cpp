@@ -30,6 +30,10 @@ namespace latinime {
 /* static */ int DictionaryUtils::getMaxProbabilityOfExactMatches(
         const DictionaryStructureWithBufferPolicy *const dictionaryStructurePolicy,
         const CodePointArrayView codePoints) {
+    if (!dictionaryStructurePolicy || codePoints.empty() || codePoints.size() > MAX_WORD_LENGTH) {
+        return NOT_A_PROBABILITY;
+    }
+    int remainingWork = 65536;
     std::vector<DicNode> current;
     std::vector<DicNode> next;
 
@@ -49,7 +53,7 @@ namespace latinime {
                 next.back().advanceDigraphIndex();
                 continue;
             }
-            processChildDicNodes(dictionaryStructurePolicy, baseLowerCodePoint, &dicNode, &next);
+            processChildDicNodes(dictionaryStructurePolicy, baseLowerCodePoint, &dicNode, &next, &remainingWork);
         }
         current.clear();
         current.swap(next);
@@ -72,10 +76,12 @@ namespace latinime {
 /* static */ void DictionaryUtils::processChildDicNodes(
         const DictionaryStructureWithBufferPolicy *const dictionaryStructurePolicy,
         const int inputCodePoint, const DicNode *const parentDicNode,
-        std::vector<DicNode> *const outDicNodes) {
+        std::vector<DicNode> *const outDicNodes, int *const remainingWork) {
+    if (*remainingWork <= 0 || parentDicNode->getNodeCodePointCount() >= MAX_WORD_LENGTH) return;
     DicNodeVector childDicNodes;
     DicNodeUtils::getAllChildDicNodes(parentDicNode, dictionaryStructurePolicy, &childDicNodes);
     for (int childIndex = 0; childIndex < childDicNodes.getSizeAndLock(); ++childIndex) {
+        if (--*remainingWork < 0) return;
         DicNode *const childDicNode = childDicNodes[childIndex];
         const int codePoint = CharUtils::toBaseLowerCase(childDicNode->getNodeCodePoint());
         if (inputCodePoint == codePoint) {
@@ -83,13 +89,13 @@ namespace latinime {
         }
         if (childDicNode->canBeIntentionalOmission()) {
             processChildDicNodes(dictionaryStructurePolicy, inputCodePoint, childDicNode,
-                    outDicNodes);
+                    outDicNodes, remainingWork);
         }
         if (DigraphUtils::hasDigraphForCodePoint(
                 dictionaryStructurePolicy->getHeaderStructurePolicy(),
                 childDicNode->getNodeCodePoint())) {
             childDicNode->advanceDigraphIndex();
-            if (childDicNode->getNodeCodePoint() == codePoint) {
+            if (CharUtils::toBaseLowerCase(childDicNode->getNodeCodePoint()) == inputCodePoint) {
                 childDicNode->advanceDigraphIndex();
                 outDicNodes->emplace_back(*childDicNode);
             }
