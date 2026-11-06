@@ -174,22 +174,47 @@ bool BufferWithExtendableBuffer::checkAndPrepareWriting(const int pos, const int
     return true;
 }
 
+namespace {
+bool rangesOverlap(const uint8_t *a, size_t aSize, const uint8_t *b, size_t bSize) {
+    if (!a || !b || !aSize || !bSize) return false;
+    const uintptr_t first = reinterpret_cast<uintptr_t>(a), second = reinterpret_cast<uintptr_t>(b);
+    return first >= second ? first - second < bSize : second - first < aSize;
+}
+}
+
 bool BufferWithExtendableBuffer::copy(const BufferWithExtendableBuffer *const source) {
     if (!source) return false;
     if (source == this) return true;
     const int size = source->getTailPosition();
+    bool overlaps = false;
+    for (bool sourceAdditional : {false, true}) {
+        const auto src = source->getReadOnlyBuffer(sourceAdditional);
+        for (bool destinationAdditional : {false, true}) {
+            const auto dst = getReadOnlyBuffer(destinationAdditional);
+            overlaps |= rangesOverlap(src.data(), src.size(), dst.data(), dst.size());
+        }
+    }
+    std::vector<uint8_t> snapshot;
+    if (overlaps && size > 0) {
+        // Snapshot before extending the destination: growth may invalidate an aliased source view.
+        snapshot.resize(size);
+        const int original = source->getOriginalBufferSize();
+        if (original) memcpy(snapshot.data(), source->getBuffer(false), original);
+        if (size > original) memcpy(snapshot.data() + original, source->getBuffer(true), size - original);
+    }
     if (size > getTailPosition() && !extend(size - getTailPosition())) return false;
     int pos = 0;
     while (pos < size) {
-        const bool srcAdditional = source->isInAdditionalBuffer(pos);
+        const bool srcAdditional = snapshot.empty() && source->isInAdditionalBuffer(pos);
         const bool dstAdditional = isInAdditionalBuffer(pos);
         const int srcBase = srcAdditional ? source->getOriginalBufferSize() : 0;
         const int dstBase = dstAdditional ? getOriginalBufferSize() : 0;
-        const int srcEnd = srcAdditional ? size : source->getOriginalBufferSize();
+        const int srcEnd = !snapshot.empty() || srcAdditional ? size : source->getOriginalBufferSize();
         const int dstEnd = dstAdditional ? size : getOriginalBufferSize();
         const int bytes = std::min(size, std::min(srcEnd, dstEnd)) - pos;
         uint8_t *destination = dstAdditional ? mAdditionalBuffer.data() : mOriginalBuffer.data();
-        memmove(destination + pos - dstBase, source->getBuffer(srcAdditional) + pos - srcBase, bytes);
+        const uint8_t *src = snapshot.empty() ? source->getBuffer(srcAdditional) : snapshot.data();
+        memmove(destination + pos - dstBase, src + pos - srcBase, bytes);
         pos += bytes;
     }
     return true;

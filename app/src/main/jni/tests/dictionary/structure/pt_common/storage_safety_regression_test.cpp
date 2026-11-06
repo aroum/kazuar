@@ -72,6 +72,15 @@ TEST(StorageSafetyTest, BlockCopyHandlesDifferentSegmentBoundariesAndSelfCopy) {
     BufferWithExtendableBuffer tooSmall(1);
     EXPECT_FALSE(tooSmall.copy(&source)); EXPECT_EQ(0, tooSmall.getTailPosition());
 }
+TEST(StorageSafetyTest, BlockCopySnapshotsOverlappingSourceBeforeSegmentWrites) {
+    uint8_t data[] = {1, 2, 3, 4};
+    BufferWithExtendableBuffer source(ReadWriteByteArrayView(data, 4), 0);
+    BufferWithExtendableBuffer destination(ReadWriteByteArrayView(data + 1, 3), 16);
+    ASSERT_TRUE(destination.copy(&source));
+    EXPECT_EQ(0x01020304u, destination.readUint(4, 0));
+    EXPECT_EQ(1, data[0]);
+}
+
 template<class Table> void checkTerminalLimits() {
     Table table;
     EXPECT_FALSE(table.setTerminalPtNodePosition(-1, 100));
