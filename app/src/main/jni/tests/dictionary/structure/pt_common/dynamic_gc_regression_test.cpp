@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include <gtest/gtest.h>
 #include <map>
+#include <string>
+#include <unistd.h>
+#include "dictionary/structure/dictionary_structure_with_buffer_policy_factory.h"
+#include "dictionary/property/unigram_property.h"
+#include "dictionary/property/ngram_property.h"
+#include "dictionary/property/word_property.h"
+#include "dictionary/utils/file_utils.h"
 #include <type_traits>
 #include <vector>
 #include "dictionary/structure/pt_common/dynamic_pt_gc_event_listeners.h"
@@ -163,6 +170,80 @@ TEST(DynamicGcTest, WriterChecksAllRelocationsBeforeModifyingBuffer) {
     EXPECT_EQ(1, DynamicPtReadingUtils::getParentPtNodePos(offset, 4));
     pos = 9;
     EXPECT_EQ(20, DynamicPtReadingUtils::readChildrenPositionAndAdvancePosition(buffer.getBuffer(true), &pos));
+}
+
+class TemporaryDictionary {
+ public:
+    TemporaryDictionary() {
+        char pattern[] = "/tmp/kazuar-gc-XXXXXX";
+        char *created = mkdtemp(pattern);
+        if (created) { root = created; path = root + "/dictionary"; }
+    }
+    ~TemporaryDictionary() {
+        if (!root.empty()) {
+            FileUtils::removeDirAndFiles(path.c_str());
+            FileUtils::removeDirAndFiles((path + ".tmp").c_str());
+            rmdir(root.c_str());
+        }
+    }
+    std::string root, path;
+};
+
+TEST(DynamicGcTest, SplitMovedAndRemovedWordsSurviveGcAndReopenInBothFormats) {
+    for (int version : {402, 403}) {
+        SCOPED_TRACE(version);
+        TemporaryDictionary temporary;
+        ASSERT_FALSE(temporary.path.empty());
+        DictionaryHeaderStructurePolicy::AttributeMap attributes;
+        auto policy = DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(
+                version, {'e', 'n'}, &attributes);
+        ASSERT_TRUE(policy);
+        const UnigramProperty property(false, false, false, 200, HistoricalInfo(),
+                {UnigramProperty::ShortcutProperty({'X'}, 10)});
+        const std::vector<std::string> inserted = {"abcd", "abef", "ab", "xyz", "xy", "mnop", "mn", "m"};
+        const std::vector<std::string> removed = {"abef", "xyz", "mnop"};
+        for (const auto &word : inserted) {
+            const std::vector<int> points(word.begin(), word.end());
+            ASSERT_TRUE(policy->addUnigramEntry(CodePointArrayView(points.data(), points.size()), &property));
+        }
+        for (const auto &word : removed) {
+            const std::vector<int> points(word.begin(), word.end());
+            ASSERT_TRUE(policy->removeUnigramEntry(CodePointArrayView(points.data(), points.size())));
+        }
+        const int contextWord[] = {'a', 'b'};
+        const NgramProperty bigram(NgramContext(contextWord, 2, false), {'a', 'b', 'c', 'd'},
+                180, HistoricalInfo());
+        ASSERT_TRUE(policy->addNgramEntry(&bigram));
+        ASSERT_TRUE(policy->flushWithGC(temporary.path.c_str()));
+        ASSERT_FALSE(policy->isCorrupted());
+        policy.reset();
+        auto reopened = DictionaryStructureWithBufferPolicyFactory::newPolicyForExistingDictFile(
+                temporary.path.c_str(), 0, 0, true);
+        ASSERT_TRUE(reopened);
+        for (const auto &word : inserted) {
+            const std::vector<int> points(word.begin(), word.end());
+            const int id = reopened->getWordId(CodePointArrayView(points.data(), points.size()), false);
+            if (std::find(removed.begin(), removed.end(), word) != removed.end()) {
+                EXPECT_EQ(NOT_A_WORD_ID, id) << word;
+            } else {
+                ASSERT_NE(NOT_A_WORD_ID, id) << word;
+                int restored[MAX_WORD_LENGTH];
+                const int count = reopened->getCodePointsAndReturnCodePointCount(id, MAX_WORD_LENGTH, restored);
+                ASSERT_EQ(static_cast<int>(points.size()), count) << word;
+                EXPECT_EQ(points, std::vector<int>(restored, restored + count));
+                EXPECT_EQ(200, reopened->getProbabilityOfWord(WordIdArrayView(), id)) << word;
+                const auto wordProperty = reopened->getWordProperty(CodePointArrayView(points.data(), points.size()));
+                const auto &shortcuts = wordProperty.getUnigramProperty().getShortcuts();
+                ASSERT_EQ(1u, shortcuts.size()) << word;
+                EXPECT_EQ(std::vector<int>{'X'}, *shortcuts.front().getTargetCodePoints());
+            }
+        }
+        const int previousId = reopened->getWordId(CodePointArrayView(contextWord, 2), false);
+        const int targetPoints[] = {'a', 'b', 'c', 'd'};
+        const int targetId = reopened->getWordId(CodePointArrayView(targetPoints, 4), false);
+        EXPECT_NE(NOT_A_PROBABILITY, reopened->getProbabilityOfWord(WordIdArrayView(&previousId, 1), targetId));
+        EXPECT_FALSE(reopened->isCorrupted());
+    }
 }
 } // namespace
 } // namespace latinime
