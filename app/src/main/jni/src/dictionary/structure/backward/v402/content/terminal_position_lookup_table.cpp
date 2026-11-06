@@ -42,9 +42,17 @@ int TerminalPositionLookupTable::getTerminalPtNodePosition(const int terminalId)
 
 bool TerminalPositionLookupTable::setTerminalPtNodePosition(
         const int terminalId, const int terminalPtNodePos) {
-    if (terminalId < 0) {
-        return NOT_A_DICT_POS;
-    }
+    const int width = Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE;
+    const int maxEntries = Ver4DictConstants::MAX_DICTIONARY_SIZE / width;
+    if (!hasValidSize() || terminalId < 0 || terminalId >= maxEntries || terminalId > mSize + 4096
+            || (terminalPtNodePos != NOT_A_DICT_POS
+                    && (terminalPtNodePos <= 0 || terminalPtNodePos >= Ver4DictConstants::MAX_DICTIONARY_SIZE))
+            || getBuffer()->getTailPosition() > Ver4DictConstants::MAX_DICTIONARY_SIZE
+            || getBuffer()->getTailPosition() % width != 0) return false;
+    // Check the entire extension before initializing any gap entries.
+    const int needed = (terminalId + 1) * width;
+    if (needed > getBuffer()->getTailPosition()
+            && !getWritableBuffer()->extend(needed - getBuffer()->getTailPosition())) return false;
     while (terminalId >= mSize) {
         // Write new entry.
         if (!getWritableBuffer()->writeUint(Ver4DictConstants::NOT_A_TERMINAL_ADDRESS,

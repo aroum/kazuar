@@ -74,6 +74,8 @@ TEST(StorageSafetyTest, BlockCopyHandlesDifferentSegmentBoundariesAndSelfCopy) {
 }
 template<class Table> void checkTerminalLimits() {
     Table table;
+    EXPECT_FALSE(table.setTerminalPtNodePosition(-1, 100));
+    EXPECT_FALSE(table.setTerminalPtNodePosition(NOT_A_DICT_POS, 100));
     EXPECT_FALSE(table.setTerminalPtNodePosition(INT_MAX, 100));
     EXPECT_FALSE(table.setTerminalPtNodePosition(1000000, 100));
     EXPECT_EQ(0, table.getNextTerminalId());
