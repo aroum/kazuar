@@ -36,6 +36,9 @@ class SuggestionSafetyTestPeer {
     static void cost(DicNode *node, float cost) {
         node->addCost(cost, 0, false, 1, ErrorTypeUtils::NOT_AN_ERROR);
     }
+    static void transpose(DicNode *node, int pointerId) {
+        node->forwardInputIndex(pointerId, 2, true);
+    }
     static void saveFirstWord(DicNode *node) {
         node->saveNormalizedCompoundDistanceAfterFirstWordIfNoneYet();
     }
@@ -162,6 +165,10 @@ TEST(SuggestionSafetyTest, InputStateInitializesAndRejectsInvalidPointers) {
 TEST(SuggestionSafetyTest, RootContextUsesOnlyInitializedPreviousWordIds) {
     DicNode root, first, next; root.initAsRoot(0, WordIdArrayView());
     const int word[] = {'a'}; first.initAsChild(&root, NOT_A_DICT_POS, 42, CodePointArrayView(word, 1));
+    SuggestionSafetyTestPeer::transpose(&first, 1);
+    EXPECT_EQ(0, first.getInputIndex(0)); EXPECT_EQ(2, first.getInputIndex(1));
+    EXPECT_EQ(NOT_A_CODE_POINT, first.getPrevCodePointG(0));
+    EXPECT_EQ('a', first.getPrevCodePointG(1));
     next.initAsRootWithPreviousWord(&first, 0);
     ASSERT_EQ(1u, next.getPrevWordIds().size()); EXPECT_EQ(42, next.getPrevWordIds()[0]);
     DicNode invalid; invalid.initAsChild(&root, 0, 42, CodePointArrayView());
