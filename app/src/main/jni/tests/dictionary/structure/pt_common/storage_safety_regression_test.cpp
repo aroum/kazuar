@@ -55,6 +55,8 @@ TEST(StorageSafetyTest, WritesCannotOverflowOrPartiallyExtendOnCapacityFailure) 
     EXPECT_FALSE(buffer.extend(INT_MAX)); EXPECT_EQ(0, buffer.getTailPosition());
     int cursor = 0;
     EXPECT_FALSE(buffer.writeCodePointsAndAdvancePosition(nullptr, 1, true, &cursor));
+    const int point = 'a';
+    EXPECT_FALSE(buffer.writeCodePointsAndAdvancePosition(&point, INT_MAX, true, &cursor));
     BufferWithExtendableBuffer invalidLimit(-1);
     EXPECT_FALSE(invalidLimit.extend(1));
 }

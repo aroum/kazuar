@@ -104,7 +104,12 @@ bool BufferWithExtendableBuffer::writeUintAndAdvancePosition(const uint32_t data
 
 bool BufferWithExtendableBuffer::writeCodePointsAndAdvancePosition(const int *const codePoints,
         const int codePointCount, const bool writesTerminator, int *const pos) {
-    if (codePointCount < 0 || (codePointCount > 0 && !codePoints)) return false;
+    if (codePointCount < 0 || (codePointCount > 0 && !codePoints)
+            || *pos < 0 || *pos > getTailPosition()) return false;
+    const size_t boundary = isInAdditionalBuffer(*pos)
+            ? mOriginalBuffer.size() + mMaxAdditionalBufferSize : mOriginalBuffer.size();
+    const size_t minimum = static_cast<size_t>(codePointCount) + (writesTerminator ? 1 : 0);
+    if (minimum > boundary - static_cast<size_t>(*pos)) return false;
     const size_t size = ByteArrayUtils::calculateRequiredByteCountToStoreCodePoints(
             codePoints, codePointCount, writesTerminator);
     if (size > static_cast<size_t>(std::numeric_limits<int>::max())
