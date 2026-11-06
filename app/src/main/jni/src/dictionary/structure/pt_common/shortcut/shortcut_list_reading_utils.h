@@ -48,10 +48,7 @@ class ShortcutListReadingUtils {
         return SHORTCUT_LIST_SIZE_FIELD_SIZE;
     }
 
-    static AK_FORCE_INLINE void skipShortcuts(const ReadOnlyByteArrayView buffer, int *const pos) {
-        const int shortcutListSize = getShortcutListSizeAndForwardPointer(buffer, pos);
-        *pos += shortcutListSize;
-    }
+    static bool skipShortcuts(const ReadOnlyByteArrayView buffer, int *const pos);
 
     static AK_FORCE_INLINE bool isWhitelist(const ShortcutFlags flags) {
         return getProbabilityFromFlags(flags) == WHITELIST_SHORTCUT_PROBABILITY;

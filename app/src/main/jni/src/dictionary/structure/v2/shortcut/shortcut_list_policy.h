@@ -37,7 +37,8 @@ class ShortcutListPolicy : public DictionaryShortcutsStructurePolicy {
             return NOT_A_DICT_POS;
         }
         int listPos = pos;
-        ShortcutListReadingUtils::getShortcutListSizeAndForwardPointer(mBuffer, &listPos);
+        if (ShortcutListReadingUtils::getShortcutListSizeAndForwardPointer(mBuffer, &listPos) < 0)
+            return NOT_A_DICT_POS;
         return listPos;
     }
 
@@ -52,16 +53,19 @@ class ShortcutListPolicy : public DictionaryShortcutsStructurePolicy {
         if (outIsWhitelist) {
             *outIsWhitelist = ShortcutListReadingUtils::isWhitelist(flags);
         }
-        if (outCodePoint) {
-            *outCodePointCount = ShortcutListReadingUtils::readShortcutTarget(
-                    mBuffer, maxCodePointCount, outCodePoint, pos);
+        int scratch[MAX_WORD_LENGTH];
+        int count = ShortcutListReadingUtils::readShortcutTarget(mBuffer,
+                outCodePoint ? maxCodePointCount : MAX_WORD_LENGTH,
+                outCodePoint ? outCodePoint : scratch, pos);
+        if (outCodePointCount) *outCodePointCount = count < 0 ? 0 : count;
+        if (*pos == NOT_A_DICT_POS || count <= 0) {
+            if (outHasNext) *outHasNext = false;
+            if (outIsWhitelist) *outIsWhitelist = false;
         }
     }
 
-    void skipAllShortcuts(int *const pos) const {
-        const int shortcutListSize = ShortcutListReadingUtils
-                ::getShortcutListSizeAndForwardPointer(mBuffer, pos);
-        *pos += shortcutListSize;
+    bool skipAllShortcuts(int *const pos) const {
+        return ShortcutListReadingUtils::skipShortcuts(mBuffer, pos);
     }
 
  private:

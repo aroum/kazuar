@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "defines.h"
+#include "utils/byte_array_view.h"
 
 namespace latinime {
 
@@ -30,25 +31,25 @@ class PatriciaTrieReadingUtils {
  public:
     typedef uint8_t NodeFlags;
 
-    static int getPtNodeArraySizeAndAdvancePosition(const uint8_t *const buffer, int *const pos);
+    static int getPtNodeArraySizeAndAdvancePosition(const ReadOnlyByteArrayView buffer, int *const pos);
 
-    static NodeFlags getFlagsAndAdvancePosition(const uint8_t *const buffer, int *const pos);
+    static NodeFlags getFlagsAndAdvancePosition(const ReadOnlyByteArrayView buffer, int *const pos);
 
-    static int getCodePointAndAdvancePosition(const uint8_t *const buffer,
+    static int getCodePointAndAdvancePosition(const ReadOnlyByteArrayView buffer,
             const int *const codePointTable, int *const pos);
 
     // Returns the number of read characters.
-    static int getCharsAndAdvancePosition(const uint8_t *const buffer, const NodeFlags flags,
+    static int getCharsAndAdvancePosition(const ReadOnlyByteArrayView buffer, const NodeFlags flags,
             const int maxLength, const int *const codePointTable, int *const outBuffer,
             int *const pos);
 
     // Returns the number of skipped characters.
-    static int skipCharacters(const uint8_t *const buffer, const NodeFlags flags,
+    static int skipCharacters(const ReadOnlyByteArrayView buffer, const NodeFlags flags,
             const int maxLength, const int *const codePointTable, int *const pos);
 
-    static int readProbabilityAndAdvancePosition(const uint8_t *const buffer, int *const pos);
+    static int readProbabilityAndAdvancePosition(const ReadOnlyByteArrayView buffer, int *const pos);
 
-    static int readChildrenPositionAndAdvancePosition(const uint8_t *const buffer,
+    static int readChildrenPositionAndAdvancePosition(const ReadOnlyByteArrayView buffer,
             const NodeFlags flags, int *const pos);
 
     /**
@@ -105,7 +106,7 @@ class PatriciaTrieReadingUtils {
         return nodeFlags;
     }
 
-    static void readPtNodeInfo(const uint8_t *const dictBuf, const int ptNodePos,
+    static bool readPtNodeInfo(const ReadOnlyByteArrayView dictBuf, const int ptNodePos,
             const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
             const DictionaryBigramsStructurePolicy *const bigramPolicy,
             const int *const codePointTable, NodeFlags *const outFlags,
@@ -130,4 +131,4 @@ class PatriciaTrieReadingUtils {
     static const NodeFlags FLAG_IS_POSSIBLY_OFFENSIVE;
 };
 } // namespace latinime
-#endif /* LATINIME_PATRICIA_TRIE_NODE_READING_UTILS_H */
+#endif /* LATINIME_PATRICIA_TRIE_READING_UTILS_H */

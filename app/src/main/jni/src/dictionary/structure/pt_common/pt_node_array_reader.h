@@ -42,4 +42,4 @@ class PtNodeArrayReader {
     DISALLOW_COPY_AND_ASSIGN(PtNodeArrayReader);
 };
 } // namespace latinime
-#endif /* LATINIME_PT_NODE_READER_H */
+#endif /* LATINIME_PT_NODE_ARRAY_READER_H */

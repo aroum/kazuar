@@ -38,6 +38,25 @@ class PtNodeWriter {
         DictPositionRelocationMap()
                 : mPtNodeArrayPositionRelocationMap(), mPtNodePositionRelocationMap() {}
 
+        // Resolve both links before writing either field. Missing mappings are corruption,
+        // not permission to keep an address in the old dictionary.
+        bool relocatePositions(int parent, int children, int *newParent, int *newChildren) const {
+            int relocatedParent = NOT_A_DICT_POS, relocatedChildren = NOT_A_DICT_POS;
+            if (parent != NOT_A_DICT_POS) {
+                const auto it = mPtNodePositionRelocationMap.find(parent);
+                if (it == mPtNodePositionRelocationMap.end() || it->second < 0) return false;
+                relocatedParent = it->second;
+            }
+            if (children != NOT_A_DICT_POS) {
+                const auto it = mPtNodeArrayPositionRelocationMap.find(children);
+                if (it == mPtNodeArrayPositionRelocationMap.end() || it->second < 0) return false;
+                relocatedChildren = it->second;
+            }
+            *newParent = relocatedParent;
+            *newChildren = relocatedChildren;
+            return true;
+        }
+
         PtNodeArrayPositionRelocationMap mPtNodeArrayPositionRelocationMap;
         PtNodePositionRelocationMap mPtNodePositionRelocationMap;
 

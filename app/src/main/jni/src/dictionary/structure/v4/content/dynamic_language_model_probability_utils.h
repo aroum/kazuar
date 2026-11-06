@@ -34,7 +34,7 @@ class DynamicLanguageModelProbabilityUtils {
         return static_cast<float>(count) / static_cast<float>(std::max(contextCount, minCount));
     }
 
-    static float backoff(const int ngramProbability, const NgramType ngramType) {
+    static int backoff(const int ngramProbability, const NgramType ngramType) {
         const int probability =
                 ngramProbability + ENCODED_BACKOFF_WEIGHTS[static_cast<int>(ngramType)];
         return std::min(std::max(probability, NOT_A_PROBABILITY), MAX_PROBABILITY);
@@ -51,7 +51,7 @@ class DynamicLanguageModelProbabilityUtils {
         return probability;
     }
 
-    static int shouldRemoveEntryDuringGC(const HistoricalInfo historicalInfo) {
+    static bool shouldRemoveEntryDuringGC(const HistoricalInfo historicalInfo) {
         // TODO: Improve this logic.
         const int elapsedTime = TimeKeeper::peekCurrentTime() - historicalInfo.getTimestamp();
         return elapsedTime > DURATION_TO_DISCARD_ENTRY_IN_SECONDS;

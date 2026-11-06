@@ -17,6 +17,8 @@
 #include "dictionary/structure/pt_common/patricia_trie_reading_utils.h"
 
 #include "defines.h"
+#include <algorithm>
+#include "utils/bounded_byte_array_reader.h"
 #include "dictionary/interface/dictionary_bigrams_structure_policy.h"
 #include "dictionary/interface/dictionary_shortcuts_structure_policy.h"
 #include "dictionary/utils/byte_array_utils.h"
@@ -45,120 +47,113 @@ const PtReadingUtils::NodeFlags PtReadingUtils::FLAG_IS_NOT_A_WORD = 0x02;
 const PtReadingUtils::NodeFlags PtReadingUtils::FLAG_IS_POSSIBLY_OFFENSIVE = 0x01;
 
 /* static */ int PtReadingUtils::getPtNodeArraySizeAndAdvancePosition(
-        const uint8_t *const buffer, int *const pos) {
-    const uint8_t firstByte = ByteArrayUtils::readUint8AndAdvancePosition(buffer, pos);
-    if (firstByte < 0x80) {
-        return firstByte;
-    } else {
-        return ((firstByte & 0x7F) << 8) ^ ByteArrayUtils::readUint8AndAdvancePosition(
-                buffer, pos);
-    }
+        const ReadOnlyByteArrayView buffer, int *const pos) {
+    uint32_t first;
+    if (!BoundedByteArrayReader::readUint(buffer, 1, &first, pos)) return -1;
+    if (first < 0x80) return first;
+    uint32_t second;
+    if (!BoundedByteArrayReader::readUint(buffer, 1, &second, pos)) return -1;
+    return ((first & 0x7F) << 8) | second;
 }
 
 /* static */ PtReadingUtils::NodeFlags PtReadingUtils::getFlagsAndAdvancePosition(
-        const uint8_t *const buffer, int *const pos) {
-    return ByteArrayUtils::readUint8AndAdvancePosition(buffer, pos);
+        const ReadOnlyByteArrayView buffer, int *const pos) {
+    uint32_t flags = 0;
+    BoundedByteArrayReader::readUint(buffer, 1, &flags, pos);
+    return flags;
 }
 
-/* static */ int PtReadingUtils::getCodePointAndAdvancePosition(const uint8_t *const buffer,
+/* static */ int PtReadingUtils::getCodePointAndAdvancePosition(const ReadOnlyByteArrayView buffer,
         const int *const codePointTable, int *const pos) {
-    return ByteArrayUtils::readCodePointAndAdvancePosition(buffer, codePointTable, pos);
+    int value = NOT_A_CODE_POINT;
+    BoundedByteArrayReader::readCodePoint(buffer, codePointTable, &value, pos);
+    return value;
 }
 
-// Returns the number of read characters.
-/* static */ int PtReadingUtils::getCharsAndAdvancePosition(const uint8_t *const buffer,
+/* static */ int PtReadingUtils::getCharsAndAdvancePosition(const ReadOnlyByteArrayView buffer,
         const NodeFlags flags, const int maxLength, const int *const codePointTable,
         int *const outBuffer, int *const pos) {
-    int length = 0;
     if (hasMultipleChars(flags)) {
-        length = ByteArrayUtils::readStringAndAdvancePosition(buffer, maxLength, codePointTable,
-                outBuffer, pos);
-    } else {
-        const int codePoint = getCodePointAndAdvancePosition(buffer, codePointTable, pos);
-        if (codePoint == NOT_A_CODE_POINT) {
-            // CAVEAT: codePoint == NOT_A_CODE_POINT means the code point is
-            // CHARACTER_ARRAY_TERMINATOR. The code point must not be CHARACTER_ARRAY_TERMINATOR
-            // when the PtNode has a single code point.
-            length = 0;
-            AKLOGE("codePoint is NOT_A_CODE_POINT. pos: %d, codePoint: 0x%x, buffer[pos - 1]: 0x%x",
-                    *pos - 1, codePoint, buffer[*pos - 1]);
-            ASSERT(false);
-        } else if (maxLength > 0) {
-            outBuffer[0] = codePoint;
-            length = 1;
-        }
+        return BoundedByteArrayReader::readString(buffer, maxLength, codePointTable, outBuffer, pos);
     }
-    return length;
+    if (maxLength <= 0 || !outBuffer) { *pos = NOT_A_DICT_POS; return -1; }
+    const int codePoint = getCodePointAndAdvancePosition(buffer, codePointTable, pos);
+    if (*pos == NOT_A_DICT_POS || codePoint == NOT_A_CODE_POINT) {
+        *pos = NOT_A_DICT_POS;
+        return -1;
+    }
+    outBuffer[0] = codePoint;
+    return 1;
 }
 
-// Returns the number of skipped characters.
-/* static */ int PtReadingUtils::skipCharacters(const uint8_t *const buffer, const NodeFlags flags,
-        const int maxLength, const int *const codePointTable, int *const pos) {
-    if (hasMultipleChars(flags)) {
-        return ByteArrayUtils::advancePositionToBehindString(buffer, maxLength, pos);
-    } else {
-        if (maxLength > 0) {
-            getCodePointAndAdvancePosition(buffer, codePointTable, pos);
-            return 1;
-        } else {
-            return 0;
-        }
-    }
+/* static */ int PtReadingUtils::skipCharacters(const ReadOnlyByteArrayView buffer,
+        const NodeFlags flags, const int maxLength, const int *const codePointTable, int *const pos) {
+    if (maxLength < 0 || maxLength > MAX_WORD_LENGTH) { *pos = NOT_A_DICT_POS; return -1; }
+    int ignored[MAX_WORD_LENGTH];
+    return getCharsAndAdvancePosition(buffer, flags, maxLength, codePointTable, ignored, pos);
 }
 
-/* static */ int PtReadingUtils::readProbabilityAndAdvancePosition(const uint8_t *const buffer,
-        int *const pos) {
-    return ByteArrayUtils::readUint8AndAdvancePosition(buffer, pos);
+/* static */ int PtReadingUtils::readProbabilityAndAdvancePosition(
+        const ReadOnlyByteArrayView buffer, int *const pos) {
+    uint32_t value;
+    return BoundedByteArrayReader::readUint(buffer, 1, &value, pos) ? value : NOT_A_PROBABILITY;
 }
 
 /* static */ int PtReadingUtils::readChildrenPositionAndAdvancePosition(
-        const uint8_t *const buffer, const NodeFlags flags, int *const pos) {
+        const ReadOnlyByteArrayView buffer, const NodeFlags flags, int *const pos) {
+    const int size = (MASK_CHILDREN_POSITION_TYPE & flags) >> 6;
+    if (!size) return NOT_A_DICT_POS;
     const int base = *pos;
-    int offset = 0;
-    switch (MASK_CHILDREN_POSITION_TYPE & flags) {
-        case FLAG_CHILDREN_POSITION_TYPE_ONEBYTE:
-            offset = ByteArrayUtils::readUint8AndAdvancePosition(buffer, pos);
-            break;
-        case FLAG_CHILDREN_POSITION_TYPE_TWOBYTES:
-            offset = ByteArrayUtils::readUint16AndAdvancePosition(buffer, pos);
-            break;
-        case FLAG_CHILDREN_POSITION_TYPE_THREEBYTES:
-            offset = ByteArrayUtils::readUint24AndAdvancePosition(buffer, pos);
-            break;
-        default:
-            // If we come here, it means we asked for the children of a word with
-            // no children.
-            return NOT_A_DICT_POS;
+    uint32_t offset;
+    if (!BoundedByteArrayReader::readUint(buffer, size, &offset, pos)
+            || offset > static_cast<uint32_t>(std::numeric_limits<int>::max() - base)) {
+        *pos = NOT_A_DICT_POS;
+        return NOT_A_DICT_POS;
     }
-    return base + offset;
+    const int child = base + offset;
+    if (!BoundedByteArrayReader::hasBytes(buffer, child, 1)) {
+        *pos = NOT_A_DICT_POS;
+        return NOT_A_DICT_POS;
+    }
+    return child;
 }
 
-/* static */ void PtReadingUtils::readPtNodeInfo(const uint8_t *const dictBuf, const int ptNodePos,
-        const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
+/* static */ bool PtReadingUtils::readPtNodeInfo(const ReadOnlyByteArrayView dictBuf,
+        const int ptNodePos, const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
         const DictionaryBigramsStructurePolicy *const bigramPolicy, const int *const codePointTable,
         NodeFlags *const outFlags, int *const outCodePointCount, int *const outCodePoint,
         int *const outProbability, int *const outChildrenPos, int *const outShortcutPos,
         int *const outBigramPos, int *const outSiblingPos) {
-    int readingPos = ptNodePos;
-    const NodeFlags flags = getFlagsAndAdvancePosition(dictBuf, &readingPos);
+    *outCodePointCount = 0;
+    *outSiblingPos = NOT_A_DICT_POS;
+    int pos = ptNodePos;
+    const NodeFlags flags = getFlagsAndAdvancePosition(dictBuf, &pos);
+    if (pos == NOT_A_DICT_POS) return false;
+    int codePoints[MAX_WORD_LENGTH];
+    const int count = getCharsAndAdvancePosition(dictBuf, flags, MAX_WORD_LENGTH,
+            codePointTable, codePoints, &pos);
+    if (count <= 0) return false;
+    const int probability = isTerminal(flags)
+            ? readProbabilityAndAdvancePosition(dictBuf, &pos) : NOT_A_PROBABILITY;
+    const int children = hasChildrenInFlags(flags)
+            ? readChildrenPositionAndAdvancePosition(dictBuf, flags, &pos) : NOT_A_DICT_POS;
+    if (pos == NOT_A_DICT_POS) return false;
+    const int shortcut = hasShortcutTargets(flags) ? pos : NOT_A_DICT_POS;
+    if (hasShortcutTargets(flags) && (!shortcutPolicy || !shortcutPolicy->skipAllShortcuts(&pos))) {
+        return false;
+    }
+    const int bigram = hasBigrams(flags) ? pos : NOT_A_DICT_POS;
+    if (hasBigrams(flags) && (!bigramPolicy || !bigramPolicy->skipAllBigrams(&pos))) return false;
+    if (!BoundedByteArrayReader::hasBytes(dictBuf, pos, 0) || pos <= ptNodePos) return false;
     *outFlags = flags;
-    *outCodePointCount = getCharsAndAdvancePosition(
-            dictBuf, flags, MAX_WORD_LENGTH, codePointTable, outCodePoint, &readingPos);
-    *outProbability = isTerminal(flags) ?
-            readProbabilityAndAdvancePosition(dictBuf, &readingPos) : NOT_A_PROBABILITY;
-    *outChildrenPos = hasChildrenInFlags(flags) ?
-            readChildrenPositionAndAdvancePosition(dictBuf, flags, &readingPos) : NOT_A_DICT_POS;
-    *outShortcutPos = NOT_A_DICT_POS;
-    if (hasShortcutTargets(flags)) {
-        *outShortcutPos = readingPos;
-        shortcutPolicy->skipAllShortcuts(&readingPos);
-    }
-    *outBigramPos = NOT_A_DICT_POS;
-    if (hasBigrams(flags)) {
-        *outBigramPos = readingPos;
-        bigramPolicy->skipAllBigrams(&readingPos);
-    }
-    *outSiblingPos = readingPos;
+    *outCodePointCount = count;
+    std::copy(codePoints, codePoints + count, outCodePoint);
+    *outProbability = probability;
+    *outChildrenPos = children;
+    *outShortcutPos = shortcut;
+    *outBigramPos = bigram;
+    *outSiblingPos = pos;
+    return true;
 }
 
 } // namespace latinime

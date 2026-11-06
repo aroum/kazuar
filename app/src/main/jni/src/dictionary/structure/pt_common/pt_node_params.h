@@ -37,8 +37,8 @@ class PtNodeParams {
             mTerminalIdFieldPos(NOT_A_DICT_POS), mTerminalId(Ver4DictConstants::NOT_A_TERMINAL_ID),
             mProbabilityFieldPos(NOT_A_DICT_POS), mProbability(NOT_A_PROBABILITY),
             mChildrenPosFieldPos(NOT_A_DICT_POS), mChildrenPos(NOT_A_DICT_POS),
-            mBigramLinkedNodePos(NOT_A_DICT_POS), mShortcutPos(NOT_A_DICT_POS),
-            mBigramPos(NOT_A_DICT_POS), mSiblingPos(NOT_A_DICT_POS) {}
+            mBigramLinkedNodePos(NOT_A_DICT_POS), mV2ShortcutPos(NOT_A_DICT_POS),
+            mV2BigramPos(NOT_A_DICT_POS), mSiblingPos(NOT_A_DICT_POS) {}
 
     PtNodeParams(const PtNodeParams& ptNodeParams)
             : mHeadPos(ptNodeParams.mHeadPos), mFlags(ptNodeParams.mFlags),
@@ -51,7 +51,7 @@ class PtNodeParams {
               mChildrenPosFieldPos(ptNodeParams.mChildrenPosFieldPos),
               mChildrenPos(ptNodeParams.mChildrenPos),
               mBigramLinkedNodePos(ptNodeParams.mBigramLinkedNodePos),
-              mShortcutPos(ptNodeParams.mShortcutPos), mBigramPos(ptNodeParams.mBigramPos),
+              mV2ShortcutPos(ptNodeParams.mV2ShortcutPos), mV2BigramPos(ptNodeParams.mV2BigramPos),
               mSiblingPos(ptNodeParams.mSiblingPos) {
         memcpy(mCodePoints, ptNodeParams.getCodePoints(), sizeof(int) * mCodePointCount);
     }
@@ -62,13 +62,13 @@ class PtNodeParams {
             const int childrenPos, const int shortcutPos, const int bigramPos,
             const int siblingPos)
             : mHeadPos(headPos), mFlags(flags), mHasMovedFlag(false), mParentPos(NOT_A_DICT_POS),
-              mCodePointCount(codePointCount), mCodePoints(), mTerminalIdFieldPos(NOT_A_DICT_POS),
+              mCodePointCount(validCount(codePointCount, codePoints)), mCodePoints(), mTerminalIdFieldPos(NOT_A_DICT_POS),
               mTerminalId(Ver4DictConstants::NOT_A_TERMINAL_ID),
               mProbabilityFieldPos(NOT_A_DICT_POS), mProbability(probability),
               mChildrenPosFieldPos(NOT_A_DICT_POS), mChildrenPos(childrenPos),
-              mBigramLinkedNodePos(NOT_A_DICT_POS), mShortcutPos(shortcutPos),
-              mBigramPos(bigramPos), mSiblingPos(siblingPos) {
-        memcpy(mCodePoints, codePoints, sizeof(int) * mCodePointCount);
+              mBigramLinkedNodePos(NOT_A_DICT_POS), mV2ShortcutPos(shortcutPos),
+              mV2BigramPos(bigramPos), mSiblingPos(siblingPos) {
+        if (mCodePointCount > 0) memcpy(mCodePoints, codePoints, sizeof(int) * mCodePointCount);
     }
 
     // PtNode with a terminal id.
@@ -77,13 +77,13 @@ class PtNodeParams {
             const int terminalIdFieldPos, const int terminalId, const int probability,
             const int childrenPosFieldPos, const int childrenPos, const int siblingPos)
             : mHeadPos(headPos), mFlags(flags), mHasMovedFlag(true), mParentPos(parentPos),
-              mCodePointCount(codePointCount), mCodePoints(),
+              mCodePointCount(validCount(codePointCount, codePoints)), mCodePoints(),
               mTerminalIdFieldPos(terminalIdFieldPos), mTerminalId(terminalId),
               mProbabilityFieldPos(NOT_A_DICT_POS), mProbability(probability),
               mChildrenPosFieldPos(childrenPosFieldPos), mChildrenPos(childrenPos),
-              mBigramLinkedNodePos(NOT_A_DICT_POS), mShortcutPos(terminalId),
-              mBigramPos(terminalId), mSiblingPos(siblingPos) {
-        memcpy(mCodePoints, codePoints, sizeof(int) * mCodePointCount);
+              mBigramLinkedNodePos(NOT_A_DICT_POS), mV2ShortcutPos(NOT_A_DICT_POS),
+              mV2BigramPos(NOT_A_DICT_POS), mSiblingPos(siblingPos) {
+        if (mCodePointCount > 0) memcpy(mCodePoints, codePoints, sizeof(int) * mCodePointCount);
     }
 
     // Construct new params by updating existing PtNode params.
@@ -91,7 +91,7 @@ class PtNodeParams {
             const PatriciaTrieReadingUtils::NodeFlags flags, const int parentPos,
             const CodePointArrayView codePoints, const int probability)
             : mHeadPos(ptNodeParams->getHeadPos()), mFlags(flags), mHasMovedFlag(true),
-              mParentPos(parentPos), mCodePointCount(codePoints.size()), mCodePoints(),
+              mParentPos(parentPos), mCodePointCount(validCount(codePoints.size(), codePoints.data())), mCodePoints(),
               mTerminalIdFieldPos(ptNodeParams->getTerminalIdFieldPos()),
               mTerminalId(ptNodeParams->getTerminalId()),
               mProbabilityFieldPos(ptNodeParams->getProbabilityFieldPos()),
@@ -99,23 +99,23 @@ class PtNodeParams {
               mChildrenPosFieldPos(ptNodeParams->getChildrenPosFieldPos()),
               mChildrenPos(ptNodeParams->getChildrenPos()),
               mBigramLinkedNodePos(ptNodeParams->getBigramLinkedNodePos()),
-              mShortcutPos(ptNodeParams->getShortcutPos()),
-              mBigramPos(ptNodeParams->getBigramsPos()),
+              mV2ShortcutPos(ptNodeParams->getV2ShortcutPos()),
+              mV2BigramPos(ptNodeParams->getV2BigramsPos()),
               mSiblingPos(ptNodeParams->getSiblingNodePos()) {
-        memcpy(mCodePoints, codePoints.data(), sizeof(int) * mCodePointCount);
+        if (mCodePointCount > 0) memcpy(mCodePoints, codePoints.data(), sizeof(int) * mCodePointCount);
     }
 
     PtNodeParams(const PatriciaTrieReadingUtils::NodeFlags flags, const int parentPos,
             const CodePointArrayView codePoints, const int probability)
             : mHeadPos(NOT_A_DICT_POS), mFlags(flags), mHasMovedFlag(true), mParentPos(parentPos),
-              mCodePointCount(codePoints.size()), mCodePoints(),
+              mCodePointCount(validCount(codePoints.size(), codePoints.data())), mCodePoints(),
               mTerminalIdFieldPos(NOT_A_DICT_POS),
               mTerminalId(Ver4DictConstants::NOT_A_TERMINAL_ID),
               mProbabilityFieldPos(NOT_A_DICT_POS), mProbability(probability),
               mChildrenPosFieldPos(NOT_A_DICT_POS), mChildrenPos(NOT_A_DICT_POS),
-              mBigramLinkedNodePos(NOT_A_DICT_POS), mShortcutPos(NOT_A_DICT_POS),
-              mBigramPos(NOT_A_DICT_POS), mSiblingPos(NOT_A_DICT_POS) {
-        memcpy(mCodePoints, codePoints.data(), sizeof(int) * mCodePointCount);
+              mBigramLinkedNodePos(NOT_A_DICT_POS), mV2ShortcutPos(NOT_A_DICT_POS),
+              mV2BigramPos(NOT_A_DICT_POS), mSiblingPos(NOT_A_DICT_POS) {
+        if (mCodePointCount > 0) memcpy(mCodePoints, codePoints.data(), sizeof(int) * mCodePointCount);
     }
 
     AK_FORCE_INLINE bool isValid() const {
@@ -165,7 +165,7 @@ class PtNodeParams {
                 && isNotAWord();
     }
 
-    AK_FORCE_INLINE int representsBeginningOfSentence() const {
+    AK_FORCE_INLINE bool representsBeginningOfSentence() const {
         return getCodePointCount() > 0 && getCodePoints()[0] == CODE_POINT_BEGINNING_OF_SENTENCE
                 && isNotAWord();
     }
@@ -222,14 +222,15 @@ class PtNodeParams {
         return mBigramLinkedNodePos;
     }
 
+    // Byte offsets in the v2 trie body only; v4 looks up content using getTerminalId().
     // Shortcutlist position
-    AK_FORCE_INLINE int getShortcutPos() const {
-        return mShortcutPos;
+    AK_FORCE_INLINE int getV2ShortcutPos() const {
+        return mV2ShortcutPos;
     }
 
     // Bigrams position
-    AK_FORCE_INLINE int getBigramsPos() const {
-        return mBigramPos;
+    AK_FORCE_INLINE int getV2BigramsPos() const {
+        return mV2BigramPos;
     }
 
     // Sibling node position
@@ -238,6 +239,10 @@ class PtNodeParams {
     }
 
  private:
+    static uint8_t validCount(const size_t count, const int *const codePoints) {
+        return count > 0 && count <= MAX_WORD_LENGTH && codePoints ? count : 0;
+    }
+
     // This class have a public copy constructor to be used as a return value.
     DISALLOW_ASSIGNMENT_OPERATOR(PtNodeParams);
 
@@ -254,8 +259,8 @@ class PtNodeParams {
     const int mChildrenPosFieldPos;
     const int mChildrenPos;
     const int mBigramLinkedNodePos;
-    const int mShortcutPos;
-    const int mBigramPos;
+    const int mV2ShortcutPos;
+    const int mV2BigramPos;
     const int mSiblingPos;
 };
 } // namespace latinime

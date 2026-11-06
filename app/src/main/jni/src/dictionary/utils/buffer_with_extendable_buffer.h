@@ -77,6 +77,11 @@ class BufferWithExtendableBuffer {
     void readCodePointsAndAdvancePosition(const int maxCodePointCount,
             int *const outCodePoints, int *outCodePointCount, int *const pos) const;
 
+    AK_FORCE_INLINE ReadOnlyByteArrayView getReadOnlyBuffer(const bool additional) const {
+        return ReadOnlyByteArrayView(getBuffer(additional), additional
+                ? mUsedAdditionalBufferSize : mOriginalBuffer.size());
+    }
+
     AK_FORCE_INLINE int getOriginalBufferSize() const {
         return mOriginalBuffer.size();
     }

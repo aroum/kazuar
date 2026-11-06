@@ -30,6 +30,7 @@
 #include "dictionary/structure/backward/v402/content/probability_entry.h"
 #include "dictionary/structure/backward/v402/ver4_patricia_trie_reading_utils.h"
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include "utils/bounded_byte_array_reader.h"
 #include "dictionary/utils/forgetting_curve_utils.h"
 
 namespace latinime {
@@ -47,13 +48,15 @@ const PtNodeParams Ver4PatriciaTrieNodeReader::fetchPtNodeInfoFromBufferAndProce
     }
     const bool usesAdditionalBuffer = mBuffer->isInAdditionalBuffer(ptNodePos);
     const uint8_t *const dictBuf = mBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     int pos = ptNodePos;
     const int headPos = ptNodePos;
     if (usesAdditionalBuffer) {
         pos -= mBuffer->getOriginalBufferSize();
     }
+    if (!BoundedByteArrayReader::hasBytes(view, pos, 4)) return PtNodeParams();
     const PatriciaTrieReadingUtils::NodeFlags flags =
-            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(dictBuf, &pos);
+            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(view, &pos);
     const int parentPosOffset =
             DynamicPtReadingUtils::getParentPtNodePosOffsetAndAdvancePosition(
                     dictBuf, &pos);
@@ -61,11 +64,14 @@ const PtNodeParams Ver4PatriciaTrieNodeReader::fetchPtNodeInfoFromBufferAndProce
             DynamicPtReadingUtils::getParentPtNodePos(parentPosOffset, headPos);
     int codePoints[MAX_WORD_LENGTH];
     const int codePointCount = PatriciaTrieReadingUtils::getCharsAndAdvancePosition(
-            dictBuf, flags, MAX_WORD_LENGTH, mHeaderPolicy->getCodePointTable(), codePoints, &pos);
+            view, flags, MAX_WORD_LENGTH, mHeaderPolicy->getCodePointTable(), codePoints, &pos);
+    if (codePointCount <= 0 || pos == NOT_A_DICT_POS) return PtNodeParams();
     int terminalIdFieldPos = NOT_A_DICT_POS;
     int terminalId = Ver4DictConstants::NOT_A_TERMINAL_ID;
     int probability = NOT_A_PROBABILITY;
     if (PatriciaTrieReadingUtils::isTerminal(flags)) {
+        if (!BoundedByteArrayReader::hasBytes(view, pos, Ver4DictConstants::TERMINAL_ID_FIELD_SIZE))
+            return PtNodeParams();
         terminalIdFieldPos = pos;
         if (usesAdditionalBuffer) {
             terminalIdFieldPos += mBuffer->getOriginalBufferSize();
@@ -80,6 +86,7 @@ const PtNodeParams Ver4PatriciaTrieNodeReader::fetchPtNodeInfoFromBufferAndProce
             probability = probabilityEntry.getProbability();
         }
     }
+    if (!BoundedByteArrayReader::hasBytes(view, pos, 3)) return PtNodeParams();
     int childrenPosFieldPos = pos;
     if (usesAdditionalBuffer) {
         childrenPosFieldPos += mBuffer->getOriginalBufferSize();

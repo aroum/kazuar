@@ -29,9 +29,9 @@ namespace latinime {
 class DictionaryBigramsStructurePolicy;
 class DictionaryShortcutsStructurePolicy;
 
-class Ver2ParticiaTrieNodeReader : public PtNodeReader {
+class Ver2PatriciaTrieNodeReader : public PtNodeReader {
  public:
-    Ver2ParticiaTrieNodeReader(const ReadOnlyByteArrayView buffer,
+    Ver2PatriciaTrieNodeReader(const ReadOnlyByteArrayView buffer,
             const DictionaryBigramsStructurePolicy *const bigramPolicy,
             const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
             const int *const codePointTable)
@@ -41,7 +41,7 @@ class Ver2ParticiaTrieNodeReader : public PtNodeReader {
     virtual const PtNodeParams fetchPtNodeParamsInBufferFromPtNodePos(const int ptNodePos) const;
 
  private:
-    DISALLOW_IMPLICIT_CONSTRUCTORS(Ver2ParticiaTrieNodeReader);
+    DISALLOW_IMPLICIT_CONSTRUCTORS(Ver2PatriciaTrieNodeReader);
 
     const ReadOnlyByteArrayView mBuffer;
     const DictionaryBigramsStructurePolicy *const mBigramPolicy;

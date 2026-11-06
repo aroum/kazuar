@@ -24,6 +24,7 @@
 #include "dictionary/structure/backward/v402/content/shortcut_dict_content.h"
 
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include "utils/bounded_byte_array_reader.h"
 
 namespace latinime {
 namespace backward {
@@ -32,32 +33,27 @@ namespace v402 {
 void ShortcutDictContent::getShortcutEntryAndAdvancePosition(const int maxCodePointCount,
         int *const outCodePoint, int *const outCodePointCount, int *const outProbability,
         bool *const outhasNext, int *const shortcutEntryPos) const {
-    const BufferWithExtendableBuffer *const shortcutListBuffer = getContentBuffer();
-    if (*shortcutEntryPos < 0 || *shortcutEntryPos >=  shortcutListBuffer->getTailPosition()) {
-        AKLOGE("Invalid shortcut entry position. shortcutEntryPos: %d, bufSize: %d",
-                *shortcutEntryPos, shortcutListBuffer->getTailPosition());
-        ASSERT(false);
-        if (outhasNext) {
-            *outhasNext = false;
-        }
-        if (outCodePointCount) {
-            *outCodePointCount = 0;
-        }
-        return;
-    }
-
-    const int shortcutFlags = shortcutListBuffer->readUintAndAdvancePosition(
-            Ver4DictConstants::SHORTCUT_FLAGS_FIELD_SIZE, shortcutEntryPos);
-    if (outProbability) {
-        *outProbability = shortcutFlags & Ver4DictConstants::SHORTCUT_PROBABILITY_MASK;
-    }
-    if (outhasNext) {
-        *outhasNext = shortcutFlags & Ver4DictConstants::SHORTCUT_HAS_NEXT_MASK;
-    }
-    if (outCodePoint && outCodePointCount) {
-        shortcutListBuffer->readCodePointsAndAdvancePosition(
-                maxCodePointCount, outCodePoint, outCodePointCount, shortcutEntryPos);
-    }
+    if (outhasNext) *outhasNext = false;
+    if (outCodePointCount) *outCodePointCount = 0;
+    if (outProbability) *outProbability = NOT_A_PROBABILITY;
+    const BufferWithExtendableBuffer *const buffer = getContentBuffer();
+    const bool additional = buffer->isInAdditionalBuffer(*shortcutEntryPos);
+    const int base = additional ? buffer->getOriginalBufferSize() : 0;
+    const ReadOnlyByteArrayView view(buffer->getBuffer(additional), additional
+            ? buffer->getUsedAdditionalBufferSize() : buffer->getOriginalBufferSize());
+    int cursor = *shortcutEntryPos - base;
+    uint32_t flags;
+    if (!BoundedByteArrayReader::readUint(view, Ver4DictConstants::SHORTCUT_FLAGS_FIELD_SIZE,
+            &flags, &cursor)) return;
+    int scratch[MAX_WORD_LENGTH];
+    const int count = BoundedByteArrayReader::readString(view,
+            outCodePoint ? maxCodePointCount : MAX_WORD_LENGTH, nullptr,
+            outCodePoint ? outCodePoint : scratch, &cursor);
+    if (count <= 0 || cursor + base <= *shortcutEntryPos) return;
+    *shortcutEntryPos = cursor + base;
+    if (outCodePointCount) *outCodePointCount = count;
+    if (outProbability) *outProbability = flags & Ver4DictConstants::SHORTCUT_PROBABILITY_MASK;
+    if (outhasNext) *outhasNext = flags & Ver4DictConstants::SHORTCUT_HAS_NEXT_MASK;
 }
 
 int ShortcutDictContent::getShortcutListHeadPos(const int terminalId) const {
@@ -113,15 +109,19 @@ bool ShortcutDictContent::copyShortcutList(const int shortcutListPos, const int 
 
 bool ShortcutDictContent::copyShortcutListFromDictContent(const int shortcutListPos,
         const ShortcutDictContent *const sourceShortcutDictContent, const int toPos) {
+    const int sourceLimit = sourceShortcutDictContent->getContentBuffer()->getTailPosition();
     bool hasNext = true;
     int readingPos = shortcutListPos;
     int writingPos = toPos;
     int codePoints[MAX_WORD_LENGTH];
     while (hasNext) {
+        if (readingPos < 0 || readingPos >= sourceLimit) return false;
+        const int entryPos = readingPos;
         int probability = 0;
         int codePointCount = 0;
         sourceShortcutDictContent->getShortcutEntryAndAdvancePosition(MAX_WORD_LENGTH,
                 codePoints, &codePointCount, &probability, &hasNext, &readingPos);
+        if (readingPos <= entryPos || readingPos > sourceLimit || codePointCount <= 0) return false;
         if (!writeShortcutEntryAndAdvancePosition(codePoints, codePointCount, probability,
                 hasNext, &writingPos)) {
             AKLOGE("Cannot write shortcut entry to copy. pos: %d", writingPos);
@@ -171,6 +171,7 @@ int ShortcutDictContent::findShortcutEntryAndGetPos(const int shortcutListPos,
         int targetCodePointCount = 0;
         getShortcutEntryAndAdvancePosition(MAX_WORD_LENGTH, targetCodePoints, &targetCodePointCount,
                 &probability, &hasNext, &readingPos);
+        if (readingPos <= entryPos || targetCodePointCount <= 0) return NOT_A_DICT_POS;
         if (targetCodePointCount != codePointCount) {
             continue;
         }

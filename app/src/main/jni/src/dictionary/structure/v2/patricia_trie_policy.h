@@ -158,7 +158,7 @@ class PatriciaTriePolicy : public DictionaryStructureWithBufferPolicy {
     const ReadOnlyByteArrayView mBuffer;
     const BigramListPolicy mBigramListPolicy;
     const ShortcutListPolicy mShortcutListPolicy;
-    const Ver2ParticiaTrieNodeReader mPtNodeReader;
+    const Ver2PatriciaTrieNodeReader mPtNodeReader;
     const Ver2PtNodeArrayReader mPtNodeArrayReader;
     std::vector<int> mTerminalPtNodePositionsForIteratingWords;
     mutable bool mIsCorrupted;

@@ -26,6 +26,7 @@
 #include "dictionary/structure/v4/ver4_patricia_trie_node_reader.h"
 #include "dictionary/structure/v4/ver4_dict_buffers.h"
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include "utils/bounded_byte_array_reader.h"
 #include "dictionary/utils/forgetting_curve_utils.h"
 
 namespace latinime {
@@ -36,13 +37,14 @@ bool Ver4PatriciaTrieNodeWriter::markPtNodeAsDeleted(
         const PtNodeParams *const toBeUpdatedPtNodeParams) {
     int pos = toBeUpdatedPtNodeParams->getHeadPos();
     const bool usesAdditionalBuffer = mTrieBuffer->isInAdditionalBuffer(pos);
-    const uint8_t *const dictBuf = mTrieBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mTrieBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     if (usesAdditionalBuffer) {
         pos -= mTrieBuffer->getOriginalBufferSize();
     }
     // Read original flags
     const PatriciaTrieReadingUtils::NodeFlags originalFlags =
-            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(dictBuf, &pos);
+            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(view, &pos);
+    if (pos == NOT_A_DICT_POS) return false;
     const PatriciaTrieReadingUtils::NodeFlags updatedFlags =
             DynamicPtReadingUtils::updateAndGetFlags(originalFlags, false /* isMoved */,
                     true /* isDeleted */, false /* willBecomeNonTerminal */);
@@ -67,13 +69,14 @@ bool Ver4PatriciaTrieNodeWriter::markPtNodeAsMoved(
         const int movedPos, const int bigramLinkedNodePos) {
     int pos = toBeUpdatedPtNodeParams->getHeadPos();
     const bool usesAdditionalBuffer = mTrieBuffer->isInAdditionalBuffer(pos);
-    const uint8_t *const dictBuf = mTrieBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mTrieBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     if (usesAdditionalBuffer) {
         pos -= mTrieBuffer->getOriginalBufferSize();
     }
     // Read original flags
     const PatriciaTrieReadingUtils::NodeFlags originalFlags =
-            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(dictBuf, &pos);
+            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(view, &pos);
+    if (pos == NOT_A_DICT_POS) return false;
     const PatriciaTrieReadingUtils::NodeFlags updatedFlags =
             DynamicPtReadingUtils::updateAndGetFlags(originalFlags, true /* isMoved */,
                     false /* isDeleted */, false /* willBecomeNonTerminal */);
@@ -112,13 +115,14 @@ bool Ver4PatriciaTrieNodeWriter::markPtNodeAsWillBecomeNonTerminal(
         const PtNodeParams *const toBeUpdatedPtNodeParams) {
     int pos = toBeUpdatedPtNodeParams->getHeadPos();
     const bool usesAdditionalBuffer = mTrieBuffer->isInAdditionalBuffer(pos);
-    const uint8_t *const dictBuf = mTrieBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mTrieBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     if (usesAdditionalBuffer) {
         pos -= mTrieBuffer->getOriginalBufferSize();
     }
     // Read original flags
     const PatriciaTrieReadingUtils::NodeFlags originalFlags =
-            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(dictBuf, &pos);
+            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(view, &pos);
+    if (pos == NOT_A_DICT_POS) return false;
     const PatriciaTrieReadingUtils::NodeFlags updatedFlags =
             DynamicPtReadingUtils::updateAndGetFlags(originalFlags, false /* isMoved */,
                     false /* isDeleted */, true /* willBecomeNonTerminal */);
@@ -240,13 +244,10 @@ bool Ver4PatriciaTrieNodeWriter::updateAllPositionFields(
         const PtNodeParams *const toBeUpdatedPtNodeParams,
         const DictPositionRelocationMap *const dictPositionRelocationMap,
         int *const outBigramEntryCount) {
-    int parentPos = toBeUpdatedPtNodeParams->getParentPos();
-    if (parentPos != NOT_A_DICT_POS) {
-        PtNodeWriter::PtNodePositionRelocationMap::const_iterator it =
-                dictPositionRelocationMap->mPtNodePositionRelocationMap.find(parentPos);
-        if (it != dictPositionRelocationMap->mPtNodePositionRelocationMap.end()) {
-            parentPos = it->second;
-        }
+    int parentPos, childrenPos;
+    if (!dictPositionRelocationMap->relocatePositions(toBeUpdatedPtNodeParams->getParentPos(),
+            toBeUpdatedPtNodeParams->getChildrenPos(), &parentPos, &childrenPos)) {
+        return false;
     }
     int writingPos = toBeUpdatedPtNodeParams->getHeadPos()
             + DynamicPtWritingUtils::NODE_FLAG_FIELD_SIZE;
@@ -257,14 +258,6 @@ bool Ver4PatriciaTrieNodeWriter::updateAllPositionFields(
     }
 
     // Updates children position.
-    int childrenPos = toBeUpdatedPtNodeParams->getChildrenPos();
-    if (childrenPos != NOT_A_DICT_POS) {
-        PtNodeWriter::PtNodeArrayPositionRelocationMap::const_iterator it =
-                dictPositionRelocationMap->mPtNodeArrayPositionRelocationMap.find(childrenPos);
-        if (it != dictPositionRelocationMap->mPtNodeArrayPositionRelocationMap.end()) {
-            childrenPos = it->second;
-        }
-    }
     if (!updateChildrenPosition(toBeUpdatedPtNodeParams, childrenPos)) {
         return false;
     }

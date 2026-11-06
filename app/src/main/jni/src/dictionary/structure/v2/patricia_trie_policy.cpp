@@ -15,6 +15,7 @@
  */
 
 #include "dictionary/structure/v2/patricia_trie_policy.h"
+#include <algorithm>
 
 #include "defines.h"
 #include "suggest/core/dicnode/dic_node.h"
@@ -44,7 +45,8 @@ void PatriciaTriePolicy::createAndGetAllChildDicNodes(const DicNode *const dicNo
         return;
     }
     const int childCount = PatriciaTrieReadingUtils::getPtNodeArraySizeAndAdvancePosition(
-            mBuffer.data(), &nextPos);
+            mBuffer, &nextPos);
+    if (childCount < 0) { mIsCorrupted = true; return; }
     for (int i = 0; i < childCount; i++) {
         if (!isValidPos(nextPos)) {
             AKLOGE("Child PtNode position is invalid. pos: %d, dict size: %zd, childCount: %d / %d",
@@ -62,216 +64,61 @@ int PatriciaTriePolicy::getCodePointsAndReturnCodePointCount(const int wordId,
     return getCodePointsAndProbabilityAndReturnCodePointCount(wordId, maxCodePointCount,
             outCodePoints, nullptr /* outUnigramProbability */);
 }
-// This retrieves code points and the probability of the word by its id.
-// Due to the fact that words are ordered in the dictionary in a strict breadth-first order,
-// it is possible to check for this with advantageous complexity. For each PtNode array, we search
-// for PtNodes with children and compare the children position with the position we look for.
-// When we shoot the position we look for, it means the word we look for is in the children
-// of the previous PtNode. The only tricky part is the fact that if we arrive at the end of a
-// PtNode array with the last PtNode's children position still less than what we are searching for,
-// we must descend the last PtNode's children (for example, if the word we are searching for starts
-// with a z, it's the last PtNode of the root array, so all children addresses will be smaller
-// than the position we look for, and we have to descend the z PtNode).
-/* Parameters :
- * wordId: Id of the word we are searching for.
- * outCodePoints: an array to write the found word, with MAX_WORD_LENGTH size.
- * outUnigramProbability: a pointer to an int to write the probability into.
- * Return value : the code point count, of 0 if the word was not found.
- */
-// TODO: Split this function to be more readable
+// v2 arrays are ordered breadth-first. Descend the last child array whose position
+// does not exceed the requested node, retaining at most the caller's output capacity.
 int PatriciaTriePolicy::getCodePointsAndProbabilityAndReturnCodePointCount(
         const int wordId, const int maxCodePointCount, int *const outCodePoints,
         int *const outUnigramProbability) const {
-    const int ptNodePos = getTerminalPtNodePosFromWordId(wordId);
-    int pos = getRootPosition();
-    int wordPos = 0;
-    const int *const codePointTable = mHeaderPolicy.getCodePointTable();
-    if (outUnigramProbability) {
-        *outUnigramProbability = NOT_A_PROBABILITY;
-    }
-    // One iteration of the outer loop iterates through PtNode arrays. As stated above, we will
-    // only traverse PtNodes that are actually a part of the terminal we are searching, so each
-    // time we enter this loop we are one depth level further than last time.
-    // The only reason we count PtNodes is because we want to reduce the probability of infinite
-    // looping in case there is a bug. Since we know there is an upper bound to the depth we are
-    // supposed to traverse, it does not hurt to count iterations.
-    for (int loopCount = maxCodePointCount; loopCount > 0; --loopCount) {
-        int lastCandidatePtNodePos = 0;
-        // Let's loop through PtNodes in this PtNode array searching for either the terminal
-        // or one of its ascendants.
-        if (!isValidPos(pos)) {
-            AKLOGE("PtNode array position is invalid. pos: %d, dict size: %zd",
-                    pos, mBuffer.size());
+    if (outUnigramProbability) *outUnigramProbability = NOT_A_PROBABILITY;
+    if (!outCodePoints || maxCodePointCount <= 0) return 0;
+    const int limit = std::min(maxCodePointCount, MAX_WORD_LENGTH);
+    const int target = getTerminalPtNodePosFromWordId(wordId);
+    if (!isValidPos(target)) return 0;
+    int arrayPos = getRootPosition();
+    int word[MAX_WORD_LENGTH];
+    int length = 0;
+    for (int depth = 0; depth < MAX_WORD_LENGTH; ++depth) {
+        int count = 0, pos = NOT_A_DICT_POS;
+        if (!mPtNodeArrayReader.readPtNodeArrayInfoAndReturnIfValid(arrayPos, &count, &pos)) {
             mIsCorrupted = true;
-            ASSERT(false);
             return 0;
         }
-        for (int ptNodeCount = PatriciaTrieReadingUtils::getPtNodeArraySizeAndAdvancePosition(
-                mBuffer.data(), &pos); ptNodeCount > 0; --ptNodeCount) {
-            const int startPos = pos;
-            if (!isValidPos(pos)) {
-                AKLOGE("PtNode position is invalid. pos: %d, dict size: %zd", pos, mBuffer.size());
+        // PtNodeParams deliberately has no assignment operator.
+        int candidatePos = NOT_A_DICT_POS;
+        int candidateChildren = NOT_A_DICT_POS;
+        for (int index = 0; index < count; ++index) {
+            const PtNodeParams node = mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(pos);
+            if (!node.isValid() || node.getSiblingNodePos() <= pos) {
                 mIsCorrupted = true;
-                ASSERT(false);
                 return 0;
             }
-            const PatriciaTrieReadingUtils::NodeFlags flags =
-                    PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(mBuffer.data(), &pos);
-            const int character = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                    mBuffer.data(), codePointTable, &pos);
-            if (ptNodePos == startPos) {
-                // We found the position. Copy the rest of the code points in the buffer and return
-                // the length.
-                outCodePoints[wordPos] = character;
-                if (PatriciaTrieReadingUtils::hasMultipleChars(flags)) {
-                    int nextChar = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                            mBuffer.data(), codePointTable, &pos);
-                    // We count code points in order to avoid infinite loops if the file is broken
-                    // or if there is some other bug
-                    int charCount = maxCodePointCount;
-                    while (NOT_A_CODE_POINT != nextChar && --charCount > 0) {
-                        outCodePoints[++wordPos] = nextChar;
-                        nextChar = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                                mBuffer.data(), codePointTable, &pos);
-                    }
-                }
-                if (outUnigramProbability) {
-                    *outUnigramProbability =
-                            PatriciaTrieReadingUtils::readProbabilityAndAdvancePosition(
-                                    mBuffer.data(), &pos);
-                }
-                return ++wordPos;
+            if (pos == target) {
+                if (!node.isTerminal() || node.getCodePointCount() > limit - length) return 0;
+                std::copy(node.getCodePoints(), node.getCodePoints() + node.getCodePointCount(), word + length);
+                length += node.getCodePointCount();
+                std::copy(word, word + length, outCodePoints);
+                if (outUnigramProbability) *outUnigramProbability = node.getProbability();
+                return length;
             }
-            // We need to skip past this PtNode, so skip any remaining code points after the
-            // first and possibly the probability.
-            if (PatriciaTrieReadingUtils::hasMultipleChars(flags)) {
-                PatriciaTrieReadingUtils::skipCharacters(mBuffer.data(), flags, MAX_WORD_LENGTH,
-                        codePointTable, &pos);
+            if (node.hasChildren() && node.getChildrenPos() <= target
+                    && node.getChildrenPos() > candidateChildren) {
+                candidatePos = pos;
+                candidateChildren = node.getChildrenPos();
             }
-            if (PatriciaTrieReadingUtils::isTerminal(flags)) {
-                PatriciaTrieReadingUtils::readProbabilityAndAdvancePosition(mBuffer.data(), &pos);
-            }
-            // The fact that this PtNode has children is very important. Since we already know
-            // that this PtNode does not match, if it has no children we know it is irrelevant
-            // to what we are searching for.
-            const bool hasChildren = PatriciaTrieReadingUtils::hasChildrenInFlags(flags);
-            // We will write in `found' whether we have passed the children position we are
-            // searching for. For example if we search for "beer", the children of b are less
-            // than the address we are searching for and the children of c are greater. When we
-            // come here for c, we realize this is too big, and that we should descend b.
-            bool found;
-            if (hasChildren) {
-                int currentPos = pos;
-                // Here comes the tricky part. First, read the children position.
-                const int childrenPos = PatriciaTrieReadingUtils
-                        ::readChildrenPositionAndAdvancePosition(mBuffer.data(), flags,
-                                &currentPos);
-                if (childrenPos > ptNodePos) {
-                    // If the children pos is greater than the position, it means the previous
-                    // PtNode, which position is stored in lastCandidatePtNodePos, was the right
-                    // one.
-                    found = true;
-                } else if (1 >= ptNodeCount) {
-                    // However if we are on the LAST PtNode of this array, and we have NOT shot the
-                    // position we should descend THIS PtNode. So we trick the
-                    // lastCandidatePtNodePos so that we will descend this PtNode, not the previous
-                    // one.
-                    lastCandidatePtNodePos = startPos;
-                    found = true;
-                } else {
-                    // Else, we should continue looking.
-                    found = false;
-                }
-            } else {
-                // Even if we don't have children here, we could still be on the last PtNode of
-                // this array. If this is the case, we should descend the last PtNode that had
-                // children, and their position is already in lastCandidatePtNodePos.
-                found = (1 >= ptNodeCount);
-            }
-
-            if (found) {
-                // Okay, we found the PtNode we should descend. Its position is in
-                // the lastCandidatePtNodePos variable, so we just re-read it.
-                if (0 != lastCandidatePtNodePos) {
-                    const PatriciaTrieReadingUtils::NodeFlags lastFlags =
-                            PatriciaTrieReadingUtils::getFlagsAndAdvancePosition(
-                                    mBuffer.data(), &lastCandidatePtNodePos);
-                    const int lastChar = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                            mBuffer.data(), codePointTable, &lastCandidatePtNodePos);
-                    // We copy all the characters in this PtNode to the buffer
-                    outCodePoints[wordPos] = lastChar;
-                    if (PatriciaTrieReadingUtils::hasMultipleChars(lastFlags)) {
-                        int nextChar = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                                mBuffer.data(), codePointTable, &lastCandidatePtNodePos);
-                        int charCount = maxCodePointCount;
-                        while (-1 != nextChar && --charCount > 0) {
-                            outCodePoints[++wordPos] = nextChar;
-                            nextChar = PatriciaTrieReadingUtils::getCodePointAndAdvancePosition(
-                                    mBuffer.data(), codePointTable, &lastCandidatePtNodePos);
-                        }
-                    }
-                    ++wordPos;
-                    // Now we only need to branch to the children address. Skip the probability if
-                    // it's there, read pos, and break to resume the search at pos.
-                    if (PatriciaTrieReadingUtils::isTerminal(lastFlags)) {
-                        PatriciaTrieReadingUtils::readProbabilityAndAdvancePosition(mBuffer.data(),
-                                &lastCandidatePtNodePos);
-                    }
-                    pos = PatriciaTrieReadingUtils::readChildrenPositionAndAdvancePosition(
-                            mBuffer.data(), lastFlags, &lastCandidatePtNodePos);
-                    break;
-                } else {
-                    // Here is a little tricky part: we come here if we found out that all children
-                    // addresses in this PtNode are bigger than the address we are searching for.
-                    // Should we conclude the word is not in the dictionary? No! It could still be
-                    // one of the remaining PtNodes in this array, so we have to keep looking in
-                    // this array until we find it (or we realize it's not there either, in which
-                    // case it's actually not in the dictionary). Pass the end of this PtNode,
-                    // ready to start the next one.
-                    if (PatriciaTrieReadingUtils::hasChildrenInFlags(flags)) {
-                        PatriciaTrieReadingUtils::readChildrenPositionAndAdvancePosition(
-                                mBuffer.data(), flags, &pos);
-                    }
-                    if (PatriciaTrieReadingUtils::hasShortcutTargets(flags)) {
-                        mShortcutListPolicy.skipAllShortcuts(&pos);
-                    }
-                    if (PatriciaTrieReadingUtils::hasBigrams(flags)) {
-                        if (!mBigramListPolicy.skipAllBigrams(&pos)) {
-                            AKLOGE("Cannot skip bigrams. BufSize: %zd, pos: %d.", mBuffer.size(),
-                                    pos);
-                            mIsCorrupted = true;
-                            ASSERT(false);
-                            return 0;
-                        }
-                    }
-                }
-            } else {
-                // If we did not find it, we should record the last children address for the next
-                // iteration.
-                if (hasChildren) lastCandidatePtNodePos = startPos;
-                // Now skip the end of this PtNode (children pos and the attributes if any) so that
-                // our pos is after the end of this PtNode, at the start of the next one.
-                if (PatriciaTrieReadingUtils::hasChildrenInFlags(flags)) {
-                    PatriciaTrieReadingUtils::readChildrenPositionAndAdvancePosition(
-                            mBuffer.data(), flags, &pos);
-                }
-                if (PatriciaTrieReadingUtils::hasShortcutTargets(flags)) {
-                    mShortcutListPolicy.skipAllShortcuts(&pos);
-                }
-                if (PatriciaTrieReadingUtils::hasBigrams(flags)) {
-                    if (!mBigramListPolicy.skipAllBigrams(&pos)) {
-                        AKLOGE("Cannot skip bigrams. BufSize: %zd, pos: %d.", mBuffer.size(), pos);
-                        mIsCorrupted = true;
-                        ASSERT(false);
-                        return 0;
-                    }
-                }
-            }
-
+            pos = node.getSiblingNodePos();
         }
+        if (candidatePos == NOT_A_DICT_POS) return 0;
+        const PtNodeParams candidate = mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(candidatePos);
+        if (candidate.isValid() && candidate.getCodePointCount() >= limit - length) return 0;
+        if (!candidate.isValid() || candidateChildren <= arrayPos) {
+            mIsCorrupted = true;
+            return 0;
+        }
+        std::copy(candidate.getCodePoints(), candidate.getCodePoints() + candidate.getCodePointCount(), word + length);
+        length += candidate.getCodePointCount();
+        arrayPos = candidateChildren;
     }
-    // If we have looked through all the PtNodes and found no match, the ptNodePos is
-    // not the position of a terminal in this dictionary.
+    mIsCorrupted = true;
     return 0;
 }
 
@@ -389,38 +236,29 @@ int PatriciaTriePolicy::getShortcutPositionOfPtNode(const int ptNodePos) const {
     if (ptNodePos == NOT_A_DICT_POS) {
         return NOT_A_DICT_POS;
     }
-    return mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(ptNodePos).getShortcutPos();
+    return mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(ptNodePos).getV2ShortcutPos();
 }
 
 int PatriciaTriePolicy::getBigramsPositionOfPtNode(const int ptNodePos) const {
     if (ptNodePos == NOT_A_DICT_POS) {
         return NOT_A_DICT_POS;
     }
-    return mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(ptNodePos).getBigramsPos();
+    return mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(ptNodePos).getV2BigramsPos();
 }
 
 int PatriciaTriePolicy::createAndGetLeavingChildNode(const DicNode *const dicNode,
         const int ptNodePos, DicNodeVector *childDicNodes) const {
-    PatriciaTrieReadingUtils::NodeFlags flags;
-    int mergedNodeCodePointCount = 0;
-    int mergedNodeCodePoints[MAX_WORD_LENGTH];
-    int probability = NOT_A_PROBABILITY;
-    int childrenPos = NOT_A_DICT_POS;
-    int shortcutPos = NOT_A_DICT_POS;
-    int bigramPos = NOT_A_DICT_POS;
-    int siblingPos = NOT_A_DICT_POS;
-    const int *const codePointTable = mHeaderPolicy.getCodePointTable();
-    PatriciaTrieReadingUtils::readPtNodeInfo(mBuffer.data(), ptNodePos, &mShortcutListPolicy,
-            &mBigramListPolicy, codePointTable, &flags, &mergedNodeCodePointCount,
-            mergedNodeCodePoints, &probability, &childrenPos, &shortcutPos, &bigramPos,
-            &siblingPos);
-    // Skip PtNodes don't start with Unicode code point because they represent non-word information.
-    if (CharUtils::isInUnicodeSpace(mergedNodeCodePoints[0])) {
-        const int wordId = PatriciaTrieReadingUtils::isTerminal(flags) ? ptNodePos : NOT_A_WORD_ID;
-        childDicNodes->pushLeavingChild(dicNode, childrenPos, wordId,
-                CodePointArrayView(mergedNodeCodePoints, mergedNodeCodePointCount));
+    const PtNodeParams node = mPtNodeReader.fetchPtNodeParamsInBufferFromPtNodePos(ptNodePos);
+    if (!node.isValid() || node.getCodePointCount() <= 0) {
+        mIsCorrupted = true;
+        return NOT_A_DICT_POS;
     }
-    return siblingPos;
+    // Non-word information can start with a non-Unicode code point.
+    if (CharUtils::isInUnicodeSpace(node.getCodePoints()[0])) {
+        const int wordId = node.isTerminal() ? ptNodePos : NOT_A_WORD_ID;
+        childDicNodes->pushLeavingChild(dicNode, node.getChildrenPos(), wordId, node.getCodePointArrayView());
+    }
+    return node.getSiblingNodePos();
 }
 
 const WordProperty PatriciaTriePolicy::getWordProperty(
@@ -460,19 +298,20 @@ const WordProperty PatriciaTriePolicy::getWordProperty(
     int shortcutPos = getShortcutPositionOfPtNode(ptNodePos);
     if (shortcutPos != NOT_A_DICT_POS) {
         int shortcutTargetCodePoints[MAX_WORD_LENGTH];
-        ShortcutListReadingUtils::getShortcutListSizeAndForwardPointer(mBuffer, &shortcutPos);
-        bool hasNext = true;
+        shortcutPos = mShortcutListPolicy.getStartPos(shortcutPos);
+        bool hasNext = shortcutPos != NOT_A_DICT_POS;
         while (hasNext) {
-            const ShortcutListReadingUtils::ShortcutFlags shortcutFlags =
-                    ShortcutListReadingUtils::getFlagsAndForwardPointer(mBuffer, &shortcutPos);
-            hasNext = ShortcutListReadingUtils::hasNext(shortcutFlags);
-            const int shortcutTargetLength = ShortcutListReadingUtils::readShortcutTarget(
-                    mBuffer, MAX_WORD_LENGTH, shortcutTargetCodePoints, &shortcutPos);
-            const int shortcutProbability =
-                    ShortcutListReadingUtils::getProbabilityFromFlags(shortcutFlags);
-            shortcuts.emplace_back(
-                    CodePointArrayView(shortcutTargetCodePoints, shortcutTargetLength).toVector(),
-                    shortcutProbability);
+            const int before = shortcutPos;
+            int count = 0;
+            bool whitelist = false;
+            // Preserve the original per-entry probability (the policy exposes whitelist only).
+            int flagsPos = shortcutPos;
+            const auto flags = ShortcutListReadingUtils::getFlagsAndForwardPointer(mBuffer, &flagsPos);
+            mShortcutListPolicy.getNextShortcut(MAX_WORD_LENGTH, shortcutTargetCodePoints,
+                    &count, &whitelist, &hasNext, &shortcutPos);
+            if (count <= 0 || shortcutPos <= before) { mIsCorrupted = true; break; }
+            shortcuts.emplace_back(CodePointArrayView(shortcutTargetCodePoints, count).toVector(),
+                    ShortcutListReadingUtils::getProbabilityFromFlags(flags));
         }
     }
     const UnigramProperty unigramProperty(ptNodeParams.representsBeginningOfSentence(),

@@ -20,13 +20,12 @@
 
 namespace latinime {
 
-const PtNodeParams Ver2ParticiaTrieNodeReader::fetchPtNodeParamsInBufferFromPtNodePos(
+const PtNodeParams Ver2PatriciaTrieNodeReader::fetchPtNodeParamsInBufferFromPtNodePos(
         const int ptNodePos) const {
     if (ptNodePos < 0 || ptNodePos >= static_cast<int>(mBuffer.size())) {
         // Reading invalid position because of bug or broken dictionary.
         AKLOGE("Fetching PtNode info from invalid dictionary position: %d, dictionary size: %zd",
                 ptNodePos, mBuffer.size());
-        ASSERT(false);
         return PtNodeParams();
     }
     PatriciaTrieReadingUtils::NodeFlags flags;
@@ -37,12 +36,13 @@ const PtNodeParams Ver2ParticiaTrieNodeReader::fetchPtNodeParamsInBufferFromPtNo
     int shortcutPos = NOT_A_DICT_POS;
     int bigramPos = NOT_A_DICT_POS;
     int siblingPos = NOT_A_DICT_POS;
-    PatriciaTrieReadingUtils::readPtNodeInfo(mBuffer.data(), ptNodePos, mShortcutPolicy,
+    if (!PatriciaTrieReadingUtils::readPtNodeInfo(mBuffer, ptNodePos, mShortcutPolicy,
             mBigramPolicy, mCodePointTable, &flags, &mergedNodeCodePointCount, mergedNodeCodePoints,
-            &probability, &childrenPos, &shortcutPos, &bigramPos, &siblingPos);
+            &probability, &childrenPos, &shortcutPos, &bigramPos, &siblingPos)) {
+        return PtNodeParams();
+    }
     if (mergedNodeCodePointCount <= 0) {
         AKLOGE("Empty PtNode is not allowed. Code point count: %d", mergedNodeCodePointCount);
-        ASSERT(false);
         return PtNodeParams();
     }
     return PtNodeParams(ptNodePos, flags, mergedNodeCodePointCount, mergedNodeCodePoints,

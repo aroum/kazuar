@@ -34,7 +34,7 @@ class DictionaryShortcutsStructurePolicy {
             int *const outCodePointCount, bool *const outIsWhitelist, bool *const outHasNext,
             int *const pos) const = 0;
 
-    virtual void skipAllShortcuts(int *const pos) const = 0;
+    virtual bool skipAllShortcuts(int *const pos) const = 0;
 
  protected:
     DictionaryShortcutsStructurePolicy() {}

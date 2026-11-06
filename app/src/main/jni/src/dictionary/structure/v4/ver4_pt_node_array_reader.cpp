@@ -19,6 +19,7 @@
 #include "dictionary/structure/pt_common/dynamic_pt_reading_utils.h"
 #include "dictionary/structure/pt_common/patricia_trie_reading_utils.h"
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include "utils/bounded_byte_array_reader.h"
 
 namespace latinime {
 
@@ -33,12 +34,13 @@ bool Ver4PtNodeArrayReader::readPtNodeArrayInfoAndReturnIfValid(const int ptNode
     }
     const bool usesAdditionalBuffer = mBuffer->isInAdditionalBuffer(ptNodeArrayPos);
     const uint8_t *const dictBuf = mBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     int readingPos = ptNodeArrayPos;
     if (usesAdditionalBuffer) {
         readingPos -= mBuffer->getOriginalBufferSize();
     }
     const int ptNodeCountInArray = PatriciaTrieReadingUtils::getPtNodeArraySizeAndAdvancePosition(
-            dictBuf, &readingPos);
+            view, &readingPos);
     if (usesAdditionalBuffer) {
         readingPos += mBuffer->getOriginalBufferSize();
     }
@@ -62,10 +64,12 @@ bool Ver4PtNodeArrayReader::readForwardLinkAndReturnIfValid(const int forwordLin
     }
     const bool usesAdditionalBuffer = mBuffer->isInAdditionalBuffer(forwordLinkPos);
     const uint8_t *const dictBuf = mBuffer->getBuffer(usesAdditionalBuffer);
+    const ReadOnlyByteArrayView view = mBuffer->getReadOnlyBuffer(usesAdditionalBuffer);
     int readingPos = forwordLinkPos;
     if (usesAdditionalBuffer) {
         readingPos -= mBuffer->getOriginalBufferSize();
     }
+    if (!BoundedByteArrayReader::hasBytes(view, readingPos, 3)) return false;
     const int nextPtNodeArrayOffset =
             DynamicPtReadingUtils::getForwardLinkPosition(dictBuf, readingPos);
     if (DynamicPtReadingUtils::isValidForwardLinkPosition(nextPtNodeArrayOffset)) {

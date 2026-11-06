@@ -24,7 +24,7 @@ namespace latinime {
 // To avoid infinite loop caused by invalid or malicious forward links.
 const int DynamicPtReadingHelper::MAX_CHILD_COUNT_TO_AVOID_INFINITE_LOOP = 100000;
 const int DynamicPtReadingHelper::MAX_PT_NODE_ARRAY_COUNT_TO_AVOID_INFINITE_LOOP = 100000;
-const size_t DynamicPtReadingHelper::MAX_READING_STATE_STACK_SIZE = MAX_WORD_LENGTH;
+const size_t DynamicPtReadingHelper::MAX_READING_STATE_STACK_SIZE = 2 * (MAX_WORD_LENGTH + 1);
 
 bool DynamicPtReadingHelper::TraversePolicyToGetAllTerminalPtNodePositions::onVisitingPtNode(
         const PtNodeParams *const ptNodeParams) {
@@ -47,8 +47,9 @@ bool DynamicPtReadingHelper::traverseAllPtNodesInPostorderDepthFirstManner(
     }
     while (!isEnd()) {
         const PtNodeParams ptNodeParams(getPtNodeParams());
-        if (!ptNodeParams.isValid()) {
-            break;
+        if (!ptNodeParams.isValid() || getTotalCodePointCount(ptNodeParams) > MAX_WORD_LENGTH) {
+            mIsError = true;
+            return false;
         }
         if (!alreadyVisitedChildren) {
             if (ptNodeParams.hasChildren()) {
@@ -56,7 +57,7 @@ bool DynamicPtReadingHelper::traverseAllPtNodesInPostorderDepthFirstManner(
                 if (!listener->onDescend(ptNodeParams.getChildrenPos())) {
                     return false;
                 }
-                pushReadingStateToStack();
+                if (!pushReadingStateToStack()) return false;
                 readChildNode(ptNodeParams);
             } else {
                 alreadyVisitedChildren = true;
@@ -112,11 +113,12 @@ bool DynamicPtReadingHelper::traverseAllPtNodesInPtNodeArrayLevelPreorderDepthFi
             return false;
         }
     }
-    pushReadingStateToStack();
+    if (!pushReadingStateToStack()) return false;
     while (!isEnd()) {
         const PtNodeParams ptNodeParams(getPtNodeParams());
-        if (!ptNodeParams.isValid()) {
-            break;
+        if (!ptNodeParams.isValid() || getTotalCodePointCount(ptNodeParams) > MAX_WORD_LENGTH) {
+            mIsError = true;
+            return false;
         }
         if (alreadyVisitedAllPtNodesInArray) {
             if (alreadyVisitedChildren) {
@@ -142,10 +144,10 @@ bool DynamicPtReadingHelper::traverseAllPtNodesInPtNodeArrayLevelPreorderDepthFi
                     if (!listener->onDescend(ptNodeParams.getChildrenPos())) {
                         return false;
                     }
-                    pushReadingStateToStack();
+                    if (!pushReadingStateToStack()) return false;
                     readChildNode(ptNodeParams);
                     // Push state to return the head of PtNode array.
-                    pushReadingStateToStack();
+                    if (!pushReadingStateToStack()) return false;
                     alreadyVisitedAllPtNodesInArray = false;
                     alreadyVisitedChildren = false;
                 } else {

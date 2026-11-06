@@ -31,7 +31,8 @@ bool Ver2PtNodeArrayReader::readPtNodeArrayInfoAndReturnIfValid(const int ptNode
     }
     int readingPos = ptNodeArrayPos;
     const int ptNodeCountInArray = PatriciaTrieReadingUtils::getPtNodeArraySizeAndAdvancePosition(
-            mBuffer.data(), &readingPos);
+            mBuffer, &readingPos);
+    if (ptNodeCountInArray < 0) return false;
     *outPtNodeCount = ptNodeCountInArray;
     *outFirstPtNodePos = readingPos;
     return true;

@@ -85,11 +85,13 @@ class DynamicPtReadingHelper {
     }
 
     AK_FORCE_INLINE bool isEnd() const {
-        return mReadingState.mPos == NOT_A_DICT_POS;
+        return mIsError || mReadingState.mPos == NOT_A_DICT_POS;
     }
 
     // Initialize reading state with the head position of a PtNode array.
     AK_FORCE_INLINE void initWithPtNodeArrayPos(const int ptNodeArrayPos) {
+        mIsError = false;
+        mReadingStateStack.clear();
         if (ptNodeArrayPos == NOT_A_DICT_POS) {
             mReadingState.mPos = NOT_A_DICT_POS;
         } else {
@@ -106,6 +108,8 @@ class DynamicPtReadingHelper {
 
     // Initialize reading state with the head position of a node.
     AK_FORCE_INLINE void initWithPtNodePos(const int ptNodePos) {
+        mIsError = false;
+        mReadingStateStack.clear();
         if (ptNodePos == NOT_A_DICT_POS) {
             mReadingState.mPos = NOT_A_DICT_POS;
         } else {
@@ -258,15 +262,15 @@ class DynamicPtReadingHelper {
 
     void followForwardLink();
 
-    AK_FORCE_INLINE void pushReadingStateToStack() {
-        if (mReadingStateStack.size() > MAX_READING_STATE_STACK_SIZE) {
+    AK_FORCE_INLINE bool pushReadingStateToStack() {
+        if (mReadingStateStack.size() >= MAX_READING_STATE_STACK_SIZE) {
             AKLOGI("Reading state stack overflow. Max size: %zd", MAX_READING_STATE_STACK_SIZE);
-            ASSERT(false);
             mIsError = true;
             mReadingState.mPos = NOT_A_DICT_POS;
-        } else {
-            mReadingStateStack.push_back(mReadingState);
+            return false;
         }
+        mReadingStateStack.push_back(mReadingState);
+        return true;
     }
 
     AK_FORCE_INLINE void popReadingStateFromStack() {

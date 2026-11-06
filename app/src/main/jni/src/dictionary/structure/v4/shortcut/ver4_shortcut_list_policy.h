@@ -49,8 +49,9 @@ class Ver4ShortcutListPolicy : public DictionaryShortcutsStructurePolicy {
         }
     }
 
-    void skipAllShortcuts(int *const pos) const {
-        // Do nothing because we don't need to skip shortcut lists in ver4 dictionaries.
+    bool skipAllShortcuts(int *const pos) const {
+        // Shortcut lists are stored separately in v4.
+        return true;
     }
 
     bool addNewShortcut(const int terminalId, const int *const codePoints, const int codePointCount,

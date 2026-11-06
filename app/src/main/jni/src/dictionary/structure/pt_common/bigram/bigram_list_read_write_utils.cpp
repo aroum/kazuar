@@ -67,8 +67,9 @@ const BigramListReadWriteUtils::BigramFlags
         int *const bigramListPos) {
     BigramFlags flags;
     do {
+        const int before = *bigramListPos;
         if (!getBigramEntryPropertiesAndAdvancePosition(buffer, &flags, 0 /* outTargetPtNodePos */,
-                bigramListPos)) {
+                bigramListPos) || *bigramListPos <= before) {
             return false;
         }
     } while(hasNext(flags));

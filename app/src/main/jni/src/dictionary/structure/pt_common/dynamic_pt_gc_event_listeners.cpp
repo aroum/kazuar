@@ -40,10 +40,10 @@ bool DynamicPtGcEventListeners
             isUselessPtNode = true;
         }
     }
-    if (mChildrenValue > 0) {
+    if (ptNodeParams->hasChildren() && mChildrenValue > 0) {
         isUselessPtNode = false;
-    } else if (ptNodeParams->isTerminal()) {
-        // Remove children as all children are useless.
+    } else if (ptNodeParams->hasChildren()) {
+        // Clear every dead subtree link before relocation, including non-terminal nodes.
         if (!mPtNodeWriter->updateChildrenPosition(ptNodeParams,
                 NOT_A_DICT_POS /* newChildrenPosition */)) {
             return false;
@@ -81,8 +81,8 @@ bool DynamicPtGcEventListeners::TraversePolicyToPlaceAndWriteValidPtNodesToBuffe
         ::onDescend(const int ptNodeArrayPos) {
     mValidPtNodeCount = 0;
     int writingPos = mBufferToWrite->getTailPosition();
-    mDictPositionRelocationMap->mPtNodeArrayPositionRelocationMap.insert(
-            PtNodeWriter::PtNodeArrayPositionRelocationMap::value_type(ptNodeArrayPos, writingPos));
+    if (!mDictPositionRelocationMap->mPtNodeArrayPositionRelocationMap.emplace(
+            ptNodeArrayPos, writingPos).second) return false;
     // Writes dummy PtNode array size because arrays can have a forward link or needles PtNodes.
     // This field will be updated later in onReadingPtNodeArrayTail() with actual PtNode count.
     mPtNodeArraySizeFieldPos = writingPos;
@@ -112,15 +112,12 @@ bool DynamicPtGcEventListeners::TraversePolicyToPlaceAndWriteValidPtNodesToBuffe
         ::onVisitingPtNode(const PtNodeParams *const ptNodeParams) {
     if (ptNodeParams->isDeleted()) {
         // Current PtNode is not written in new buffer because it has been deleted.
-        mDictPositionRelocationMap->mPtNodePositionRelocationMap.insert(
-                PtNodeWriter::PtNodePositionRelocationMap::value_type(
-                        ptNodeParams->getHeadPos(), NOT_A_DICT_POS));
-        return true;
+        return mDictPositionRelocationMap->mPtNodePositionRelocationMap.emplace(
+                ptNodeParams->getHeadPos(), NOT_A_DICT_POS).second;
     }
     int writingPos = mBufferToWrite->getTailPosition();
-    mDictPositionRelocationMap->mPtNodePositionRelocationMap.insert(
-            PtNodeWriter::PtNodePositionRelocationMap::value_type(
-                    ptNodeParams->getHeadPos(), writingPos));
+    if (!mDictPositionRelocationMap->mPtNodePositionRelocationMap.emplace(
+            ptNodeParams->getHeadPos(), writingPos).second) return false;
     mValidPtNodeCount++;
     // Writes current PtNode.
     return mPtNodeWriter->writePtNodeAndAdvancePosition(ptNodeParams, &writingPos);

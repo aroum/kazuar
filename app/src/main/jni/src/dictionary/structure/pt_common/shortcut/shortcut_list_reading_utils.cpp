@@ -17,6 +17,7 @@
 #include "dictionary/structure/pt_common/shortcut/shortcut_list_reading_utils.h"
 
 #include "dictionary/utils/byte_array_utils.h"
+#include "utils/bounded_byte_array_reader.h"
 
 namespace latinime {
 
@@ -33,21 +34,37 @@ const int ShortcutListReadingUtils::WHITELIST_SHORTCUT_PROBABILITY = 15;
 /* static */ ShortcutListReadingUtils::ShortcutFlags
         ShortcutListReadingUtils::getFlagsAndForwardPointer(const ReadOnlyByteArrayView buffer,
                 int *const pos) {
-    return ByteArrayUtils::readUint8AndAdvancePosition(buffer.data(), pos);
+    uint32_t flags = 0;
+    BoundedByteArrayReader::readUint(buffer, 1, &flags, pos);
+    return flags;
 }
 
 /* static */ int ShortcutListReadingUtils::getShortcutListSizeAndForwardPointer(
         const ReadOnlyByteArrayView buffer, int *const pos) {
-    // readUint16andAdvancePosition() returns an offset *including* the uint16 field itself.
-    return ByteArrayUtils::readUint16AndAdvancePosition(buffer.data(), pos)
-            - SHORTCUT_LIST_SIZE_FIELD_SIZE;
+    int cursor = *pos;
+    uint32_t totalSize;
+    if (!BoundedByteArrayReader::readUint(buffer, SHORTCUT_LIST_SIZE_FIELD_SIZE, &totalSize, &cursor)
+            || totalSize < static_cast<uint32_t>(SHORTCUT_LIST_SIZE_FIELD_SIZE)
+            || !BoundedByteArrayReader::hasBytes(buffer, *pos, totalSize)) {
+        *pos = NOT_A_DICT_POS;
+        return -1;
+    }
+    *pos = cursor;
+    return totalSize - SHORTCUT_LIST_SIZE_FIELD_SIZE;
 }
 
 /* static */ int ShortcutListReadingUtils::readShortcutTarget(const ReadOnlyByteArrayView buffer,
         const int maxLength, int *const outWord, int *const pos) {
-    // TODO: Use codePointTable for shortcuts.
-    return ByteArrayUtils::readStringAndAdvancePosition(buffer.data(), maxLength,
-            nullptr /* codePointTable */, outWord, pos);
+    return BoundedByteArrayReader::readString(buffer, maxLength, nullptr, outWord, pos);
+}
+
+/* static */ bool ShortcutListReadingUtils::skipShortcuts(const ReadOnlyByteArrayView buffer,
+        int *const pos) {
+    int cursor = *pos;
+    const int size = getShortcutListSizeAndForwardPointer(buffer, &cursor);
+    if (size < 0) return false;
+    *pos = cursor + size;
+    return true;
 }
 
 } // namespace latinime
