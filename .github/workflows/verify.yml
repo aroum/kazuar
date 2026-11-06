@@ -56,6 +56,12 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: android
           RELEASE_KEY_ALIAS: verification
           RELEASE_KEY_PASSWORD: android
+      - name: Verify APK minimum Android version
+        run: |
+          for apk in app/build/outputs/apk/{debug,ci}/*.apk; do
+            "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
+            grep -qx "sdkVersion:'33'" "$RUNNER_TEMP/apk-badging.txt"
+          done
       - name: Run Android lint
         run: ./gradlew :app:lintDebug --console=plain
       - name: Upload APKs

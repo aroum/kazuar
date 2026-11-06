@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "io.github.aroum.kazuar.inputmethod.latin"
-        minSdkVersion 19
+        minSdkVersion 33
         targetSdkVersion 34
         externalNativeBuild {
             cmake { arguments '-DANDROID_STL=c++_static' }
