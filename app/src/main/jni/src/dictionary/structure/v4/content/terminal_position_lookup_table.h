@@ -43,7 +43,7 @@ class TerminalPositionLookupTable : public SingleDictContent {
     bool setTerminalPtNodePosition(const int terminalId, const int terminalPtNodePos);
 
     int getNextTerminalId() const {
-        return mSize;
+        return hasValidSize() ? mSize : Ver4DictConstants::NOT_A_TERMINAL_ID;
     }
 
     bool flushToFile(FILE *const file) const;
@@ -52,6 +52,13 @@ class TerminalPositionLookupTable : public SingleDictContent {
 
  private:
     DISALLOW_COPY_AND_ASSIGN(TerminalPositionLookupTable);
+
+    bool hasValidSize() const {
+        const int bytes = getBuffer()->getTailPosition();
+        const int width = Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE;
+        return bytes <= Ver4DictConstants::MAX_DICTIONARY_SIZE && bytes % width == 0
+                && mSize >= 0 && mSize <= bytes / width;
+    }
 
     int getEntryPos(const int terminalId) const {
         return terminalId >= 0 && terminalId <= Ver4DictConstants::MAX_DICTIONARY_SIZE

@@ -86,6 +86,13 @@ TEST(StorageSafetyTest, TerminalExpansionIsBoundedInBothFormats) {
     checkTerminalLimits<TerminalPositionLookupTable>();
     checkTerminalLimits<backward::v402::TerminalPositionLookupTable>();
 }
+TEST(StorageSafetyTest, PartialTerminalTableDoesNotReadOrExtendInvalidRecords) {
+    uint8_t broken[] = {0,0,1,0};
+    TerminalPositionLookupTable table(ReadWriteByteArrayView(broken, sizeof(broken)));
+    EXPECT_EQ(NOT_A_DICT_POS, table.getTerminalPtNodePosition(0));
+    EXPECT_EQ(Ver4DictConstants::NOT_A_TERMINAL_ID, table.getNextTerminalId());
+    EXPECT_FALSE(table.setTerminalPtNodePosition(1, 100));
+}
 TEST(StorageSafetyTest, NegativeBloomPositionsNeverContaminateRealBuckets) {
     BloomFilter filter;
     filter.setInFilter(NOT_A_DICT_POS); filter.setInFilter(-1);

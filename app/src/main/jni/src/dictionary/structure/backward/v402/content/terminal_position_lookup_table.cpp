@@ -31,7 +31,7 @@ namespace backward {
 namespace v402 {
 
 int TerminalPositionLookupTable::getTerminalPtNodePosition(const int terminalId) const {
-    if (terminalId < 0 || terminalId >= mSize) {
+    if (!hasValidSize() || terminalId < 0 || terminalId >= mSize) {
         return NOT_A_DICT_POS;
     }
     const int terminalPos = getBuffer()->readUint(
@@ -60,6 +60,7 @@ bool TerminalPositionLookupTable::setTerminalPtNodePosition(
 }
 
 bool TerminalPositionLookupTable::flushToFile(const char *const dictPath) const {
+    if (!hasValidSize()) return false;
     // If the used buffer size is smaller than the actual buffer size, regenerate the lookup
     // table and write the new table to the file.
     if (getEntryPos(mSize) < getBuffer()->getTailPosition()) {

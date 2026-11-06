@@ -21,7 +21,7 @@
 namespace latinime {
 
 int TerminalPositionLookupTable::getTerminalPtNodePosition(const int terminalId) const {
-    if (terminalId < 0 || terminalId >= mSize) {
+    if (!hasValidSize() || terminalId < 0 || terminalId >= mSize) {
         return NOT_A_DICT_POS;
     }
     const int terminalPos = getBuffer()->readUint(
@@ -34,7 +34,7 @@ bool TerminalPositionLookupTable::setTerminalPtNodePosition(
         const int terminalId, const int terminalPtNodePos) {
     const int width = Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE;
     const int maxEntries = Ver4DictConstants::MAX_DICTIONARY_SIZE / width;
-    if (terminalId < 0 || terminalId >= maxEntries || terminalId > mSize + 4096
+    if (!hasValidSize() || terminalId < 0 || terminalId >= maxEntries || terminalId > mSize + 4096
             || (terminalPtNodePos != NOT_A_DICT_POS
                     && (terminalPtNodePos <= 0 || terminalPtNodePos >= Ver4DictConstants::MAX_DICTIONARY_SIZE))
             || getBuffer()->getTailPosition() > Ver4DictConstants::MAX_DICTIONARY_SIZE
@@ -58,6 +58,7 @@ bool TerminalPositionLookupTable::setTerminalPtNodePosition(
 }
 
 bool TerminalPositionLookupTable::flushToFile(FILE *const file) const {
+    if (!hasValidSize()) return false;
     // If the used buffer size is smaller than the actual buffer size, regenerate the lookup
     // table and write the new table to the file.
     if (getEntryPos(mSize) < getBuffer()->getTailPosition()) {
