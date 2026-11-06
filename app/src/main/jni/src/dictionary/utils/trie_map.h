@@ -323,17 +323,17 @@ class TrieMap {
     // Returns whether an entry for the index is existing by testing if the index-th bit in the
     // bitmap is set or not.
     AK_FORCE_INLINE bool exists(const uint32_t bitmap, const int index) const {
-        return (bitmap & (1 << index)) != 0;
+        return (bitmap & (uint32_t{1} << index)) != 0;
     }
 
     // Set index-th bit in the bitmap.
     AK_FORCE_INLINE uint32_t setExist(const uint32_t bitmap, const int index) const {
-        return bitmap | (1 << index);
+        return bitmap | (uint32_t{1} << index);
     }
 
     // Count set bits before index in the bitmap.
     AK_FORCE_INLINE int popCount(const uint32_t bitmap, const int index) const {
-        return popCount(bitmap & ((1 << index) - 1));
+        return popCount(bitmap & ((uint32_t{1} << index) - 1));
     }
 
     // Count set bits in the bitmap.
