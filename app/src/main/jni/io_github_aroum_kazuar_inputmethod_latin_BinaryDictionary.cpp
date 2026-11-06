@@ -450,8 +450,13 @@ static int latinime_BinaryDictionary_updateEntriesForInputEvents(JNIEnv *env, jc
     if (startIndex >= inputEventCount) return 0;
     JniLocalFrame methodFrame(env);
     if (!methodFrame.valid()) return 0;
-    jobject inputEvent = env->GetObjectArrayElement(inputEvents, 0);
-    if (!inputEvent || env->ExceptionCheck()) return startIndex;
+    jobject inputEvent = nullptr;
+    for (int first = startIndex; first < inputEventCount; ++first) {
+        inputEvent = env->GetObjectArrayElement(inputEvents, first);
+        if (env->ExceptionCheck()) return first;
+        if (inputEvent) break;
+    }
+    if (!inputEvent) return inputEventCount;
     jclass wordInputEventClass = env->GetObjectClass(inputEvent);
     if (!wordInputEventClass || env->ExceptionCheck()) return startIndex;
     env->DeleteLocalRef(inputEvent);
@@ -476,7 +481,8 @@ static int latinime_BinaryDictionary_updateEntriesForInputEvents(JNIEnv *env, jc
         if (!env->IsInstanceOf(inputEvent, wordInputEventClass)) continue;
         jintArray targetWord = static_cast<jintArray>(
                 env->GetObjectField(inputEvent, targetWordFieldId));
-        if (!targetWord || env->ExceptionCheck()) return i;
+        if (env->ExceptionCheck()) return i;
+        if (!targetWord) continue;
         jsize wordLength = env->GetArrayLength(targetWord);
         if (wordLength <= 0 || wordLength > MAX_WORD_LENGTH) continue;
         int wordCodePoints[MAX_WORD_LENGTH];
@@ -490,6 +496,9 @@ static int latinime_BinaryDictionary_updateEntriesForInputEvents(JNIEnv *env, jc
                 env->GetObjectField(inputEvent, isPrevWordBoSArrayFieldId));
         jboolean isValid = env->GetBooleanField(inputEvent, isValidFieldId);
         jint timestamp = env->GetIntField(inputEvent, timestampFieldId);
+        if (prevWordCount < 0 || prevWordCount > MAX_PREV_WORD_COUNT_FOR_N_GRAM) continue;
+        if (prevWordCount > 0 && (!JniDataUtils::hasArrayRange(env, prevWordArray, 0, prevWordCount)
+                || !JniDataUtils::hasArrayRange(env, isPrevWordBeginningOfSentenceArray, 0, prevWordCount))) continue;
         const NgramContext ngramContext = JniDataUtils::constructNgramContext(env,
                 prevWordArray, isPrevWordBeginningOfSentenceArray, prevWordCount);
         if (env->ExceptionCheck()) return i;

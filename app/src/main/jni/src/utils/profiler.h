@@ -32,13 +32,17 @@ class Profiler final {
             : mClockId(clockId), mStartTime(getTimeInMicroSec()), mStartTimes(), mTimes(),
               mCounters() {}
 
+    static float percentage(float elapsed, float total) {
+        return total > 0.0f ? elapsed / total * 100.0f : 0.0f;
+    }
+
     ~Profiler() {
         const float totalTime =
                 static_cast<float>(getTimeInMicroSec() - mStartTime) / 1000.f;
         AKLOGI("Total time is %6.3f ms.", totalTime);
         for (const auto &time : mTimes) {
             AKLOGI("(%d): Used %4.2f%%, %8.4f ms. Called %d times.", time.first,
-                    totalTime > 0.0f ? time.second / totalTime * 100.0f : 0.0f, time.second, mCounters[time.first]);
+                    percentage(time.second, totalTime), time.second, mCounters[time.first]);
         }
     }
 

@@ -190,7 +190,7 @@ TEST(NativeBoundaryTest, NativeEntriesRejectNullEventsAndOversizedGestureInput) 
     auto policy=DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(403,{'e','n'},&attrs);
     ASSERT_TRUE(policy);Dictionary dictionary(&jni.env,std::move(policy));DicTraverseSession session(nullptr,nullptr,false);
     Value events;events.kind=Value::Object;events.objects={nullptr};
-    EXPECT_EQ(0,latinime_BinaryDictionary_updateEntriesForInputEvents(&jni.env,nullptr,reinterpret_cast<jlong>(&dictionary),events.as<jobjectArray>(),0));
+    EXPECT_EQ(1,latinime_BinaryDictionary_updateEntriesForInputEvents(&jni.env,nullptr,reinterpret_cast<jlong>(&dictionary),events.as<jobjectArray>(),0));
     Value count({9}), codes({'a'}), options({1,0,0,0,1000});
     latinime_BinaryDictionary_getSuggestions(&jni.env,nullptr,reinterpret_cast<jlong>(&dictionary),0,reinterpret_cast<jlong>(&session),nullptr,nullptr,nullptr,nullptr,codes.as<jintArray>(),INT_MAX,options.as<jintArray>(),nullptr,nullptr,0,count.as<jintArray>(),nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
     EXPECT_EQ(0,count.ints[0]);
@@ -223,6 +223,92 @@ TEST(NativeBoundaryTest, QuadgramCountersAreReadWrittenAndUsedForDecayLimits) {
     HeaderPolicy reopened(buffer.getReadOnlyBuffer(true),FormatUtils::VERSION_403);
     EXPECT_EQ(7,reopened.getNgramCounts().getNgramCount(NgramType::Quadgram));
     EXPECT_EQ(FutureClock::NOW,reopened.getDate());
+}
+
+TEST(NativeBoundaryTest, InputModeUsesGestureOptionInsteadOfPointerLimit) {
+    JniHarness jni;DictionaryHeaderStructurePolicy::AttributeMap attrs;
+    auto policy=DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(403,{'e','n'},&attrs);
+    Dictionary dictionary(&jni.env,std::move(policy));DicTraverseSession session(nullptr,nullptr,false);
+    int options[]={1,0,0,0,1000};SuggestOptions gesture(options,5);session.init(&dictionary,nullptr,&gesture);
+    ProximityInfo info(nullptr,100,100,1,1,10,10,nullptr,0,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
+    int code='a',x=5,y=5,time=0,pointer=0;
+    session.setupForGetSuggestions(&info,&code,1,&x,&y,&time,&pointer,1,1);
+    ASSERT_EQ(1,session.getProximityInfoState(0)->size());
+    EXPECT_FLOAT_EQ(1,session.getProximityInfoState(0)->getSpeedRate(0));
+}
+TEST(NativeBoundaryTest, SameAsTypedComparesTheEntireMultiwordSuggestion) {
+    JniHarness jni;DictionaryHeaderStructurePolicy::AttributeMap attrs;
+    auto policy=DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(403,{'e','n'},&attrs);
+    Dictionary dictionary(&jni.env,std::move(policy));DicTraverseSession session(nullptr,nullptr,false);
+    int opts[]={0,0,0,0,1000};SuggestOptions options(opts,5);session.init(&dictionary,nullptr,&options);
+    ProximityInfo info(nullptr,100,100,1,1,10,10,nullptr,0,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
+    int code[]={'a',' ','b','c'},xy[]={5,5,5,5},time[]={0,1,2,3},pointer[]={0,0,0,0};
+    session.setupForGetSuggestions(&info,code,4,xy,xy,time,pointer,1,1);
+    DicNode root,first,next,word,passing;root.initAsRoot(0,WordIdArrayView());
+    first.initAsChild(&root,NOT_A_DICT_POS,42,CodePointArrayView(code,1));
+    next.initAsRootWithPreviousWord(&first,0);
+    word.initAsChild(&next,NOT_A_DICT_POS,43,CodePointArrayView(code+2,2));
+    passing.initAsPassingChild(&word);
+    EXPECT_TRUE(TypingScoring::getInstance()->sameAsTyped(&session,&passing));
+}
+TEST(NativeBoundaryTest, OversizedCandidateDoesNotAbandonRemainingQueue) {
+    JniHarness jni;DictionaryHeaderStructurePolicy::AttributeMap attrs;
+    auto policy=DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(403,{'e','n'},&attrs);
+    Dictionary dictionary(&jni.env,std::move(policy));DicTraverseSession session(nullptr,nullptr,false);
+    int opts[]={0,0,0,0,1000};SuggestOptions options(opts,5);session.init(&dictionary,nullptr,&options);
+    DicNode root,longWord,passing;root.initAsRoot(NOT_A_DICT_POS,WordIdArrayView());
+    int letters[46];std::fill(letters,letters+46,'a');
+    longWord.initAsChild(&root,NOT_A_DICT_POS,NOT_A_WORD_ID,CodePointArrayView(letters,46));
+    while(longWord.getNodeCodePointCount()<46) { passing.initAsPassingChild(&longWord);longWord.initByCopy(&passing); }
+    session.getDicTraverseCache()->copyPushActive(&longWord);session.getDicTraverseCache()->copyPushActive(&root);
+    Suggest suggest(TypingSuggestPolicyFactory::getTypingSuggestPolicy());
+    NativeBoundaryTestPeer::expand(suggest,&session);
+    EXPECT_EQ(0,session.getDicTraverseCache()->activeSize());
+}
+TEST(NativeBoundaryTest, TimestampRoundTripThroughGcAndDiskRetainsPost2038History) {
+    FutureClock clock;
+    for(int version : {402,403}) {
+        DictionaryHeaderStructurePolicy::AttributeMap attrs;
+        HeaderReadWriteUtils::setBoolAttribute(&attrs,"HAS_HISTORICAL_INFO",true);
+        auto policy=DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(version,{'e','n'},&attrs);
+        ASSERT_TRUE(policy);HistoricalInfo history(FutureClock::NOW-10,2,3);
+        UnigramProperty property(false,false,false,200,history,{});int word='a';
+        ASSERT_TRUE(policy->addUnigramEntry(CodePointArrayView(&word,1),&property));
+        char path[]="/tmp/kazuar-wide-time-XXXXXX";ASSERT_NE(nullptr,mkdtemp(path));
+        struct Cleanup { const char *path; ~Cleanup(){FileUtils::removeDirAndFiles(path);} } cleanup{path};
+        ASSERT_TRUE(policy->flushWithGC(path));
+        auto reopened=DictionaryStructureWithBufferPolicyFactory::newPolicyForExistingDictFile(path,0,0,true);
+        ASSERT_TRUE(reopened);
+        const auto actual=reopened->getWordProperty(CodePointArrayView(&word,1));
+        EXPECT_EQ(FutureClock::NOW-10,actual.getUnigramProperty().getHistoricalInfo().getTimestamp());
+        EXPECT_EQ(FutureClock::NOW,HeaderReadWriteUtils::readLongAttributeValue(reopened->getHeaderStructurePolicy()->getAttributeMap(),"date",0));
+    }
+}
+TEST(NativeBoundaryTest, HeaderIntegersRejectOverflowAndPreserveNegativeLimits) {
+    DictionaryHeaderStructurePolicy::AttributeMap attrs;
+    HeaderReadWriteUtils::setIntAttribute(&attrs,"minimum",INT_MIN);
+    EXPECT_EQ(INT_MIN,HeaderReadWriteUtils::readIntAttributeValue(&attrs,"minimum",7));
+    HeaderReadWriteUtils::setLongAttribute(&attrs,"large",INT64_MAX);
+    EXPECT_EQ(INT64_MAX,HeaderReadWriteUtils::readLongAttributeValue(&attrs,"large",7));
+    EXPECT_EQ(7,HeaderReadWriteUtils::readIntAttributeValue(&attrs,"large",7));
+}
+TEST(NativeBoundaryTest, LoggingUsesUtf16ForUnicodeAndEmbeddedNulls) {
+    JniHarness jni;std::u16string captured;
+    jni.table.FindClass=[](JNIEnv *,const char *)->jclass {++JniHarness::active->refs;return reinterpret_cast<jclass>(1);};
+    jni.table.GetStaticMethodID=[](JNIEnv *,jclass,const char *,const char *)->jmethodID {return reinterpret_cast<jmethodID>(1);};
+    jni.table.NewStringUTF=[](JNIEnv *,const char *text)->jstring {
+        EXPECT_STREQ("LatinIME:LogUtils",text);++JniHarness::active->refs;return reinterpret_cast<jstring>(2);
+    };
+    // NewString is intercepted through a thread-local test destination, never NewStringUTF for the message.
+    static std::u16string *destination;destination=&captured;
+    jni.table.NewString=[](JNIEnv *,const jchar *text,jsize count)->jstring {
+        destination->assign(reinterpret_cast<const char16_t *>(text),count);
+        ++JniHarness::active->refs;return reinterpret_cast<jstring>(3);
+    };
+    jni.table.CallStaticIntMethodV=[](JNIEnv *,jclass,jmethodID,va_list)->jint {return 0;};
+    LogUtils::logToJava(&jni.env,"%s%c%s","\xF0\x9F\x98\x80",0,"end");
+    EXPECT_EQ(std::u16string(u"\U0001F600\0end",6),captured);EXPECT_EQ(0,jni.refs);
+    captured.clear();std::string huge(70000,'x');LogUtils::logToJava(&jni.env,"%s",huge.c_str());EXPECT_TRUE(captured.empty());
 }
 } // namespace
 } // namespace latinime

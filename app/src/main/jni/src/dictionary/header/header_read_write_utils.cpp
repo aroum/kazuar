@@ -182,7 +182,7 @@ typedef DictionaryHeaderStructurePolicy::AttributeMap AttributeMap;
 /* static */ void HeaderReadWriteUtils::setIntAttributeInner(AttributeMap *const headerAttributes,
         const AttributeMap::key_type *const key, const int value) {
     AttributeMap::mapped_type valueVector;
-    char charBuf[LARGEST_INT_DIGIT_COUNT];
+    char charBuf[LARGEST_INT_DIGIT_COUNT + 1];
     snprintf(charBuf, sizeof(charBuf), "%d", value);
     insertCharactersIntoVector(charBuf, &valueVector);
     (*headerAttributes)[*key] = valueVector;
