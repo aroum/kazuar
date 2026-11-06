@@ -6,7 +6,7 @@ namespace latinime {
 class JniLocalFrame {
  public:
     explicit JniLocalFrame(JNIEnv *env, int capacity = 32)
-            : mEnv(env), mValid(env && env->PushLocalFrame(capacity) == JNI_OK) {}
+            : mEnv(env), mValid(env && !env->ExceptionCheck() && env->PushLocalFrame(capacity) == JNI_OK) {}
     ~JniLocalFrame() { if (mValid) mEnv->PopLocalFrame(nullptr); }
     bool valid() const { return mValid; }
  private:

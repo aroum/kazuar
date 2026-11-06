@@ -23,7 +23,8 @@ internal object HistoryBackup {
     data class Snapshot(val locale: String, val words: List<Word>, val ngrams: List<Ngram>)
 
     private fun probability(info: ProbabilityInfo) = JSONObject()
-            .put("probability", info.mProbability).put("timestamp", info.mTimestamp)
+            .put("probability", info.mProbability)
+            .put("timestamp", if (info.mTimestamp == -1) -1L else Integer.toUnsignedLong(info.mTimestamp))
             .put("level", info.mLevel).put("count", info.mCount)
 
     fun export(context: Context): JSONObject {
@@ -90,11 +91,12 @@ internal object HistoryBackup {
 
     private fun readProbability(item: JSONObject): Probability {
         val probability = item.getInt("probability")
-        val timestamp = item.getInt("timestamp")
+        val timestamp = item.getLong("timestamp")
         val level = item.getInt("level")
         val count = item.getInt("count")
-        require(probability in -1..255 && timestamp >= -1 && level in 0..3 && count in 0..65535)
-        return Probability(probability, timestamp, level, count)
+        require(probability in -1..255 && timestamp in -1L..0xfffffffeL && level in 0..3 && count in 0..65535)
+        // JNI retains the existing 32-bit wire representation; native code decodes unsigned seconds.
+        return Probability(probability, timestamp.toInt(), level, count)
     }
 
     fun validate(json: JSONObject): List<Snapshot> {

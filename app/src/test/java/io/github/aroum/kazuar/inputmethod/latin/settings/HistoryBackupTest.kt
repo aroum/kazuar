@@ -54,4 +54,20 @@ class HistoryBackupTest {
         HistoryBackup.validate(json)
     }
 
+    @Test fun timestampsAfter2038PreserveTheirUnsignedWireValue() {
+        val json = backup()
+        json.getJSONArray("dictionaries").getJSONObject(0).getJSONArray("words")
+                .getJSONObject(0).put("timestamp", 2200000000L)
+        val value = HistoryBackup.validate(json).single().words.single().probability.timestamp
+        assertEquals(2200000000L, Integer.toUnsignedLong(value))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun timestampBeyondDictionaryWireFormatIsRejected() {
+        val json = backup()
+        json.getJSONArray("dictionaries").getJSONObject(0).getJSONArray("words")
+                .getJSONObject(0).put("timestamp", 4294967296L)
+        HistoryBackup.validate(json)
+    }
+
 }

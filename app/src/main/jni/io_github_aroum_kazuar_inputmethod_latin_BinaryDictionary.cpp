@@ -461,13 +461,16 @@ static int latinime_BinaryDictionary_updateEntriesForInputEvents(JNIEnv *env, jc
     if (!wordInputEventClass || env->ExceptionCheck()) return startIndex;
     env->DeleteLocalRef(inputEvent);
 
-    jfieldID targetWordFieldId = env->GetFieldID(wordInputEventClass, "mTargetWord", "[I");
-    jfieldID prevWordCountFieldId = env->GetFieldID(wordInputEventClass, "mPrevWordsCount", "I");
-    jfieldID prevWordArrayFieldId = env->GetFieldID(wordInputEventClass, "mPrevWordArray", "[[I");
+    const auto field = [env, wordInputEventClass](const char *name, const char *signature) -> jfieldID {
+        return env->ExceptionCheck() ? nullptr : env->GetFieldID(wordInputEventClass, name, signature);
+    };
+    jfieldID targetWordFieldId = field( "mTargetWord", "[I");
+    jfieldID prevWordCountFieldId = field( "mPrevWordsCount", "I");
+    jfieldID prevWordArrayFieldId = field( "mPrevWordArray", "[[I");
     jfieldID isPrevWordBoSArrayFieldId =
-            env->GetFieldID(wordInputEventClass, "mIsPrevWordBeginningOfSentenceArray", "[Z");
-    jfieldID isValidFieldId = env->GetFieldID(wordInputEventClass, "mIsValid", "Z");
-    jfieldID timestampFieldId = env->GetFieldID(wordInputEventClass, "mTimestamp", "I");
+            field( "mIsPrevWordBeginningOfSentenceArray", "[Z");
+    jfieldID isValidFieldId = field( "mIsValid", "Z");
+    jfieldID timestampFieldId = field( "mTimestamp", "I");
     if (!targetWordFieldId || !prevWordCountFieldId || !prevWordArrayFieldId
             || !isPrevWordBoSArrayFieldId || !isValidFieldId || !timestampFieldId
             || env->ExceptionCheck()) return startIndex;

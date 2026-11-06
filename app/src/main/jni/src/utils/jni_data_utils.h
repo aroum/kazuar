@@ -34,7 +34,7 @@ namespace latinime {
 class JniDataUtils {
  public:
     static bool hasArrayRange(JNIEnv *env, jarray array, int start, int count) {
-        if (!env || !array || start < 0 || count < 0) return false;
+        if (!env || !array || start < 0 || count < 0 || env->ExceptionCheck()) return false;
         const int length = env->GetArrayLength(array);
         return start <= length && count <= length - start;
     }
@@ -52,7 +52,7 @@ class JniDataUtils {
             jobjectArray attributeKeyStringArray, jobjectArray attributeValueStringArray, bool *success = nullptr) {
         if (success) *success = false;
         DictionaryHeaderStructurePolicy::AttributeMap attributeMap;
-        if (!env || !attributeKeyStringArray || !attributeValueStringArray) return attributeMap;
+        if (!env || !attributeKeyStringArray || !attributeValueStringArray || env->ExceptionCheck()) return attributeMap;
         const int count = env->GetArrayLength(attributeKeyStringArray);
         if (count > 256 || env->GetArrayLength(attributeValueStringArray) != count) return attributeMap;
         for (int i = 0; i < count; ++i) {

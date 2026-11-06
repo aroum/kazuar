@@ -51,13 +51,16 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
     env->SetIntArrayRegion(outProbabilityInfo, 0 /* start */, NELEMS(probabilityInfo),
             probabilityInfo);
 
+    if (env->ExceptionCheck()) return;
     jclass integerClass = env->FindClass("java/lang/Integer");
     if (!integerClass || env->ExceptionCheck()) return;
     jmethodID intToIntegerConstructorId = env->GetMethodID(integerClass, "<init>", "(I)V");
+    if (!intToIntegerConstructorId || env->ExceptionCheck()) return;
     jclass arrayListClass = env->FindClass("java/util/ArrayList");
     if (!intToIntegerConstructorId || !arrayListClass || env->ExceptionCheck()) return;
     jmethodID addMethodId = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
 
+    if (!addMethodId || env->ExceptionCheck()) return;
     // Output ngrams.
     jclass intArrayClass = env->FindClass("[I");
     if (!addMethodId || !intArrayClass || env->ExceptionCheck()) return;
@@ -67,11 +70,13 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         const NgramContext *const ngramContext = ngramProperty.getNgramContext();
         jobjectArray prevWordWordCodePointsArray = env->NewObjectArray(
                 ngramContext->getPrevWordCount(), intArrayClass, nullptr);
+        if (!prevWordWordCodePointsArray || env->ExceptionCheck()) return;
         jbooleanArray prevWordIsBeginningOfSentenceArray =
                 env->NewBooleanArray(ngramContext->getPrevWordCount());
         for (size_t i = 0; i < ngramContext->getPrevWordCount(); ++i) {
             const CodePointArrayView codePoints = ngramContext->getNthPrevWordCodePoints(i + 1);
             jintArray prevWordCodePoints = env->NewIntArray(codePoints.size());
+            if (!prevWordCodePoints || env->ExceptionCheck()) return;
             JniDataUtils::outputCodePoints(env, prevWordCodePoints, 0 /* start */,
                     codePoints.size(), codePoints.data(), codePoints.size(),
                     false /* needsNullTermination */);
@@ -81,17 +86,21 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
                     ngramContext->isNthPrevWordBeginningOfSentence(i + 1));
         }
         env->CallBooleanMethod(outNgramPrevWordsArray, addMethodId, prevWordWordCodePointsArray);
+        if (env->ExceptionCheck()) return;
         env->CallBooleanMethod(outNgramPrevWordIsBeginningOfSentenceArray, addMethodId,
                 prevWordIsBeginningOfSentenceArray);
+        if (env->ExceptionCheck()) return;
         env->DeleteLocalRef(prevWordWordCodePointsArray);
         env->DeleteLocalRef(prevWordIsBeginningOfSentenceArray);
 
         const std::vector<int> *const targetWordCodePoints = ngramProperty.getTargetCodePoints();
         jintArray targetWordCodePointArray = env->NewIntArray(targetWordCodePoints->size());
+        if (!targetWordCodePointArray || env->ExceptionCheck()) return;
         JniDataUtils::outputCodePoints(env, targetWordCodePointArray, 0 /* start */,
                 targetWordCodePoints->size(), targetWordCodePoints->data(),
                 targetWordCodePoints->size(), false /* needsNullTermination */);
         env->CallBooleanMethod(outNgramTargets, addMethodId, targetWordCodePointArray);
+        if (env->ExceptionCheck()) return;
         env->DeleteLocalRef(targetWordCodePointArray);
 
         if (env->ExceptionCheck()) return;
@@ -100,9 +109,11 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
                 ngramHistoricalInfo.getLegacyTimestamp(), ngramHistoricalInfo.getLevel(),
                 ngramHistoricalInfo.getCount()};
         jintArray bigramProbabilityInfoArray = env->NewIntArray(NELEMS(bigramProbabilityInfo));
+        if (!bigramProbabilityInfoArray || env->ExceptionCheck()) return;
         env->SetIntArrayRegion(bigramProbabilityInfoArray, 0 /* start */,
                 NELEMS(bigramProbabilityInfo), bigramProbabilityInfo);
         env->CallBooleanMethod(outNgramProbabilities, addMethodId, bigramProbabilityInfoArray);
+        if (env->ExceptionCheck()) return;
         env->DeleteLocalRef(bigramProbabilityInfoArray);
     }
 
@@ -112,14 +123,18 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         if (!shortcutFrame.valid()) return;
         const std::vector<int> *const targetCodePoints = shortcut.getTargetCodePoints();
         jintArray shortcutTargetCodePointArray = env->NewIntArray(targetCodePoints->size());
+        if (!shortcutTargetCodePointArray || env->ExceptionCheck()) return;
         JniDataUtils::outputCodePoints(env, shortcutTargetCodePointArray, 0 /* start */,
                 targetCodePoints->size(), targetCodePoints->data(), targetCodePoints->size(),
                 false /* needsNullTermination */);
         env->CallBooleanMethod(outShortcutTargets, addMethodId, shortcutTargetCodePointArray);
+        if (env->ExceptionCheck()) return;
         env->DeleteLocalRef(shortcutTargetCodePointArray);
         jobject integerProbability = env->NewObject(integerClass, intToIntegerConstructorId,
                 shortcut.getProbability());
+        if (!integerProbability || env->ExceptionCheck()) return;
         env->CallBooleanMethod(outShortcutProbabilities, addMethodId, integerProbability);
+        if (env->ExceptionCheck()) return;
         env->DeleteLocalRef(integerProbability);
     }
     if (env->ExceptionCheck()) return;

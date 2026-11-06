@@ -4,6 +4,8 @@
 #include <cmath>
 #include <thread>
 #include "utils/char_utils.h"
+#include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include "suggest/core/layout/proximity_info.h"
 #include "utils/unicode_utils.h"
 #include "utils/autocorrection_threshold_utils.h"
 #include "utils/jni_data_utils.h"
