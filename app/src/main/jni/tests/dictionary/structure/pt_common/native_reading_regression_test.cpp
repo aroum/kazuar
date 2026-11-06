@@ -197,6 +197,23 @@ TEST(PatriciaBoundsTest, MultiLevelWordsRespectRemainingOutputCapacity) {
     EXPECT_EQ(0, policy.getCodePointsAndReturnCodePointCount(7, 4, nullptr));
 }
 
+TEST(PatriciaBoundsTest, BreadthFirstSiblingArraysRestoreTheCorrectPrefix) {
+    // Root has "a" and terminal "b"; their child arrays contain "c" and "d".
+    V2Fixture fixture({2, 0x40, 'a', 5, 0x50, 'b', 60, 5,
+            1, 0x10, 'c', 70, 1, 0x10, 'd', 80});
+    ASSERT_TRUE(fixture.buffer);
+    PatriciaTriePolicy policy(std::move(fixture.buffer));
+    int out[3] = {123, 456, 999};
+    ASSERT_EQ(1, policy.getCodePointsAndReturnCodePointCount(4, 2, out));
+    EXPECT_EQ('b', out[0]);
+    ASSERT_EQ(2, policy.getCodePointsAndReturnCodePointCount(9, 2, out));
+    EXPECT_EQ('a', out[0]); EXPECT_EQ('c', out[1]);
+    ASSERT_EQ(2, policy.getCodePointsAndReturnCodePointCount(13, 2, out));
+    EXPECT_EQ('b', out[0]); EXPECT_EQ('d', out[1]); EXPECT_EQ(999, out[2]);
+    EXPECT_EQ(0, policy.getCodePointsAndReturnCodePointCount(13, 1, out));
+    EXPECT_FALSE(policy.isCorrupted());
+}
+
 TEST(PatriciaBoundsTest, DynamicReaderRejectsTruncatedNodeFields) {
     // non-moved, terminal, two chars, parent(3), terminal id(4), children(3).
     std::vector<uint8_t> bytes = {0xF0, 0, 0, 0, 'a', 'b', 0x1F, 0, 0, 0, 1, 0, 0, 0};
