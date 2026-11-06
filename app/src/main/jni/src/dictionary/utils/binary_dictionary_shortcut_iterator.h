@@ -28,13 +28,17 @@ class BinaryDictionaryShortcutIterator {
             const DictionaryShortcutsStructurePolicy *const shortcutStructurePolicy,
             const int shortcutPos)
             : mShortcutStructurePolicy(shortcutStructurePolicy),
-              mPos(shortcutStructurePolicy->getStartPos(shortcutPos)),
-              mHasNextShortcutTarget(shortcutPos != NOT_A_DICT_POS) {}
+              mPos(shortcutStructurePolicy && shortcutPos >= 0
+                      ? shortcutStructurePolicy->getStartPos(shortcutPos) : NOT_A_DICT_POS),
+              mHasNextShortcutTarget(shortcutStructurePolicy && mPos >= 0) {}
 
-    BinaryDictionaryShortcutIterator(const BinaryDictionaryShortcutIterator &&shortcutIterator) noexcept
+    BinaryDictionaryShortcutIterator(BinaryDictionaryShortcutIterator &&shortcutIterator) noexcept
             : mShortcutStructurePolicy(shortcutIterator.mShortcutStructurePolicy),
               mPos(shortcutIterator.mPos),
-              mHasNextShortcutTarget(shortcutIterator.mHasNextShortcutTarget) {}
+              mHasNextShortcutTarget(shortcutIterator.mHasNextShortcutTarget) {
+        shortcutIterator.mHasNextShortcutTarget = false;
+        shortcutIterator.mPos = NOT_A_DICT_POS;
+    }
 
     AK_FORCE_INLINE bool hasNextShortcutTarget() const {
         return mHasNextShortcutTarget;
@@ -45,6 +49,11 @@ class BinaryDictionaryShortcutIterator {
     AK_FORCE_INLINE void nextShortcutTarget(
             const int maxDepth, int *const outTarget, int *const outTargetLength,
             bool *const outIsWhitelist) {
+        if (!mShortcutStructurePolicy || !mHasNextShortcutTarget) {
+            if (outTargetLength) *outTargetLength = 0;
+            if (outIsWhitelist) *outIsWhitelist = false;
+            return;
+        }
         mShortcutStructurePolicy->getNextShortcut(maxDepth, outTarget, outTargetLength,
                 outIsWhitelist, &mHasNextShortcutTarget, &mPos);
     }

@@ -131,7 +131,7 @@ TEST(PatriciaBoundsTest, TruncatedArrayAndCodePointFieldsAreRejected) {
         pos = 0;
         int out[2] = {123, 456};
         EXPECT_EQ(-1, Reading::getCharsAndAdvancePosition(
-                ReadOnlyByteArrayView(bytes.data(), bytes.size()), 0, 1, nullptr, out, &pos));
+                ReadOnlyByteArrayView(bytes.data(), bytes.size()), 0, 1, CodePointArrayView(), out, &pos));
         EXPECT_EQ(123, out[0]);
         EXPECT_EQ(456, out[1]);
     }
@@ -146,7 +146,7 @@ TEST(PatriciaBoundsTest, EveryTruncatedFullNodeIsInvalidIncludingShortcutsAndBig
         const ReadOnlyByteArrayView view(record.data(), size);
         ShortcutListPolicy shortcuts(view);
         BigramListPolicy bigrams(view);
-        Ver2PatriciaTrieNodeReader reader(view, &bigrams, &shortcuts, nullptr);
+        Ver2PatriciaTrieNodeReader reader(view, &bigrams, &shortcuts, CodePointArrayView());
         const auto node = reader.fetchPtNodeParamsInBufferFromPtNodePos(0);
         if (size == record.size()) {
             ASSERT_TRUE(node.isValid());
@@ -160,7 +160,7 @@ TEST(PatriciaBoundsTest, ZeroLengthAndOverlongCharacterSequencesAreInvalid) {
     for (const std::vector<uint8_t> bytes : {std::vector<uint8_t>{0, 0x1F}, {0x20, 0x1F},
             std::vector<uint8_t>(MAX_WORD_LENGTH + 3, 'a')}) {
         const ReadOnlyByteArrayView view(bytes.data(), bytes.size());
-        Ver2PatriciaTrieNodeReader reader(view, nullptr, nullptr, nullptr);
+        Ver2PatriciaTrieNodeReader reader(view, nullptr, nullptr, CodePointArrayView());
         EXPECT_FALSE(reader.fetchPtNodeParamsInBufferFromPtNodePos(0).isValid());
     }
 }

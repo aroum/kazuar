@@ -38,7 +38,7 @@ void ShortcutDictContent::getShortcutEntryAndAdvancePosition(const int maxCodePo
             &flags, &cursor)) return;
     int scratch[MAX_WORD_LENGTH];
     const int count = BoundedByteArrayReader::readString(view,
-            outCodePoint ? maxCodePointCount : MAX_WORD_LENGTH, nullptr,
+            outCodePoint ? maxCodePointCount : MAX_WORD_LENGTH, CodePointArrayView(),
             outCodePoint ? outCodePoint : scratch, &cursor);
     if (count <= 0 || cursor + base <= *shortcutEntryPos) return;
     *shortcutEntryPos = cursor + base;

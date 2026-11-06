@@ -28,12 +28,12 @@ TEST(ByteArrayUtilsTest, TestReadCodePointTable) {
     const uint8_t buffer[] = { 0x20u, 0x21u, 0x00u, 0x01u, 0x00u };
     int pos = 0;
     // Expect the first entry of codePointTable
-    EXPECT_EQ(0x6f, ByteArrayUtils::readCodePointAndAdvancePosition(buffer, codePointTable, &pos));
+    EXPECT_EQ(0x6f, ByteArrayUtils::readCodePointAndAdvancePosition(ReadOnlyByteArrayView(buffer, sizeof(buffer)), CodePointArrayView(codePointTable, NELEMS(codePointTable)), &pos));
     // Expect the second entry of codePointTable
-    EXPECT_EQ(0x6b, ByteArrayUtils::readCodePointAndAdvancePosition(buffer, codePointTable, &pos));
+    EXPECT_EQ(0x6b, ByteArrayUtils::readCodePointAndAdvancePosition(ReadOnlyByteArrayView(buffer, sizeof(buffer)), CodePointArrayView(codePointTable, NELEMS(codePointTable)), &pos));
     // Expect the original code point from buffer[2] to buffer[4], 0x100
     // It isn't picked from the codePointTable, since it exceeds the range of the codePointTable.
-    EXPECT_EQ(0x100, ByteArrayUtils::readCodePointAndAdvancePosition(buffer, codePointTable, &pos));
+    EXPECT_EQ(0x100, ByteArrayUtils::readCodePointAndAdvancePosition(ReadOnlyByteArrayView(buffer, sizeof(buffer)), CodePointArrayView(codePointTable, NELEMS(codePointTable)), &pos));
 }
 
 TEST(ByteArrayUtilsTest, TestReadInt) {
@@ -73,19 +73,19 @@ TEST(ByteArrayUtilsTest, TestWriteAndReadInt) {
 TEST(ByteArrayUtilsTest, TestReadCodePoint) {
     const uint8_t buffer[] = { 0x10, 0xFF, 0x00u, 0x20u, 0x41u, 0x1Fu, 0x60 };
 
-    EXPECT_EQ(0x10FF00, ByteArrayUtils::readCodePoint(buffer, 0));
-    EXPECT_EQ(0x20, ByteArrayUtils::readCodePoint(buffer, 3));
-    EXPECT_EQ(0x41, ByteArrayUtils::readCodePoint(buffer, 4));
-    EXPECT_EQ(NOT_A_CODE_POINT, ByteArrayUtils::readCodePoint(buffer, 5));
+    EXPECT_EQ(0x10FF00, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 0));
+    EXPECT_EQ(0x20, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 3));
+    EXPECT_EQ(0x41, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 4));
+    EXPECT_EQ(NOT_A_CODE_POINT, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 5));
 
     int pos = 0;
     int codePointArray[3];
-    EXPECT_EQ(3, ByteArrayUtils::readStringAndAdvancePosition(buffer, MAX_WORD_LENGTH, nullptr,
+    EXPECT_EQ(3, ByteArrayUtils::readStringAndAdvancePosition(ReadOnlyByteArrayView(buffer, sizeof(buffer)), MAX_WORD_LENGTH, CodePointArrayView(),
             codePointArray, &pos));
     EXPECT_EQ(0x10FF00, codePointArray[0]);
     EXPECT_EQ(0x20, codePointArray[1]);
     EXPECT_EQ(0x41, codePointArray[2]);
-    EXPECT_EQ(0x60, ByteArrayUtils::readCodePoint(buffer, pos));
+    EXPECT_EQ(0x60, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), pos));
 }
 
 TEST(ByteArrayUtilsTest, TestWriteAndReadCodePoint) {
@@ -95,10 +95,10 @@ TEST(ByteArrayUtilsTest, TestWriteAndReadCodePoint) {
     int pos = 0;
     ByteArrayUtils::writeCodePointsAndAdvancePosition(buffer, codePointArray, 3,
             true /* writesTerminator */, &pos);
-    EXPECT_EQ(0x10FF00, ByteArrayUtils::readCodePoint(buffer, 0));
-    EXPECT_EQ(0x20, ByteArrayUtils::readCodePoint(buffer, 3));
-    EXPECT_EQ(0x41, ByteArrayUtils::readCodePoint(buffer, 4));
-    EXPECT_EQ(NOT_A_CODE_POINT, ByteArrayUtils::readCodePoint(buffer, 5));
+    EXPECT_EQ(0x10FF00, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 0));
+    EXPECT_EQ(0x20, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 3));
+    EXPECT_EQ(0x41, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 4));
+    EXPECT_EQ(NOT_A_CODE_POINT, ByteArrayUtils::readCodePoint(ReadOnlyByteArrayView(buffer, sizeof(buffer)), 5));
 }
 
 }  // namespace

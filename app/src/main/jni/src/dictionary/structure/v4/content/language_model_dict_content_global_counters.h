@@ -18,6 +18,7 @@
 #define LATINIME_LANGUAGE_MODEL_DICT_CONTENT_GLOBAL_COUNTERS_H
 
 #include <cstdio>
+#include <limits>
 
 #include "defines.h"
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
@@ -59,13 +60,14 @@ class LanguageModelDictContentGlobalCounters {
         return DictFileWritingUtils::writeBufferToFileTail(file, &bufferToWrite);
     }
 
-    void incrementTotalCount() {
-        mTotalCount += 1;
-    }
+    void incrementTotalCount() { addToTotalCount(1); }
 
     void addToTotalCount(const int count) {
-        mTotalCount += count;
+        mTotalCount = static_cast<int>(std::max<int64_t>(0, std::min<int64_t>(
+                std::numeric_limits<int>::max(), static_cast<int64_t>(mTotalCount) + count)));
     }
+
+    void resetCounters(int total, int maximum) { mTotalCount = total; mMaxValueOfCounters = maximum; }
 
     void updateMaxValueOfCounters(const int count) {
         mMaxValueOfCounters = std::max(count, mMaxValueOfCounters);
@@ -94,7 +96,8 @@ private:
         if (pos + COUNTER_SIZE_IN_BYTES > buffer.getTailPosition()) {
             return 0;
         }
-        return buffer.readUint(COUNTER_SIZE_IN_BYTES, pos);
+        return std::min<uint32_t>(buffer.readUint(COUNTER_SIZE_IN_BYTES, pos),
+                std::numeric_limits<int>::max());
     }
 };
 } // namespace latinime

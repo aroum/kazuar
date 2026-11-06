@@ -66,39 +66,38 @@ typedef DictionaryHeaderStructurePolicy::AttributeMap AttributeMap;
     return NO_FLAGS;
 }
 
-/* static */ void HeaderReadWriteUtils::fetchAllHeaderAttributes(const uint8_t *const dictBuf,
-        AttributeMap *const headerAttributes) {
-    const int headerSize = getHeaderSize(dictBuf);
+/* static */ bool HeaderReadWriteUtils::fetchAllHeaderAttributes(const ReadOnlyByteArrayView buffer,
+        AttributeMap *const attributes) {
+    if (!ByteArrayUtils::hasBytes(buffer, 0, getHeaderOptionsPosition())) return false;
+    const int headerSize = getHeaderSize(buffer.data());
+    if (headerSize < getHeaderOptionsPosition() || !ByteArrayUtils::hasBytes(buffer, 0, headerSize)) return false;
+    const ReadOnlyByteArrayView header(buffer.data(), headerSize);
+    AttributeMap parsed;
     int pos = getHeaderOptionsPosition();
-    if (pos == NOT_A_DICT_POS) {
-        // The header doesn't have header options.
-        return;
-    }
-    int keyBuffer[MAX_ATTRIBUTE_KEY_LENGTH];
-    std::unique_ptr<int[]> valueBuffer(new int[MAX_ATTRIBUTE_VALUE_LENGTH]);
+    int key[MAX_ATTRIBUTE_KEY_LENGTH];
+    std::vector<int> value(MAX_ATTRIBUTE_VALUE_LENGTH);
     while (pos < headerSize) {
-        // The values in the header don't use the code point table for their encoding.
-        const int keyLength = ByteArrayUtils::readStringAndAdvancePosition(dictBuf,
-                MAX_ATTRIBUTE_KEY_LENGTH, nullptr /* codePointTable */, keyBuffer, &pos);
-        std::vector<int> key;
-        key.insert(key.end(), keyBuffer, keyBuffer + keyLength);
-        const int valueLength = ByteArrayUtils::readStringAndAdvancePosition(dictBuf,
-                MAX_ATTRIBUTE_VALUE_LENGTH, nullptr /* codePointTable */, valueBuffer.get(), &pos);
-        std::vector<int> value;
-        value.insert(value.end(), valueBuffer.get(), valueBuffer.get() + valueLength);
-        headerAttributes->insert(AttributeMap::value_type(key, value));
+        const int keyLength = ByteArrayUtils::readStringAndAdvancePosition(header,
+                MAX_ATTRIBUTE_KEY_LENGTH, CodePointArrayView(), key, &pos);
+        if (keyLength <= 0) return false;
+        const int valueLength = ByteArrayUtils::readStringAndAdvancePosition(header,
+                MAX_ATTRIBUTE_VALUE_LENGTH, CodePointArrayView(), value.data(), &pos);
+        if (valueLength < 0) return false;
+        parsed.emplace(std::vector<int>(key, key + keyLength), std::vector<int>(value.begin(), value.begin() + valueLength));
     }
+    attributes->swap(parsed);
+    return true;
 }
 
-/* static */ const int *HeaderReadWriteUtils::readCodePointTable(
+/* static */ CodePointArrayView HeaderReadWriteUtils::readCodePointTable(
         AttributeMap *const headerAttributes) {
     AttributeMap::key_type keyVector;
     insertCharactersIntoVector(CODE_POINT_TABLE_KEY, &keyVector);
     AttributeMap::const_iterator it = headerAttributes->find(keyVector);
     if (it == headerAttributes->end()) {
-        return nullptr;
+        return CodePointArrayView();
     }
-    return it->second.data();
+    return CodePointArrayView(it->second);
 }
 
 /* static */ bool HeaderReadWriteUtils::writeDictionaryVersion(

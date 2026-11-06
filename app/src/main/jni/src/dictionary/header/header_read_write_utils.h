@@ -18,6 +18,8 @@
 #define LATINIME_HEADER_READ_WRITE_UTILS_H
 
 #include <cstdint>
+#include "utils/byte_array_view.h"
+#include "utils/int_array_view.h"
 
 #include "defines.h"
 #include "dictionary/interface/dictionary_header_structure_policy.h"
@@ -43,10 +45,10 @@ class HeaderReadWriteUtils {
     static DictionaryFlags createAndGetDictionaryFlagsUsingAttributeMap(
             const DictionaryHeaderStructurePolicy::AttributeMap *const attributeMap);
 
-    static void fetchAllHeaderAttributes(const uint8_t *const dictBuf,
+    static bool fetchAllHeaderAttributes(const ReadOnlyByteArrayView dictBuf,
             DictionaryHeaderStructurePolicy::AttributeMap *const headerAttributes);
 
-    static const int *readCodePointTable(
+    static CodePointArrayView readCodePointTable(
             DictionaryHeaderStructurePolicy::AttributeMap *const headerAttributes);
 
     static bool writeDictionaryVersion(BufferWithExtendableBuffer *const buffer,

@@ -57,7 +57,7 @@ class DictionaryStructureWithBufferPolicyFactory {
     static DictionaryStructureWithBufferPolicy::StructurePolicyPtr
             newPolicyForFileDict(const char *const path, const int bufOffset, const int size);
 
-    static void getHeaderFilePathInDictDir(const char *const dirPath,
+    static bool getHeaderFilePathInDictDir(const char *const dirPath,
             const int outHeaderFileBufSize, char *const outHeaderFilePath);
 };
 } // namespace latinime

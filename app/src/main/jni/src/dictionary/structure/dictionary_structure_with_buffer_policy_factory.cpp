@@ -17,6 +17,9 @@
 #include "dictionary/structure/dictionary_structure_with_buffer_policy_factory.h"
 
 #include <climits>
+#include <string>
+#include <vector>
+#include <mutex>
 
 #include "defines.h"
 #include "dictionary/structure/backward/v402/ver4_dict_buffers.h"
@@ -39,6 +42,8 @@ namespace latinime {
         DictionaryStructureWithBufferPolicyFactory::newPolicyForExistingDictFile(
                 const char *const path, const int bufOffset, const int size,
                 const bool isUpdatable) {
+    std::lock_guard<std::recursive_mutex> lock(DictFileWritingUtils::fileMutex());
+    if (!path || strnlen(path, PATH_MAX) == 0 || strnlen(path, PATH_MAX) >= PATH_MAX) return nullptr;
     if (FileUtils::existsDir(path)) {
         // Given path represents a directory.
         return newPolicyForDirectoryDict(path, isUpdatable);
@@ -102,7 +107,7 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr, class Str
                 const char *const path, const bool isUpdatable) {
     const int headerFilePathBufSize = PATH_MAX + 1 /* terminator */;
     char headerFilePath[headerFilePathBufSize];
-    getHeaderFilePathInDictDir(path, headerFilePathBufSize, headerFilePath);
+    if (!getHeaderFilePathInDictDir(path, headerFilePathBufSize, headerFilePath)) return nullptr;
     // Allocated buffer in MmapedBuffer::openBuffer() will be freed in the destructor of
     // MmappedBufferPtr if the instance has the responsibility.
     MmappedBuffer::MmappedBufferPtr mmappedBuffer =
@@ -110,6 +115,9 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr, class Str
     if (!mmappedBuffer) {
         return nullptr;
     }
+    DictionaryHeaderStructurePolicy::AttributeMap checkedAttributes;
+    if (!HeaderReadWriteUtils::fetchAllHeaderAttributes(mmappedBuffer->getReadOnlyByteArrayView(),
+            &checkedAttributes)) return nullptr;
     const FormatUtils::FORMAT_VERSION formatVersion = FormatUtils::detectFormatVersion(
             mmappedBuffer->getReadOnlyByteArrayView());
     switch (formatVersion) {
@@ -144,8 +152,9 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr, class Str
         DictionaryStructureWithBufferPolicyFactory::newPolicyForV4Dict(
                 const char *const headerFilePath, const FormatUtils::FORMAT_VERSION formatVersion,
                 MmappedBuffer::MmappedBufferPtr &&mmappedBuffer) {
-    const int dictDirPathBufSize = strlen(headerFilePath) + 1 /* terminator */;
-    char dictPath[dictDirPathBufSize];
+    const int dictDirPathBufSize = strlen(headerFilePath) + 1;
+    std::vector<char> pathBuffer(dictDirPathBufSize);
+    char *const dictPath = pathBuffer.data();
     if (!FileUtils::getFilePathWithoutSuffix(headerFilePath,
             DictConstants::HEADER_FILE_EXTENSION, dictDirPathBufSize, dictPath)) {
         AKLOGE("Dictionary file name is not valid as a ver4 dictionary. header path: %s",
@@ -175,6 +184,9 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr, class Str
     if (!mmappedBuffer) {
         return nullptr;
     }
+    DictionaryHeaderStructurePolicy::AttributeMap checkedAttributes;
+    if (!HeaderReadWriteUtils::fetchAllHeaderAttributes(mmappedBuffer->getReadOnlyByteArrayView(),
+            &checkedAttributes)) return nullptr;
     switch (FormatUtils::detectFormatVersion(mmappedBuffer->getReadOnlyByteArrayView())) {
         case FormatUtils::VERSION_2:
         case FormatUtils::VERSION_201:
@@ -196,14 +208,17 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr, class Str
     return nullptr;
 }
 
-/* static */ void DictionaryStructureWithBufferPolicyFactory::getHeaderFilePathInDictDir(
-        const char *const dictDirPath, const int outHeaderFileBufSize,
-        char *const outHeaderFilePath) {
-    const int dictNameBufSize = strlen(dictDirPath) + 1 /* terminator */;
-    char dictName[dictNameBufSize];
-    FileUtils::getBasename(dictDirPath, dictNameBufSize, dictName);
-    snprintf(outHeaderFilePath, outHeaderFileBufSize, "%s/%s%s", dictDirPath,
-            dictName, Ver4DictConstants::HEADER_FILE_EXTENSION);
+/* static */ bool DictionaryStructureWithBufferPolicyFactory::getHeaderFilePathInDictDir(
+        const char *const dirPath, const int capacity, char *const out) {
+    if (!dirPath || !out || capacity <= 0 || strnlen(dirPath, PATH_MAX) >= PATH_MAX) return false;
+    std::string path(dirPath);
+    while (path.size() > 1 && path.back() == '/') path.pop_back();
+    const auto slash = path.find_last_of('/');
+    const std::string name = path.substr(slash == std::string::npos ? 0 : slash + 1);
+    if (name.empty() || name == "." || name == "..") return false;
+    const int written = snprintf(out, capacity, "%s/%s%s", path.c_str(), name.c_str(),
+            Ver4DictConstants::HEADER_FILE_EXTENSION);
+    return written >= 0 && written < capacity;
 }
 
 } // namespace latinime

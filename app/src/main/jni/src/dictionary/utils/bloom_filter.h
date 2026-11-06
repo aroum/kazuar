@@ -36,11 +36,11 @@ class BloomFilter {
     BloomFilter() : mFilter() {}
 
     AK_FORCE_INLINE void setInFilter(const int position) {
-        mFilter.set(getIndex(position));
+        if (position >= 0) mFilter.set(getIndex(position));
     }
 
     AK_FORCE_INLINE bool isInFilter(const int position) const {
-        return mFilter.test(getIndex(position));
+        return position >= 0 && mFilter.test(getIndex(position));
     }
 
  private:

@@ -33,18 +33,22 @@ class BinaryDictionaryBigramsIterator {
             const DictionaryBigramsStructurePolicy *const bigramsStructurePolicy, const int pos)
             : mBigramsStructurePolicy(bigramsStructurePolicy), mPos(pos),
               mBigramPos(NOT_A_DICT_POS), mProbability(NOT_A_PROBABILITY),
-              mHasNext(pos != NOT_A_DICT_POS) {}
+              mHasNext(bigramsStructurePolicy && pos >= 0) {}
 
     BinaryDictionaryBigramsIterator(BinaryDictionaryBigramsIterator &&bigramsIterator) noexcept
             : mBigramsStructurePolicy(bigramsIterator.mBigramsStructurePolicy),
               mPos(bigramsIterator.mPos), mBigramPos(bigramsIterator.mBigramPos),
-              mProbability(bigramsIterator.mProbability), mHasNext(bigramsIterator.mHasNext) {}
+              mProbability(bigramsIterator.mProbability), mHasNext(bigramsIterator.mHasNext) {
+        bigramsIterator.mHasNext = false;
+        bigramsIterator.mPos = NOT_A_DICT_POS;
+    }
 
     AK_FORCE_INLINE bool hasNext() const {
         return mHasNext;
     }
 
     AK_FORCE_INLINE void next() {
+        if (!mBigramsStructurePolicy || !mHasNext) return;
         mBigramsStructurePolicy->getNextBigram(&mBigramPos, &mProbability, &mHasNext, &mPos);
     }
 

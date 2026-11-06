@@ -17,6 +17,10 @@
 #include "dictionary/utils/dict_file_writing_utils.h"
 
 #include <cstdio>
+#include <climits>
+#include <cstring>
+#include <vector>
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -81,10 +85,11 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr>
 
 /* static */ bool DictFileWritingUtils::flushBufferToFileWithSuffix(const char *const basePath,
         const char *const suffix, const BufferWithExtendableBuffer *const buffer) {
-    const int filePathBufSize = FileUtils::getFilePathWithSuffixBufSize(basePath, suffix);
-    char filePath[filePathBufSize];
-    FileUtils::getFilePathWithSuffix(basePath, suffix, filePathBufSize, filePath);
-    return flushBufferToFile(filePath, buffer);
+    if (!basePath || !suffix || strnlen(basePath, PATH_MAX) >= PATH_MAX
+            || strnlen(suffix, PATH_MAX) >= PATH_MAX) return false;
+    const std::string path = std::string(basePath) + suffix;
+    if (path.size() >= PATH_MAX) return false;
+    return flushBufferToFile(path.c_str(), buffer);
 }
 
 /* static */ bool DictFileWritingUtils::writeBufferToFileTail(FILE *const file,
@@ -101,28 +106,23 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr>
 
 /* static */ bool DictFileWritingUtils::flushBufferToFile(const char *const filePath,
         const BufferWithExtendableBuffer *const buffer) {
-    const int fd = open(filePath, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-    if (fd == -1) {
-        AKLOGE("File %s cannot be opened. errno: %d", filePath, errno);
-        ASSERT(false);
-        return false;
-    }
-    FILE *const file = fdopen(fd, "wb");
-    if (!file) {
-        AKLOGE("fdopen failed for the file %s. errno: %d", filePath, errno);
-        ASSERT(false);
-        return false;
-    }
-    if (!writeBufferToFile(file, buffer)) {
-        fclose(file);
-        remove(filePath);
-        AKLOGE("Buffer cannot be written to the file %s. size: %d", filePath,
-                buffer->getTailPosition());
-        ASSERT(false);
-        return false;
-    }
-    fclose(file);
-    return true;
+    std::lock_guard<std::recursive_mutex> lock(fileMutex());
+    if (!buffer || !filePath || strnlen(filePath, PATH_MAX) >= PATH_MAX) return false;
+    const std::string pattern = std::string(filePath) + ".tmp.XXXXXX";
+    if (pattern.size() >= PATH_MAX) return false;
+    std::vector<char> staging(pattern.begin(), pattern.end());
+    staging.push_back(0);
+    const int fd = mkstemp(staging.data());
+    if (fd < 0) return false;
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    FILE *file = fdopen(fd, "wb");
+    if (!file) { close(fd); unlink(staging.data()); return false; }
+    bool success = writeBufferToFile(file, buffer) && fflush(file) == 0 && fsync(fd) == 0;
+    if (fclose(file) != 0) success = false;
+    // link publishes a complete inode atomically, preserving the existing no-overwrite contract.
+    if (success) success = link(staging.data(), filePath) == 0;
+    unlink(staging.data());
+    return success;
 }
 
 // Returns whether the writing was succeeded or not.
@@ -138,6 +138,49 @@ template<class DictConstants, class DictBuffers, class DictBuffersPtr>
             additionalBufSize, 1, file) < 1) {
         return false;
     }
+    return true;
+}
+
+std::recursive_mutex &DictFileWritingUtils::fileMutex() {
+    static std::recursive_mutex mutex;
+    return mutex;
+}
+
+DictFileWritingUtils::StagedDirectory::StagedDirectory(const char *base) : mPath() {
+    if (!base || strnlen(base, PATH_MAX) >= PATH_MAX) return;
+    const std::string pattern = std::string(base) + ".tmp.XXXXXX";
+    if (pattern.size() >= PATH_MAX) return;
+    std::vector<char> name(pattern.begin(), pattern.end());
+    name.push_back(0);
+    if (mkdtemp(name.data())) mPath = name.data();
+}
+
+DictFileWritingUtils::StagedDirectory::~StagedDirectory() {
+    if (!mPath.empty()) FileUtils::removeDirAndFiles(mPath.c_str());
+}
+
+bool DictFileWritingUtils::StagedDirectory::publishTo(const char *target) {
+    std::lock_guard<std::recursive_mutex> lock(fileMutex());
+    if (mPath.empty() || !target || strnlen(target, PATH_MAX) >= PATH_MAX) return false;
+    struct stat status;
+    std::string backup;
+    if (lstat(target, &status) == 0) {
+        if (!S_ISDIR(status.st_mode)) return false;
+        const std::string pattern = std::string(target) + ".old.XXXXXX";
+        if (pattern.size() >= PATH_MAX) return false;
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back(0);
+        if (!mkdtemp(name.data()) || rmdir(name.data()) != 0) return false;
+        backup = name.data();
+        if (rename(target, backup.c_str()) != 0) return false;
+    } else if (errno != ENOENT) return false;
+    if (rename(mPath.c_str(), target) != 0) {
+        // Keep the old dictionary recoverable even if rollback itself fails.
+        if (!backup.empty()) rename(backup.c_str(), target);
+        return false;
+    }
+    mPath.clear();
+    if (!backup.empty()) FileUtils::removeDirAndFiles(backup.c_str());
     return true;
 }
 

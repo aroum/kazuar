@@ -18,6 +18,7 @@
 #define LATINIME_PROBABILITY_ENTRY_H
 
 #include <climits>
+#include <algorithm>
 #include <cstdint>
 
 #include "defines.h"
@@ -103,9 +104,10 @@ class ProbabilityEntry {
             encodedEntry = (encodedEntry << (Ver4DictConstants::TIME_STAMP_FIELD_SIZE * CHAR_BIT))
                     | static_cast<uint32_t>(mHistoricalInfo.getTimestamp());
             encodedEntry = (encodedEntry << (Ver4DictConstants::WORD_LEVEL_FIELD_SIZE * CHAR_BIT))
-                    | static_cast<uint8_t>(mHistoricalInfo.getLevel());
+                    | (Ver4DictConstants::WORD_LEVEL_FIELD_SIZE == 0 ? 0
+                            : static_cast<uint8_t>(mHistoricalInfo.getLevel()));
             encodedEntry = (encodedEntry << (Ver4DictConstants::WORD_COUNT_FIELD_SIZE * CHAR_BIT))
-                    | static_cast<uint16_t>(mHistoricalInfo.getCount());
+                    | static_cast<uint16_t>(std::max(0, std::min(65535, mHistoricalInfo.getCount())));
         } else {
             encodedEntry = (encodedEntry << (Ver4DictConstants::PROBABILITY_SIZE * CHAR_BIT))
                     | static_cast<uint8_t>(mProbability);

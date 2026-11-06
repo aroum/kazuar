@@ -56,7 +56,7 @@ const PtNodeParams Ver4PatriciaTrieNodeReader::fetchPtNodeInfoFromBufferAndProce
     int codePoints[MAX_WORD_LENGTH];
     // Code point table is not used for ver4 dictionaries.
     const int codePointCount = PatriciaTrieReadingUtils::getCharsAndAdvancePosition(
-            view, flags, MAX_WORD_LENGTH, nullptr /* codePointTable */, codePoints, &pos);
+            view, flags, MAX_WORD_LENGTH, CodePointArrayView() /* codePointTable */, codePoints, &pos);
     if (codePointCount <= 0 || pos == NOT_A_DICT_POS) return PtNodeParams();
     int terminalIdFieldPos = NOT_A_DICT_POS;
     int terminalId = Ver4DictConstants::NOT_A_TERMINAL_ID;

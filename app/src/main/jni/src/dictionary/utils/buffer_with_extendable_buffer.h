@@ -19,6 +19,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "defines.h"
@@ -37,13 +39,15 @@ class BufferWithExtendableBuffer {
 
     BufferWithExtendableBuffer(const ReadWriteByteArrayView originalBuffer,
             const int maxAdditionalBufferSize)
-            : mOriginalBuffer(originalBuffer), mAdditionalBuffer(), mUsedAdditionalBufferSize(0),
-              mMaxAdditionalBufferSize(maxAdditionalBufferSize) {}
+            : mOriginalBuffer(validOriginalBuffer(originalBuffer)), mAdditionalBuffer(), mUsedAdditionalBufferSize(0),
+              mMaxAdditionalBufferSize(std::min(static_cast<size_t>(std::max(0, maxAdditionalBufferSize)),
+                      static_cast<size_t>(std::numeric_limits<int>::max()) - mOriginalBuffer.size())) {}
 
     // Without original buffer.
     BufferWithExtendableBuffer(const int maxAdditionalBufferSize)
             : mOriginalBuffer(), mAdditionalBuffer(), mUsedAdditionalBufferSize(0),
-              mMaxAdditionalBufferSize(maxAdditionalBufferSize) {}
+              mMaxAdditionalBufferSize(std::min(static_cast<size_t>(std::max(0, maxAdditionalBufferSize)),
+                      static_cast<size_t>(std::numeric_limits<int>::max()) - mOriginalBuffer.size())) {}
 
     AK_FORCE_INLINE int getTailPosition() const {
         return mOriginalBuffer.size() + mUsedAdditionalBufferSize;
@@ -70,6 +74,9 @@ class BufferWithExtendableBuffer {
         }
     }
 
+    // Invalid reads return false without touching the output. The legacy convenience form
+    // returns zero; the advancing form also sets the cursor to NOT_A_DICT_POS on failure.
+    bool tryReadUint(const int size, const int pos, uint32_t *const out) const;
     uint32_t readUint(const int size, const int pos) const;
 
     uint32_t readUintAndAdvancePosition(const int size, int *const pos) const;
@@ -118,6 +125,11 @@ class BufferWithExtendableBuffer {
     std::vector<uint8_t> mAdditionalBuffer;
     int mUsedAdditionalBufferSize;
     const size_t mMaxAdditionalBufferSize;
+
+    static ReadWriteByteArrayView validOriginalBuffer(ReadWriteByteArrayView view) {
+        return view.size() <= static_cast<size_t>(std::numeric_limits<int>::max())
+                && (view.size() == 0 || view.data()) ? view : ReadWriteByteArrayView();
+    }
 
     // Return if the buffer is successfully extended or not.
     bool extendBuffer(const size_t size);

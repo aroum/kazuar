@@ -153,7 +153,7 @@ void HeaderPolicy::fillInHeader(const bool updatesLastDecayedTime,
 }
 
 /* static */ DictionaryHeaderStructurePolicy::AttributeMap
-        HeaderPolicy::createAttributeMapAndReadAllAttributes(const uint8_t *const dictBuf) {
+        HeaderPolicy::createAttributeMapAndReadAllAttributes(const ReadOnlyByteArrayView dictBuf) {
     DictionaryHeaderStructurePolicy::AttributeMap attributeMap;
     HeaderReadWriteUtils::fetchAllHeaderAttributes(dictBuf, &attributeMap);
     return attributeMap;

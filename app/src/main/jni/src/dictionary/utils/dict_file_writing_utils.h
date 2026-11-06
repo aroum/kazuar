@@ -18,6 +18,8 @@
 #define LATINIME_DICT_FILE_WRITING_UTILS_H
 
 #include <cstdio>
+#include <mutex>
+#include <string>
 
 #include "defines.h"
 #include "dictionary/header/header_read_write_utils.h"
@@ -30,6 +32,20 @@ class BufferWithExtendableBuffer;
 class DictFileWritingUtils {
  public:
     static const char *const TEMP_FILE_SUFFIX_FOR_WRITING_DICT_FILE;
+    // Serializes publication and opening of all components of a dictionary in this process.
+    static std::recursive_mutex &fileMutex();
+
+    class StagedDirectory {
+     public:
+        explicit StagedDirectory(const char *base);
+        ~StagedDirectory();
+        const char *path() const { return mPath.c_str(); }
+        bool isValid() const { return !mPath.empty(); }
+        bool publishTo(const char *target);
+     private:
+        std::string mPath;
+        DISALLOW_COPY_AND_ASSIGN(StagedDirectory);
+    };
 
     static bool createEmptyDictFile(const char *const filePath, const int dictVersion,
             const std::vector<int> localeAsCodePointVector,

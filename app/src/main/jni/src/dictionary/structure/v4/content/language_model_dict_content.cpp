@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 
 #include "dictionary/structure/v4/content/dynamic_language_model_probability_utils.h"
 #include "dictionary/utils/probability_utils.h"
@@ -36,12 +37,14 @@ bool LanguageModelDictContent::runGC(
         const TerminalPositionLookupTable::TerminalIdMap *const terminalIdMap,
         const LanguageModelDictContent *const originalContent) {
     return runGCInner(terminalIdMap, originalContent->mTrieMap.getEntriesInRootLevel(),
-            0 /* nextLevelBitmapEntryIndex */);
+            0 /* nextLevelBitmapEntryIndex */, 0 /* depth */) && recomputeGlobalCounters();
 }
 
 const WordAttributes LanguageModelDictContent::getWordAttributes(const WordIdArrayView prevWordIds,
         const int wordId, const bool mustMatchAllPrevWords,
         const HeaderPolicy *const headerPolicy) const {
+    if (prevWordIds.size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+            || (!prevWordIds.empty() && !prevWordIds.data())) return WordAttributes();
     int bitmapEntryIndices[MAX_PREV_WORD_COUNT_FOR_N_GRAM + 1];
     bitmapEntryIndices[0] = mTrieMap.getRootBitmapEntryIndex();
     int maxPrevWordCount = 0;
@@ -130,24 +133,32 @@ ProbabilityEntry LanguageModelDictContent::getNgramProbabilityEntry(
 
 bool LanguageModelDictContent::setNgramProbabilityEntry(const WordIdArrayView prevWordIds,
         const int wordId, const ProbabilityEntry *const probabilityEntry) {
-    if (wordId == Ver4DictConstants::NOT_A_TERMINAL_ID) {
-        return false;
-    }
+    if (wordId < 0 || !probabilityEntry || prevWordIds.size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+            || (!prevWordIds.empty() && !prevWordIds.data())) return false;
+    const auto old = getNgramProbabilityEntry(prevWordIds, wordId);
+    const uint64_t encoded = probabilityEntry->encode(mHasHistoricalInfo);
+    const auto stored = ProbabilityEntry::decode(encoded, mHasHistoricalInfo);
+    const int oldCount = old.isValid() && old.hasHistoricalInfo() ? old.getHistoricalInfo()->getCount() : 0;
+    const int newCount = stored.isValid() && stored.hasHistoricalInfo() ? stored.getHistoricalInfo()->getCount() : 0;
+    const int64_t total = static_cast<int64_t>(mGlobalCounters.getTotalCount())
+            + (prevWordIds.empty() && mHasHistoricalInfo ? newCount - oldCount : 0);
+    if (total < 0 || total > std::numeric_limits<int>::max()) return false;
     const int bitmapEntryIndex = createAndGetBitmapEntryIndex(prevWordIds);
-    if (bitmapEntryIndex == TrieMap::INVALID_INDEX) {
-        return false;
-    }
-    return mTrieMap.put(wordId, probabilityEntry->encode(mHasHistoricalInfo), bitmapEntryIndex);
+    if (bitmapEntryIndex == TrieMap::INVALID_INDEX
+            || !mTrieMap.put(wordId, encoded, bitmapEntryIndex)) return false;
+    if (prevWordIds.empty() && mHasHistoricalInfo) mGlobalCounters.addToTotalCount(newCount - oldCount);
+    if (mHasHistoricalInfo) mGlobalCounters.updateMaxValueOfCounters(newCount);
+    return true;
 }
 
 bool LanguageModelDictContent::removeNgramProbabilityEntry(const WordIdArrayView prevWordIds,
         const int wordId) {
+    const auto old = getNgramProbabilityEntry(prevWordIds, wordId);
     const int bitmapEntryIndex = getBitmapEntryIndex(prevWordIds);
-    if (bitmapEntryIndex == TrieMap::INVALID_INDEX) {
-        // Cannot find bitmap entry for the probability entry. The entry doesn't exist.
-        return false;
-    }
-    return mTrieMap.remove(wordId, bitmapEntryIndex);
+    if (bitmapEntryIndex == TrieMap::INVALID_INDEX || !mTrieMap.remove(wordId, bitmapEntryIndex)) return false;
+    if (prevWordIds.empty() && mHasHistoricalInfo && old.isValid() && old.hasHistoricalInfo())
+        mGlobalCounters.addToTotalCount(-old.getHistoricalInfo()->getCount());
+    return true;
 }
 
 LanguageModelDictContent::EntryRange LanguageModelDictContent::getProbabilityEntries(
@@ -166,15 +177,16 @@ std::vector<LanguageModelDictContent::DumppedFullEntryInfo>
     }
     std::vector<int> prevWordIds = { wordId };
     std::vector<DumppedFullEntryInfo> entries;
-    exportAllNgramEntriesRelatedToWordInner(headerPolicy, result.mNextLevelBitmapEntryIndex,
-            &prevWordIds, &entries);
+    if (!exportAllNgramEntriesRelatedToWordInner(headerPolicy, result.mNextLevelBitmapEntryIndex,
+            &prevWordIds, &entries)) entries.clear();
     return entries;
 }
 
-void LanguageModelDictContent::exportAllNgramEntriesRelatedToWordInner(
+bool LanguageModelDictContent::exportAllNgramEntriesRelatedToWordInner(
         const HeaderPolicy *const headerPolicy, const int bitmapEntryIndex,
         std::vector<int> *const prevWordIds,
         std::vector<DumppedFullEntryInfo> *const outBummpedFullEntryInfo) const {
+    if (prevWordIds->size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM) return false;
     for (const auto &entry : mTrieMap.getEntriesInSpecifiedLevel(bitmapEntryIndex)) {
         const int wordId = entry.key();
         const ProbabilityEntry probabilityEntry =
@@ -188,11 +200,15 @@ void LanguageModelDictContent::exportAllNgramEntriesRelatedToWordInner(
         }
         if (entry.hasNextLevelMap()) {
             prevWordIds->push_back(wordId);
-            exportAllNgramEntriesRelatedToWordInner(headerPolicy,
-                    entry.getNextLevelBitmapEntryIndex(), prevWordIds, outBummpedFullEntryInfo);
+            if (!exportAllNgramEntriesRelatedToWordInner(headerPolicy,
+                    entry.getNextLevelBitmapEntryIndex(), prevWordIds, outBummpedFullEntryInfo)) {
+                prevWordIds->pop_back();
+                return false;
+            }
             prevWordIds->pop_back();
         }
     }
+    return true;
 }
 
 bool LanguageModelDictContent::truncateEntries(const EntryCounts &currentEntryCounts,
@@ -214,12 +230,14 @@ bool LanguageModelDictContent::truncateEntries(const EntryCounts &currentEntryCo
         }
         outEntryCounters->setNgramCount(ngramType, entryCount);
     }
-    return true;
+    return recomputeGlobalCounters();
 }
 
 bool LanguageModelDictContent::updateAllEntriesOnInputWord(const WordIdArrayView prevWordIds,
         const int wordId, const bool isValid, const HistoricalInfo historicalInfo,
         const HeaderPolicy *const headerPolicy, MutableEntryCounters *const entryCountersToUpdate) {
+    if (prevWordIds.size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM || historicalInfo.getCount() < 0
+            || (!prevWordIds.empty() && !prevWordIds.data())) return false;
     if (!mHasHistoricalInfo) {
         AKLOGE("updateAllEntriesOnInputWord is called for dictionary without historical info.");
         return false;
@@ -230,7 +248,6 @@ bool LanguageModelDictContent::updateAllEntriesOnInputWord(const WordIdArrayView
     if (!setProbabilityEntry(wordId, &updatedUnigramProbabilityEntry)) {
         return false;
     }
-    mGlobalCounters.incrementTotalCount();
     mGlobalCounters.updateMaxValueOfCounters(
             updatedUnigramProbabilityEntry.getHistoricalInfo()->getCount());
     for (size_t i = 0; i < prevWordIds.size(); ++i) {
@@ -262,8 +279,9 @@ const ProbabilityEntry LanguageModelDictContent::createUpdatedEntryFrom(
         const ProbabilityEntry &originalProbabilityEntry, const bool isValid,
         const HistoricalInfo historicalInfo, const HeaderPolicy *const headerPolicy) const {
     const HistoricalInfo updatedHistoricalInfo = HistoricalInfo(historicalInfo.getTimestamp(),
-            0 /* level */, originalProbabilityEntry.getHistoricalInfo()->getCount()
-                    + historicalInfo.getCount());
+            0 /* level */, static_cast<int>(std::min<int64_t>(65535,
+                    static_cast<int64_t>(originalProbabilityEntry.getHistoricalInfo()->getCount())
+                            + historicalInfo.getCount())));
     if (originalProbabilityEntry.isValid()) {
         return ProbabilityEntry(originalProbabilityEntry.getFlags(), &updatedHistoricalInfo);
     } else {
@@ -273,7 +291,8 @@ const ProbabilityEntry LanguageModelDictContent::createUpdatedEntryFrom(
 
 bool LanguageModelDictContent::runGCInner(
         const TerminalPositionLookupTable::TerminalIdMap *const terminalIdMap,
-        const TrieMap::TrieMapRange trieMapRange, const int nextLevelBitmapEntryIndex) {
+        const TrieMap::TrieMapRange trieMapRange, const int nextLevelBitmapEntryIndex, const int depth) {
+    if (depth > MAX_PREV_WORD_COUNT_FOR_N_GRAM) return false;
     for (auto &entry : trieMapRange) {
         const auto it = terminalIdMap->find(entry.key());
         if (it == terminalIdMap->end() || it->second == Ver4DictConstants::NOT_A_TERMINAL_ID) {
@@ -285,7 +304,7 @@ bool LanguageModelDictContent::runGCInner(
         }
         if (entry.hasNextLevelMap()) {
             if (!runGCInner(terminalIdMap, entry.getEntriesInNextLevel(),
-                    mTrieMap.getNextLevelBitmapEntryIndex(it->second, nextLevelBitmapEntryIndex))) {
+                    mTrieMap.getNextLevelBitmapEntryIndex(it->second, nextLevelBitmapEntryIndex), depth + 1)) {
                 return false;
             }
         }
@@ -294,6 +313,8 @@ bool LanguageModelDictContent::runGCInner(
 }
 
 int LanguageModelDictContent::createAndGetBitmapEntryIndex(const WordIdArrayView prevWordIds) {
+    if (prevWordIds.size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+            || (!prevWordIds.empty() && !prevWordIds.data())) return TrieMap::INVALID_INDEX;
     int lastBitmapEntryIndex = mTrieMap.getRootBitmapEntryIndex();
     for (const int wordId : prevWordIds) {
         const TrieMap::Result result = mTrieMap.get(wordId, lastBitmapEntryIndex);
@@ -316,6 +337,8 @@ int LanguageModelDictContent::createAndGetBitmapEntryIndex(const WordIdArrayView
 }
 
 int LanguageModelDictContent::getBitmapEntryIndex(const WordIdArrayView prevWordIds) const {
+    if (prevWordIds.size() > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+            || (!prevWordIds.empty() && !prevWordIds.data())) return TrieMap::INVALID_INDEX;
     int bitmapEntryIndex = mTrieMap.getRootBitmapEntryIndex();
     for (const int wordId : prevWordIds) {
         const TrieMap::Result result = mTrieMap.get(wordId, bitmapEntryIndex);
@@ -408,6 +431,7 @@ bool LanguageModelDictContent::turncateEntriesInSpecifiedLevel(
             EntryInfoToTurncate::Comparator());
     for (int i = 0; i < entryCountToRemove; ++i) {
         const EntryInfoToTurncate &entryInfo = entryInfoVector[i];
+        if (entryInfo.mPrevWordCount < 0) return false;
         if (!removeNgramProbabilityEntry(
                 WordIdArrayView(entryInfo.mPrevWordIds, entryInfo.mPrevWordCount),
                 entryInfo.mKey)) {
@@ -421,6 +445,8 @@ bool LanguageModelDictContent::getEntryInfo(const HeaderPolicy *const headerPoli
         const int targetLevel, const int bitmapEntryIndex,  std::vector<int> *const prevWordIds,
         std::vector<EntryInfoToTurncate> *const outEntryInfo) const {
     const int prevWordCount = prevWordIds->size();
+    if (targetLevel < 0 || targetLevel > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+            || prevWordCount > targetLevel) return false;
     for (const auto &entry : mTrieMap.getEntriesInSpecifiedLevel(bitmapEntryIndex)) {
         if (prevWordCount < targetLevel) {
             if (!entry.hasNextLevelMap()) {
@@ -471,8 +497,35 @@ bool LanguageModelDictContent::EntryInfoToTurncate::Comparator::operator()(
 
 LanguageModelDictContent::EntryInfoToTurncate::EntryInfoToTurncate(const int priority,
         const int count, const int key, const int prevWordCount, const int *const prevWordIds)
-        : mPriority(priority), mCount(count), mKey(key), mPrevWordCount(prevWordCount) {
-    memmove(mPrevWordIds, prevWordIds, mPrevWordCount * sizeof(mPrevWordIds[0]));
+        : mPriority(priority), mCount(count), mKey(key),
+          mPrevWordCount(prevWordCount >= 0 && prevWordCount <= MAX_PREV_WORD_COUNT_FOR_N_GRAM
+                  && (prevWordCount == 0 || prevWordIds) ? prevWordCount : -1), mPrevWordIds() {
+    if (mPrevWordCount > 0)
+        memmove(mPrevWordIds, prevWordIds, mPrevWordCount * sizeof(mPrevWordIds[0]));
+}
+
+bool LanguageModelDictContent::collectCounters(int bitmap, int depth, int64_t *total, int *maximum) const {
+    if (depth > MAX_PREV_WORD_COUNT_FOR_N_GRAM) return false;
+    for (const auto &entry : mTrieMap.getEntriesInSpecifiedLevel(bitmap)) {
+        const auto probability = ProbabilityEntry::decode(entry.value(), mHasHistoricalInfo);
+        if (probability.isValid() && probability.hasHistoricalInfo()) {
+            const int count = probability.getHistoricalInfo()->getCount();
+            if (depth == 0) *total += count;
+            *maximum = std::max(*maximum, count);
+        }
+        if (entry.hasNextLevelMap() && !collectCounters(entry.getNextLevelBitmapEntryIndex(),
+                depth + 1, total, maximum)) return false;
+    }
+    return *total <= std::numeric_limits<int>::max();
+}
+
+bool LanguageModelDictContent::recomputeGlobalCounters() {
+    int64_t total = 0;
+    int maximum = 0;
+    if (mHasHistoricalInfo && !collectCounters(mTrieMap.getRootBitmapEntryIndex(), 0, &total, &maximum))
+        return false;
+    mGlobalCounters.resetCounters(static_cast<int>(total), maximum);
+    return true;
 }
 
 } // namespace latinime

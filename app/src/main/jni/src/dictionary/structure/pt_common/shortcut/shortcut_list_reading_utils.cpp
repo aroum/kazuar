@@ -55,7 +55,7 @@ const int ShortcutListReadingUtils::WHITELIST_SHORTCUT_PROBABILITY = 15;
 
 /* static */ int ShortcutListReadingUtils::readShortcutTarget(const ReadOnlyByteArrayView buffer,
         const int maxLength, int *const outWord, int *const pos) {
-    return BoundedByteArrayReader::readString(buffer, maxLength, nullptr, outWord, pos);
+    return BoundedByteArrayReader::readString(buffer, maxLength, CodePointArrayView(), outWord, pos);
 }
 
 /* static */ bool ShortcutListReadingUtils::skipShortcuts(const ReadOnlyByteArrayView buffer,

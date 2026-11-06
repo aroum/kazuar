@@ -141,6 +141,8 @@ class LanguageModelDictContent {
     explicit LanguageModelDictContent(const bool hasHistoricalInfo)
             : mTrieMap(), mGlobalCounters(), mHasHistoricalInfo(hasHistoricalInfo) {}
 
+    int getTotalCount() const { return mGlobalCounters.getTotalCount(); }
+
     bool isNearSizeLimit() const {
         return mTrieMap.isNearSizeLimit() || mGlobalCounters.needsToHalveCounters();
     }
@@ -158,7 +160,6 @@ class LanguageModelDictContent {
     }
 
     bool setProbabilityEntry(const int wordId, const ProbabilityEntry *const probabilityEntry) {
-        mGlobalCounters.addToTotalCount(probabilityEntry->getHistoricalInfo()->getCount());
         return setNgramProbabilityEntry(WordIdArrayView(), wordId, probabilityEntry);
     }
 
@@ -186,10 +187,7 @@ class LanguageModelDictContent {
                 outEntryCounters)) {
             return false;
         }
-        if (mGlobalCounters.needsToHalveCounters()) {
-            mGlobalCounters.halveCounters();
-        }
-        return true;
+        return recomputeGlobalCounters();
     }
 
     // entryCounts should be created by updateAllProbabilityEntries.
@@ -236,7 +234,10 @@ class LanguageModelDictContent {
     const bool mHasHistoricalInfo;
 
     bool runGCInner(const TerminalPositionLookupTable::TerminalIdMap *const terminalIdMap,
-            const TrieMap::TrieMapRange trieMapRange, const int nextLevelBitmapEntryIndex);
+            const TrieMap::TrieMapRange trieMapRange, const int nextLevelBitmapEntryIndex,
+            const int depth);
+    bool recomputeGlobalCounters();
+    bool collectCounters(int bitmap, int depth, int64_t *total, int *maximum) const;
     int createAndGetBitmapEntryIndex(const WordIdArrayView prevWordIds);
     int getBitmapEntryIndex(const WordIdArrayView prevWordIds) const;
     bool updateAllProbabilityEntriesForGCInner(const int bitmapEntryIndex, const int prevWordCount,
@@ -250,7 +251,7 @@ class LanguageModelDictContent {
     const ProbabilityEntry createUpdatedEntryFrom(const ProbabilityEntry &originalProbabilityEntry,
             const bool isValid, const HistoricalInfo historicalInfo,
             const HeaderPolicy *const headerPolicy) const;
-    void exportAllNgramEntriesRelatedToWordInner(const HeaderPolicy *const headerPolicy,
+    bool exportAllNgramEntriesRelatedToWordInner(const HeaderPolicy *const headerPolicy,
             const int bitmapEntryIndex, std::vector<int> *const prevWordIds,
             std::vector<DumppedFullEntryInfo> *const outBummpedFullEntryInfo) const;
 };

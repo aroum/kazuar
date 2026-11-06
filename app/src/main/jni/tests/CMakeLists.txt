@@ -16,6 +16,15 @@ target_compile_options(native_regression_core PRIVATE -ffunction-sections -fdata
 enable_testing()
 add_executable(native_regressions
     dictionary/utils/format_utils_test.cpp
+    dictionary/utils/byte_array_utils_test.cpp
+    dictionary/utils/buffer_with_extendable_buffer_test.cpp
+    dictionary/utils/bloom_filter_test.cpp
+    dictionary/structure/v4/content/language_model_dict_content_test.cpp
+    dictionary/structure/v4/content/language_model_dict_content_global_counters_test.cpp
+    dictionary/structure/v4/content/probability_entry_test.cpp
+    dictionary/structure/v4/content/terminal_position_lookup_table_test.cpp
+    dictionary/structure/pt_common/storage_safety_regression_test.cpp
+    dictionary/structure/pt_common/dictionary_file_regression_test.cpp
     dictionary/utils/trie_map_test.cpp
     suggest/core/layout/geometry_utils_test.cpp
     dictionary/structure/pt_common/bigram/bigram_list_read_write_utils_test.cpp

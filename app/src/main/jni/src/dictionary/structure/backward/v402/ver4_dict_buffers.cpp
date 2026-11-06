@@ -52,25 +52,10 @@ namespace v402 {
 
 bool Ver4DictBuffers::flushHeaderAndDictBuffers(const char *const dictDirPath,
         const BufferWithExtendableBuffer *const headerBuffer) const {
-    // Create temporary directory.
-    const int tmpDirPathBufSize = FileUtils::getFilePathWithSuffixBufSize(dictDirPath,
-            DictFileWritingUtils::TEMP_FILE_SUFFIX_FOR_WRITING_DICT_FILE);
-    char tmpDirPath[tmpDirPathBufSize];
-    FileUtils::getFilePathWithSuffix(dictDirPath,
-            DictFileWritingUtils::TEMP_FILE_SUFFIX_FOR_WRITING_DICT_FILE, tmpDirPathBufSize,
-            tmpDirPath);
-    if (FileUtils::existsDir(tmpDirPath)) {
-        if (!FileUtils::removeDirAndFiles(tmpDirPath)) {
-            AKLOGE("Existing directory %s cannot be removed.", tmpDirPath);
-            ASSERT(false);
-            return false;
-        }
-    }
-    umask(S_IWGRP | S_IWOTH);
-    if (mkdir(tmpDirPath, S_IRWXU) == -1) {
-        AKLOGE("Cannot create directory: %s. errno: %d.", tmpDirPath, errno);
-        return false;
-    }
+    std::lock_guard<std::recursive_mutex> lock(DictFileWritingUtils::fileMutex());
+    DictFileWritingUtils::StagedDirectory staging(dictDirPath);
+    if (!staging.isValid()) return false;
+    const char *const tmpDirPath = staging.path();
     // Get dictionary base path.
     const int dictNameBufSize = strlen(dictDirPath) + 1 /* terminator */;
     char dictName[dictNameBufSize];
@@ -110,19 +95,7 @@ bool Ver4DictBuffers::flushHeaderAndDictBuffers(const char *const dictDirPath,
         AKLOGE("Shortcut dict content cannot be written. %s", tmpDirPath);
         return false;
     }
-    // Remove existing dictionary.
-    if (!FileUtils::removeDirAndFiles(dictDirPath)) {
-        AKLOGE("Existing directory %s cannot be removed.", dictDirPath);
-        ASSERT(false);
-        return false;
-    }
-    // Rename temporary directory.
-    if (rename(tmpDirPath, dictDirPath) != 0) {
-        AKLOGE("%s cannot be renamed to %s", tmpDirPath, dictDirPath);
-        ASSERT(false);
-        return false;
-    }
-    return true;
+    return staging.publishTo(dictDirPath);
 }
 
 Ver4DictBuffers::Ver4DictBuffers(const char *const dictPath,
@@ -131,7 +104,7 @@ Ver4DictBuffers::Ver4DictBuffers(const char *const dictPath,
         : mHeaderBuffer(std::move(headerBuffer)),
           mDictBuffer(MmappedBuffer::openBuffer(dictPath,
                   Ver4DictConstants::TRIE_FILE_EXTENSION, isUpdatable)),
-          mHeaderPolicy(mHeaderBuffer->getReadOnlyByteArrayView().data(), formatVersion),
+          mHeaderPolicy(mHeaderBuffer->getReadOnlyByteArrayView(), formatVersion),
           mExpandableHeaderBuffer(mHeaderBuffer->getReadWriteByteArrayView(),
                   BufferWithExtendableBuffer::DEFAULT_MAX_ADDITIONAL_BUFFER_SIZE),
           mExpandableTrieBuffer(

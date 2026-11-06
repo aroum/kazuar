@@ -64,14 +64,14 @@ const PtReadingUtils::NodeFlags PtReadingUtils::FLAG_IS_POSSIBLY_OFFENSIVE = 0x0
 }
 
 /* static */ int PtReadingUtils::getCodePointAndAdvancePosition(const ReadOnlyByteArrayView buffer,
-        const int *const codePointTable, int *const pos) {
+        const CodePointArrayView codePointTable, int *const pos) {
     int value = NOT_A_CODE_POINT;
     BoundedByteArrayReader::readCodePoint(buffer, codePointTable, &value, pos);
     return value;
 }
 
 /* static */ int PtReadingUtils::getCharsAndAdvancePosition(const ReadOnlyByteArrayView buffer,
-        const NodeFlags flags, const int maxLength, const int *const codePointTable,
+        const NodeFlags flags, const int maxLength, const CodePointArrayView codePointTable,
         int *const outBuffer, int *const pos) {
     if (hasMultipleChars(flags)) {
         return BoundedByteArrayReader::readString(buffer, maxLength, codePointTable, outBuffer, pos);
@@ -87,7 +87,7 @@ const PtReadingUtils::NodeFlags PtReadingUtils::FLAG_IS_POSSIBLY_OFFENSIVE = 0x0
 }
 
 /* static */ int PtReadingUtils::skipCharacters(const ReadOnlyByteArrayView buffer,
-        const NodeFlags flags, const int maxLength, const int *const codePointTable, int *const pos) {
+        const NodeFlags flags, const int maxLength, const CodePointArrayView codePointTable, int *const pos) {
     if (maxLength < 0 || maxLength > MAX_WORD_LENGTH) { *pos = NOT_A_DICT_POS; return -1; }
     int ignored[MAX_WORD_LENGTH];
     return getCharsAndAdvancePosition(buffer, flags, maxLength, codePointTable, ignored, pos);
@@ -120,7 +120,7 @@ const PtReadingUtils::NodeFlags PtReadingUtils::FLAG_IS_POSSIBLY_OFFENSIVE = 0x0
 
 /* static */ bool PtReadingUtils::readPtNodeInfo(const ReadOnlyByteArrayView dictBuf,
         const int ptNodePos, const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
-        const DictionaryBigramsStructurePolicy *const bigramPolicy, const int *const codePointTable,
+        const DictionaryBigramsStructurePolicy *const bigramPolicy, const CodePointArrayView codePointTable,
         NodeFlags *const outFlags, int *const outCodePointCount, int *const outCodePoint,
         int *const outProbability, int *const outChildrenPos, int *const outShortcutPos,
         int *const outBigramPos, int *const outSiblingPos) {

@@ -17,6 +17,12 @@
 #include "dictionary/utils/file_utils.h"
 
 #include <cstdio>
+#include <cerrno>
+#include <climits>
+#include <memory>
+#include <string>
+#include <vector>
+#include "dictionary/utils/dict_file_writing_utils.h"
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
@@ -51,47 +57,55 @@ namespace latinime {
     return true;
 }
 
-// Remove a directory and all files in the directory.
-/* static */ bool FileUtils::removeDirAndFiles(const char *const dirPath) {
-    return removeDirAndFiles(dirPath, 5 /* maxTries */);
-}
-
-// Remove a directory and all files in the directory, trying up to maxTimes.
-/* static */ bool FileUtils::removeDirAndFiles(const char *const dirPath, const int maxTries) {
-    DIR *const dir = opendir(dirPath);
-    if (dir == NULL) {
-        AKLOGE("Cannot open dir %s.", dirPath);
-        return true;
-    }
-    struct dirent *dirent;
-    while ((dirent = readdir(dir)) != NULL) {
-        if (dirent->d_type == DT_DIR) {
-            continue;
-        }
-        if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0) {
-            continue;
-        }
-        const int filePathBufSize = getFilePathBufSize(dirPath, dirent->d_name);
-        char filePath[filePathBufSize];
-        getFilePath(dirPath, dirent->d_name, filePathBufSize, filePath);
-        if (remove(filePath) != 0) {
-            AKLOGE("Cannot remove file %s.", filePath);
-            closedir(dir);
+namespace {
+bool removeTree(const std::string &root) {
+    struct Frame { std::string path; int depth; bool visited; dev_t device; ino_t inode; };
+    std::vector<Frame> pending{{root, 0, false, 0, 0}};
+    size_t entries = 0;
+    while (!pending.empty()) {
+        Frame frame = std::move(pending.back()); pending.pop_back();
+        if (frame.path.size() >= PATH_MAX || frame.depth > 64) { errno = EOVERFLOW; return false; }
+        struct stat status;
+        if (lstat(frame.path.c_str(), &status) != 0) {
+            if (errno == ENOENT) continue;
             return false;
         }
-    }
-    closedir(dir);
-    if (remove(dirPath) != 0) {
-        if (maxTries > 0) {
-            // On NFS, deleting files sometimes creates new files. I'm not sure what the
-            // correct way of dealing with this is, but for the time being, this seems to work.
-            removeDirAndFiles(dirPath, maxTries - 1);
-        } else {
-            AKLOGE("Cannot remove directory %s.", dirPath);
-            return false;
+        if (!S_ISDIR(status.st_mode)) {
+            if (frame.depth == 0) { errno = ENOTDIR; return false; }
+            if (unlink(frame.path.c_str()) != 0 && errno != ENOENT) return false;
+            continue;
         }
+        if (frame.visited) {
+            if (status.st_dev != frame.device || status.st_ino != frame.inode) { errno = EBUSY; return false; }
+            if (rmdir(frame.path.c_str()) != 0 && errno != ENOENT) return false;
+            continue;
+        }
+        std::unique_ptr<DIR, int(*)(DIR*)> dir(opendir(frame.path.c_str()), closedir);
+        if (!dir) return false;
+        struct stat opened;
+        if (fstat(dirfd(dir.get()), &opened) != 0 || opened.st_dev != status.st_dev
+                || opened.st_ino != status.st_ino) { errno = EBUSY; return false; }
+        pending.push_back({frame.path, frame.depth, true, status.st_dev, status.st_ino});
+        errno = 0;
+        while (auto entry = readdir(dir.get())) {
+            if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
+            if (++entries > 4096) { errno = EOVERFLOW; return false; }
+            pending.push_back({frame.path + "/" + entry->d_name, frame.depth + 1, false, 0, 0});
+        }
+        if (errno != 0) return false;
     }
     return true;
+}
+}
+
+/* static */ bool FileUtils::removeDirAndFiles(const char *const path) {
+    std::lock_guard<std::recursive_mutex> lock(DictFileWritingUtils::fileMutex());
+    if (!path || !*path || strnlen(path, PATH_MAX) >= PATH_MAX) return false;
+    for (int attempt = 0; attempt < 6; ++attempt) {
+        if (removeTree(path)) return true;
+        if (errno != ENOTEMPTY && errno != EBUSY) return false;
+    }
+    return false;
 }
 
 /* static */ int FileUtils::getFilePathWithSuffixBufSize(const char *const filePath,
@@ -155,17 +169,15 @@ namespace latinime {
 
 /* static */ void FileUtils::getBasename(const char *const filePath,
         const int outNameBufSize, char *const outName) {
-    const int filePathBufSize = strlen(filePath) + 1 /* terminator */;
-    char filePathBuf[filePathBufSize];
-    snprintf(filePathBuf, filePathBufSize, "%s", filePath);
-    const char *const baseName = basename(filePathBuf);
-    const int baseNameLength = strlen(baseName);
-    if (baseNameLength >= outNameBufSize) {
-        AKLOGE("outNameBufSize is too small. filePath: %s, outNameBufSize: %d",
-                filePath, outNameBufSize);
-        return;
-    }
-    snprintf(outName, baseNameLength + 1 /* terminator */, "%s", baseName);
+    if (!outName || outNameBufSize <= 0) return;
+    outName[0] = 0;
+    if (!filePath || strnlen(filePath, PATH_MAX) >= PATH_MAX) return;
+    std::string path(filePath);
+    while (path.size() > 1 && path.back() == '/') path.pop_back();
+    const auto slash = path.find_last_of('/');
+    const std::string base = path == "/" ? "/" : path.substr(slash == std::string::npos ? 0 : slash + 1);
+    if (base.size() >= static_cast<size_t>(outNameBufSize)) return;
+    memcpy(outName, base.c_str(), base.size() + 1);
 }
 
 } // namespace latinime

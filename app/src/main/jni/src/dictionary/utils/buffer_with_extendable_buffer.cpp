@@ -15,6 +15,8 @@
  */
 
 #include "dictionary/utils/buffer_with_extendable_buffer.h"
+#include <cstring>
+#include <limits>
 
 namespace latinime {
 
@@ -23,32 +25,49 @@ const int BufferWithExtendableBuffer::NEAR_BUFFER_LIMIT_THRESHOLD_PERCENTILE = 9
 // TODO: Needs to allocate larger memory corresponding to the current vector size.
 const size_t BufferWithExtendableBuffer::EXTEND_ADDITIONAL_BUFFER_SIZE_STEP = 128 * 1024;
 
-uint32_t BufferWithExtendableBuffer::readUint(const int size, const int pos) const {
-    const bool readingPosIsInAdditionalBuffer = isInAdditionalBuffer(pos);
-    const int posInBuffer = readingPosIsInAdditionalBuffer ? pos - mOriginalBuffer.size() : pos;
-    return ByteArrayUtils::readUint(getBuffer(readingPosIsInAdditionalBuffer), size, posInBuffer);
+bool BufferWithExtendableBuffer::tryReadUint(const int size, const int pos, uint32_t *const out) const {
+    if (!out || size < 1 || size > 4 || pos < 0 || pos > getTailPosition()
+            || size > getTailPosition() - pos) return false;
+    uint32_t value = 0;
+    for (int i = 0; i < size; ++i) {
+        const int current = pos + i;
+        const bool additional = isInAdditionalBuffer(current);
+        const int local = additional ? current - getOriginalBufferSize() : current;
+        value = (value << 8) | getBuffer(additional)[local];
+    }
+    *out = value;
+    return true;
 }
 
-uint32_t BufferWithExtendableBuffer::readUintAndAdvancePosition(const int size,
-        int *const pos) const {
-    const uint32_t value = readUint(size, *pos);
-    *pos += size;
+uint32_t BufferWithExtendableBuffer::readUint(const int size, const int pos) const {
+    uint32_t value = 0;
+    tryReadUint(size, pos, &value);
     return value;
 }
 
-void BufferWithExtendableBuffer::readCodePointsAndAdvancePosition(const int maxCodePointCount,
-        int *const outCodePoints, int *outCodePointCount, int *const pos) const {
-    const bool readingPosIsInAdditionalBuffer = isInAdditionalBuffer(*pos);
-    if (readingPosIsInAdditionalBuffer) {
-        *pos -= mOriginalBuffer.size();
+uint32_t BufferWithExtendableBuffer::readUintAndAdvancePosition(const int size, int *const pos) const {
+    uint32_t value = 0;
+    if (tryReadUint(size, *pos, &value)) *pos += size;
+    else *pos = NOT_A_DICT_POS;
+    return value;
+}
+
+void BufferWithExtendableBuffer::readCodePointsAndAdvancePosition(const int capacity,
+        int *const out, int *count, int *const pos) const {
+    *count = 0;
+    int cursor = *pos;
+    if (capacity < 0 || (capacity > 0 && !out)) { *pos = NOT_A_DICT_POS; return; }
+    int length = 0;
+    for (;;) {
+        uint32_t first, value;
+        if (!tryReadUint(1, cursor, &first)) break;
+        if (first == 0x1F) { *pos = cursor + 1; *count = length; return; }
+        const int size = first < 0x20 ? 3 : 1;
+        if (length >= capacity || !tryReadUint(size, cursor, &value)) break;
+        out[length++] = value;
+        cursor += size;
     }
-    // Code point table is not used for dynamic format.
-    *outCodePointCount = ByteArrayUtils::readStringAndAdvancePosition(
-            getBuffer(readingPosIsInAdditionalBuffer), maxCodePointCount,
-            nullptr /* codePointTable */, outCodePoints, pos);
-    if (readingPosIsInAdditionalBuffer) {
-        *pos += mOriginalBuffer.size();
-    }
+    *pos = NOT_A_DICT_POS;
 }
 
 bool BufferWithExtendableBuffer::extend(const int size) {
@@ -85,9 +104,11 @@ bool BufferWithExtendableBuffer::writeUintAndAdvancePosition(const uint32_t data
 
 bool BufferWithExtendableBuffer::writeCodePointsAndAdvancePosition(const int *const codePoints,
         const int codePointCount, const bool writesTerminator, int *const pos) {
+    if (codePointCount < 0 || (codePointCount > 0 && !codePoints)) return false;
     const size_t size = ByteArrayUtils::calculateRequiredByteCountToStoreCodePoints(
             codePoints, codePointCount, writesTerminator);
-    if (!checkAndPrepareWriting(*pos, size)) {
+    if (size > static_cast<size_t>(std::numeric_limits<int>::max())
+            || !checkAndPrepareWriting(*pos, static_cast<int>(size))) {
         return false;
     }
     const bool usesAdditionalBuffer = isInAdditionalBuffer(*pos);
@@ -105,13 +126,10 @@ bool BufferWithExtendableBuffer::writeCodePointsAndAdvancePosition(const int *co
 }
 
 bool BufferWithExtendableBuffer::extendBuffer(const size_t size) {
-    const size_t extendSize = std::max(EXTEND_ADDITIONAL_BUFFER_SIZE_STEP, size);
-    const size_t sizeAfterExtending =
-            std::min(mAdditionalBuffer.size() + extendSize, mMaxAdditionalBufferSize);
-    if (sizeAfterExtending < mAdditionalBuffer.size() + size) {
-        return false;
-    }
-    mAdditionalBuffer.resize(sizeAfterExtending);
+    if (size > mMaxAdditionalBufferSize - mAdditionalBuffer.size()) return false;
+    const size_t growth = std::min(std::max(EXTEND_ADDITIONAL_BUFFER_SIZE_STEP, size),
+            mMaxAdditionalBufferSize - mAdditionalBuffer.size());
+    mAdditionalBuffer.resize(mAdditionalBuffer.size() + growth);
     return true;
 }
 
@@ -120,7 +138,8 @@ bool BufferWithExtendableBuffer::checkAndPrepareWriting(const int pos, const int
         // Invalid position or size.
         return false;
     }
-    const size_t totalRequiredSize = static_cast<size_t>(pos + size);
+    const size_t totalRequiredSize = static_cast<size_t>(pos) + static_cast<size_t>(size);
+    if (totalRequiredSize > static_cast<size_t>(std::numeric_limits<int>::max())) return false;
     if (!isInAdditionalBuffer(pos)) {
         // Here don't need to care about the additional buffer.
         if (mOriginalBuffer.size() < totalRequiredSize) {
@@ -150,21 +169,25 @@ bool BufferWithExtendableBuffer::checkAndPrepareWriting(const int pos, const int
     return true;
 }
 
-bool BufferWithExtendableBuffer::copy(const BufferWithExtendableBuffer *const sourceBuffer) {
-    int copyingPos = 0;
-    const int tailPos = sourceBuffer->getTailPosition();
-    const int maxDataChunkSize = sizeof(uint32_t);
-    while (copyingPos < tailPos) {
-        const int remainingSize = tailPos - copyingPos;
-        const int copyingSize = (remainingSize >= maxDataChunkSize) ?
-                maxDataChunkSize : remainingSize;
-        const uint32_t data = sourceBuffer->readUint(copyingSize, copyingPos);
-        if (!writeUint(data, copyingSize, copyingPos)) {
-            return false;
-        }
-        copyingPos += copyingSize;
+bool BufferWithExtendableBuffer::copy(const BufferWithExtendableBuffer *const source) {
+    if (!source) return false;
+    if (source == this) return true;
+    const int size = source->getTailPosition();
+    if (size > getTailPosition() && !extend(size - getTailPosition())) return false;
+    int pos = 0;
+    while (pos < size) {
+        const bool srcAdditional = source->isInAdditionalBuffer(pos);
+        const bool dstAdditional = isInAdditionalBuffer(pos);
+        const int srcBase = srcAdditional ? source->getOriginalBufferSize() : 0;
+        const int dstBase = dstAdditional ? getOriginalBufferSize() : 0;
+        const int srcEnd = srcAdditional ? size : source->getOriginalBufferSize();
+        const int dstEnd = dstAdditional ? size : getOriginalBufferSize();
+        const int bytes = std::min(size, std::min(srcEnd, dstEnd)) - pos;
+        uint8_t *destination = dstAdditional ? mAdditionalBuffer.data() : mOriginalBuffer.data();
+        memmove(destination + pos - dstBase, source->getBuffer(srcAdditional) + pos - srcBase, bytes);
+        pos += bytes;
     }
     return true;
 }
 
-}
+} // namespace latinime

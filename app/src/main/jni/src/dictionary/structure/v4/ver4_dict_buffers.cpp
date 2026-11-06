@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <vector>
+#include <unistd.h>
 
 #include "dictionary/utils/byte_array_utils.h"
 #include "dictionary/utils/dict_file_writing_utils.h"
@@ -68,25 +69,10 @@ namespace latinime {
 
 bool Ver4DictBuffers::flushHeaderAndDictBuffers(const char *const dictDirPath,
         const BufferWithExtendableBuffer *const headerBuffer) const {
-    // Create temporary directory.
-    const int tmpDirPathBufSize = FileUtils::getFilePathWithSuffixBufSize(dictDirPath,
-            DictFileWritingUtils::TEMP_FILE_SUFFIX_FOR_WRITING_DICT_FILE);
-    char tmpDirPath[tmpDirPathBufSize];
-    FileUtils::getFilePathWithSuffix(dictDirPath,
-            DictFileWritingUtils::TEMP_FILE_SUFFIX_FOR_WRITING_DICT_FILE, tmpDirPathBufSize,
-            tmpDirPath);
-    if (FileUtils::existsDir(tmpDirPath)) {
-        if (!FileUtils::removeDirAndFiles(tmpDirPath)) {
-            AKLOGE("Existing directory %s cannot be removed.", tmpDirPath);
-            ASSERT(false);
-            return false;
-        }
-    }
-    umask(S_IWGRP | S_IWOTH);
-    if (mkdir(tmpDirPath, S_IRWXU) == -1) {
-        AKLOGE("Cannot create directory: %s. errno: %d.", tmpDirPath, errno);
-        return false;
-    }
+    std::lock_guard<std::recursive_mutex> lock(DictFileWritingUtils::fileMutex());
+    DictFileWritingUtils::StagedDirectory staging(dictDirPath);
+    if (!staging.isValid()) return false;
+    const char *const tmpDirPath = staging.path();
     // Get dictionary base path.
     const int dictNameBufSize = strlen(dictDirPath) + 1 /* terminator */;
     char dictName[dictNameBufSize];
@@ -119,28 +105,14 @@ bool Ver4DictBuffers::flushHeaderAndDictBuffers(const char *const dictDirPath,
     FILE *const file = fdopen(fd, "wb");
     if (!file) {
         AKLOGE("fdopen failed for the file %s. errno: %d", bodyFilePath, errno);
-        ASSERT(false);
+        close(fd);
         return false;
     }
 
-    if (!flushDictBuffers(file)) {
-        fclose(file);
-        return false;
-    }
-    fclose(file);
-    // Remove existing dictionary.
-    if (!FileUtils::removeDirAndFiles(dictDirPath)) {
-        AKLOGE("Existing directory %s cannot be removed.", dictDirPath);
-        ASSERT(false);
-        return false;
-    }
-    // Rename temporary directory.
-    if (rename(tmpDirPath, dictDirPath) != 0) {
-        AKLOGE("%s cannot be renamed to %s", tmpDirPath, dictDirPath);
-        ASSERT(false);
-        return false;
-    }
-    return true;
+    bool success = flushDictBuffers(file) && fflush(file) == 0 && fsync(fd) == 0;
+    if (fclose(file) != 0) success = false;
+    if (!success) return false;
+    return staging.publishTo(dictDirPath);
 }
 
 bool Ver4DictBuffers::flushDictBuffers(FILE *const file) const {
@@ -172,7 +144,7 @@ Ver4DictBuffers::Ver4DictBuffers(MmappedBuffer::MmappedBufferPtr &&headerBuffer,
         const FormatUtils::FORMAT_VERSION formatVersion,
         const std::vector<ReadWriteByteArrayView> &contentBuffers)
         : mHeaderBuffer(std::move(headerBuffer)), mDictBuffer(std::move(bodyBuffer)),
-          mHeaderPolicy(mHeaderBuffer->getReadOnlyByteArrayView().data(), formatVersion),
+          mHeaderPolicy(mHeaderBuffer->getReadOnlyByteArrayView(), formatVersion),
           mExpandableHeaderBuffer(mHeaderBuffer->getReadWriteByteArrayView(),
                   BufferWithExtendableBuffer::DEFAULT_MAX_ADDITIONAL_BUFFER_SIZE),
           mExpandableTrieBuffer(contentBuffers[Ver4DictConstants::TRIE_BUFFER_INDEX],

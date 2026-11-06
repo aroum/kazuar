@@ -54,7 +54,9 @@ class TerminalPositionLookupTable : public SingleDictContent {
     DISALLOW_COPY_AND_ASSIGN(TerminalPositionLookupTable);
 
     int getEntryPos(const int terminalId) const {
-        return terminalId * Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE;
+        return terminalId >= 0 && terminalId <= Ver4DictConstants::MAX_DICTIONARY_SIZE
+                / Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE
+                ? terminalId * Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE : NOT_A_DICT_POS;
     }
 
     int mSize;

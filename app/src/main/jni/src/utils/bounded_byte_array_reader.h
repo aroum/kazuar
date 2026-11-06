@@ -28,17 +28,13 @@ class BoundedByteArrayReader {
         return true;
     }
 
-    static bool readCodePoint(ReadOnlyByteArrayView buffer, const int *table, int *value, int *pos) {
-        if (!hasBytes(buffer, *pos, 1)) { *pos = NOT_A_DICT_POS; return false; }
-        const uint8_t first = buffer.data()[*pos];
-        const int size = first < 0x20 && first != 0x1F ? 3 : 1;
-        if (!hasBytes(buffer, *pos, size)) { *pos = NOT_A_DICT_POS; return false; }
-        *value = ByteArrayUtils::readCodePointAndAdvancePosition(buffer.data(), table, pos);
-        return true;
+    static bool readCodePoint(ReadOnlyByteArrayView buffer, CodePointArrayView table, int *value, int *pos) {
+        *value = ByteArrayUtils::readCodePointAndAdvancePosition(buffer, table, pos);
+        return *pos != NOT_A_DICT_POS;
     }
 
     // An exact-length string must still have its terminator; overlong strings are rejected.
-    static int readString(ReadOnlyByteArrayView buffer, int capacity, const int *table,
+    static int readString(ReadOnlyByteArrayView buffer, int capacity, CodePointArrayView table,
             int *out, int *pos) {
         if (capacity < 0 || (capacity > 0 && !out)) { *pos = NOT_A_DICT_POS; return -1; }
         int count = 0;

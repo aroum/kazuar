@@ -41,7 +41,9 @@ class DynamicLanguageModelProbabilityUtils {
     }
 
     static int getDecayedProbability(const int probability, const HistoricalInfo historicalInfo) {
-        const int elapsedTime = TimeKeeper::peekCurrentTime() - historicalInfo.getTimestamp();
+        if (!historicalInfo.isValid()) return NOT_A_PROBABILITY;
+        const int64_t elapsedTime = static_cast<int64_t>(TimeKeeper::peekCurrentTime())
+                - historicalInfo.getTimestamp();
         if (elapsedTime < 0) {
             AKLOGE("The elapsed time is negatime value. Timestamp overflow?");
             return NOT_A_PROBABILITY;
@@ -53,8 +55,10 @@ class DynamicLanguageModelProbabilityUtils {
 
     static bool shouldRemoveEntryDuringGC(const HistoricalInfo historicalInfo) {
         // TODO: Improve this logic.
-        const int elapsedTime = TimeKeeper::peekCurrentTime() - historicalInfo.getTimestamp();
-        return elapsedTime > DURATION_TO_DISCARD_ENTRY_IN_SECONDS;
+        const int64_t elapsedTime = static_cast<int64_t>(TimeKeeper::peekCurrentTime())
+                - historicalInfo.getTimestamp();
+        return !historicalInfo.isValid() || elapsedTime < 0
+                || elapsedTime > DURATION_TO_DISCARD_ENTRY_IN_SECONDS;
     }
 
     static int getPriorityToPreventFromEviction(const HistoricalInfo historicalInfo) {

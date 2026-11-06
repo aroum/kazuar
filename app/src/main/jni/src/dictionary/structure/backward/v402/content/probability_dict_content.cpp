@@ -151,12 +151,12 @@ bool ProbabilityDictContent::writeEntry(const ProbabilityEntry *const probabilit
             AKLOGE("Cannot write timestamp in probability dict content. pos: %d", writingPos);
             return false;
         }
-        if (!bufferToWrite->writeUintAndAdvancePosition(historicalInfo->getLevel(),
+        if (!bufferToWrite->writeUintAndAdvancePosition(std::max(0, std::min(255, historicalInfo->getLevel())),
                 Ver4DictConstants::WORD_LEVEL_FIELD_SIZE, &writingPos)) {
             AKLOGE("Cannot write level in probability dict content. pos: %d", writingPos);
             return false;
         }
-        if (!bufferToWrite->writeUintAndAdvancePosition(historicalInfo->getCount(),
+        if (!bufferToWrite->writeUintAndAdvancePosition(std::max(0, std::min(255, historicalInfo->getCount())),
                 Ver4DictConstants::WORD_COUNT_FIELD_SIZE, &writingPos)) {
             AKLOGE("Cannot write count in probability dict content. pos: %d", writingPos);
             return false;

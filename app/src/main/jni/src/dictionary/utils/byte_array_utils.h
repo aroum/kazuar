@@ -18,6 +18,9 @@
 #define LATINIME_BYTE_ARRAY_UTILS_H
 
 #include <cstdint>
+#include <limits>
+#include "utils/byte_array_view.h"
+#include "utils/int_array_view.h"
 
 #include "defines.h"
 
@@ -145,65 +148,60 @@ class ByteArrayUtils {
      * the BMP. Also everything in the iso-latin-1 charset is only 1 byte, except control
      * characters which should never happen anyway (and still work, but take 3 bytes).
      */
-    static AK_FORCE_INLINE int readCodePoint(const uint8_t *const buffer, const int pos) {
-        int p = pos;
-        return readCodePointAndAdvancePosition(buffer, nullptr /* codePointTable */, &p);
+    static bool hasBytes(ReadOnlyByteArrayView buffer, int pos, size_t count) {
+        return pos >= 0 && static_cast<size_t>(pos) <= buffer.size()
+                && count <= buffer.size() - static_cast<size_t>(pos)
+                && count <= static_cast<size_t>(std::numeric_limits<int>::max() - pos)
+                && (count == 0 || buffer.data());
     }
 
-    static AK_FORCE_INLINE int readCodePointAndAdvancePosition(
-            const uint8_t *const buffer, const int *const codePointTable, int *const pos) {
-        /*
-         * codePointTable is an array to convert the most frequent characters in this dictionary to
-         * 1 byte code points. It is only made of the original code points of the most frequent
-         * characters used in this dictionary. 0x20 - 0xFF is used for the 1 byte characters.
-         * The original code points are restored by picking the code points at the indices of the
-         * codePointTable. The indices are calculated by subtracting 0x20 from the firstByte.
-         */
-        const uint8_t firstByte = readUint8(buffer, *pos);
-        if (firstByte < MINIMUM_ONE_BYTE_CHARACTER_VALUE) {
-            if (firstByte == CHARACTER_ARRAY_TERMINATOR) {
-                *pos += 1;
-                return NOT_A_CODE_POINT;
-            } else {
-                return readUint24AndAdvancePosition(buffer, pos);
-            }
-        } else {
-            *pos += 1;
-            if (codePointTable) {
-                return codePointTable[firstByte - MINIMUM_ONE_BYTE_CHARACTER_VALUE];
-            }
-            return firstByte;
+    static AK_FORCE_INLINE int readCodePoint(ReadOnlyByteArrayView buffer, const int pos) {
+        int cursor = pos;
+        return readCodePointAndAdvancePosition(buffer, CodePointArrayView(), &cursor);
+    }
+
+    static AK_FORCE_INLINE int readCodePointAndAdvancePosition(ReadOnlyByteArrayView buffer,
+            CodePointArrayView table, int *const pos) {
+        if (!hasBytes(buffer, *pos, 1)) { *pos = NOT_A_DICT_POS; return NOT_A_CODE_POINT; }
+        const uint8_t first = buffer.data()[*pos];
+        if (first < MINIMUM_ONE_BYTE_CHARACTER_VALUE) {
+            if (first == CHARACTER_ARRAY_TERMINATOR) { ++*pos; return NOT_A_CODE_POINT; }
+            if (!hasBytes(buffer, *pos, 3)) { *pos = NOT_A_DICT_POS; return NOT_A_CODE_POINT; }
+            return readUint24AndAdvancePosition(buffer.data(), pos);
         }
+        if (!table.empty()) {
+            const size_t index = first - MINIMUM_ONE_BYTE_CHARACTER_VALUE;
+            if (!table.data() || index >= table.size()) { *pos = NOT_A_DICT_POS; return NOT_A_CODE_POINT; }
+            ++*pos;
+            return table[index];
+        }
+        ++*pos;
+        return first;
     }
 
-    /**
-     * String (array of code points) Reading
-     *
-     * Reads code points until the terminator is found.
-     */
-    // Returns the length of the string.
-    static int readStringAndAdvancePosition(const uint8_t *const buffer,
-            const int maxLength, const int *const codePointTable, int *const outBuffer,
-            int *const pos) {
+    static int readStringAndAdvancePosition(ReadOnlyByteArrayView buffer, int capacity,
+            CodePointArrayView table, int *out, int *pos) {
+        if (capacity < 0 || (capacity > 0 && !out)) { *pos = NOT_A_DICT_POS; return -1; }
         int length = 0;
-        int codePoint = readCodePointAndAdvancePosition(buffer, codePointTable, pos);
-        while (NOT_A_CODE_POINT != codePoint && length < maxLength) {
-            outBuffer[length++] = codePoint;
-            codePoint = readCodePointAndAdvancePosition(buffer, codePointTable, pos);
+        for (;;) {
+            const int value = readCodePointAndAdvancePosition(buffer, table, pos);
+            if (*pos == NOT_A_DICT_POS) return -1;
+            if (value == NOT_A_CODE_POINT) return length;
+            if (length >= capacity) { *pos = NOT_A_DICT_POS; return -1; }
+            out[length++] = value;
         }
-        return length;
     }
 
     // Advances the position and returns the length of the string.
-    static int advancePositionToBehindString(
-            const uint8_t *const buffer, const int maxLength, int *const pos) {
+    static int advancePositionToBehindString(ReadOnlyByteArrayView buffer, int capacity, int *pos) {
+        if (capacity < 0) { *pos = NOT_A_DICT_POS; return -1; }
         int length = 0;
-        int codePoint = readCodePointAndAdvancePosition(buffer, nullptr /* codePointTable */, pos);
-        while (NOT_A_CODE_POINT != codePoint && length < maxLength) {
-            codePoint = readCodePointAndAdvancePosition(buffer, nullptr /* codePointTable */, pos);
-            length++;
+        for (;;) {
+            int value = readCodePointAndAdvancePosition(buffer, CodePointArrayView(), pos);
+            if (*pos == NOT_A_DICT_POS) return -1;
+            if (value == NOT_A_CODE_POINT) return length;
+            if (++length > capacity) { *pos = NOT_A_DICT_POS; return -1; }
         }
-        return length;
     }
 
     /**

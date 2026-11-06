@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "defines.h"
+#include "utils/int_array_view.h"
 #include "dictionary/structure/pt_common/pt_node_params.h"
 #include "dictionary/structure/pt_common/pt_node_reader.h"
 #include "utils/byte_array_view.h"
@@ -34,7 +35,7 @@ class Ver2PatriciaTrieNodeReader : public PtNodeReader {
     Ver2PatriciaTrieNodeReader(const ReadOnlyByteArrayView buffer,
             const DictionaryBigramsStructurePolicy *const bigramPolicy,
             const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
-            const int *const codePointTable)
+            const CodePointArrayView codePointTable)
             : mBuffer(buffer), mBigramPolicy(bigramPolicy), mShortcutPolicy(shortcutPolicy),
               mCodePointTable(codePointTable) {}
 
@@ -46,7 +47,7 @@ class Ver2PatriciaTrieNodeReader : public PtNodeReader {
     const ReadOnlyByteArrayView mBuffer;
     const DictionaryBigramsStructurePolicy *const mBigramPolicy;
     const DictionaryShortcutsStructurePolicy *const mShortcutPolicy;
-    const int *const mCodePointTable;
+    const CodePointArrayView mCodePointTable;
 };
 } // namespace latinime
 #endif /* LATINIME_VER2_PATRICIA_TRIE_NODE_READER_H */

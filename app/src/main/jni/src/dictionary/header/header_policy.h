@@ -32,10 +32,12 @@ namespace latinime {
 class HeaderPolicy : public DictionaryHeaderStructurePolicy {
  public:
     // Reads information from existing dictionary buffer.
-    HeaderPolicy(const uint8_t *const dictBuf, const FormatUtils::FORMAT_VERSION formatVersion)
+    HeaderPolicy(const ReadOnlyByteArrayView dictBuf, const FormatUtils::FORMAT_VERSION formatVersion)
             : mDictFormatVersion(formatVersion),
-              mDictionaryFlags(HeaderReadWriteUtils::getFlags(dictBuf)),
-              mSize(HeaderReadWriteUtils::getHeaderSize(dictBuf)),
+              mDictionaryFlags(dictBuf.data() && dictBuf.size() >= 12 ? HeaderReadWriteUtils::getFlags(dictBuf.data()) : 0),
+              mSize(dictBuf.data() && dictBuf.size() >= 12 && HeaderReadWriteUtils::getHeaderSize(dictBuf.data()) >= 12
+                      && static_cast<size_t>(HeaderReadWriteUtils::getHeaderSize(dictBuf.data())) <= dictBuf.size()
+                      ? HeaderReadWriteUtils::getHeaderSize(dictBuf.data()) : 0),
               mAttributeMap(createAttributeMapAndReadAllAttributes(dictBuf)),
               mLocale(readLocale()),
               mMultiWordCostMultiplier(readMultipleWordCostMultiplier()),
@@ -95,7 +97,7 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
               mHasHistoricalInfoOfWords(headerPolicy->mHasHistoricalInfoOfWords),
               mForgettingCurveProbabilityValuesTableId(
                       headerPolicy->mForgettingCurveProbabilityValuesTableId),
-              mCodePointTable(headerPolicy->mCodePointTable) {}
+              mCodePointTable(HeaderReadWriteUtils::readCodePointTable(&mAttributeMap)) {}
 
     // Temporary dummy header.
     HeaderPolicy()
@@ -104,7 +106,7 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
               mRequiresGermanUmlautProcessing(false), mIsDecayingDict(false),
               mDate(0), mLastDecayedTime(0), mNgramCounts(), mMaxNgramCounts(),
               mExtendedRegionSize(0), mHasHistoricalInfoOfWords(false),
-              mForgettingCurveProbabilityValuesTableId(0), mCodePointTable(nullptr) {}
+              mForgettingCurveProbabilityValuesTableId(0), mCodePointTable() {}
 
     ~HeaderPolicy() {}
 
@@ -214,7 +216,7 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
         return mDictFormatVersion >= FormatUtils::VERSION_402;
     }
 
-    const int *getCodePointTable() const {
+    CodePointArrayView getCodePointTable() const {
         return mCodePointTable;
     }
 
@@ -254,7 +256,7 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
     const int mExtendedRegionSize;
     const bool mHasHistoricalInfoOfWords;
     const int mForgettingCurveProbabilityValuesTableId;
-    const int *const mCodePointTable;
+    const CodePointArrayView mCodePointTable;
 
     const std::vector<int> readLocale() const;
     float readMultipleWordCostMultiplier() const;
@@ -262,7 +264,7 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
     const EntryCounts readNgramCounts() const;
     const EntryCounts readMaxNgramCounts() const;
     static DictionaryHeaderStructurePolicy::AttributeMap createAttributeMapAndReadAllAttributes(
-            const uint8_t *const dictBuf);
+            const ReadOnlyByteArrayView dictBuf);
 };
 } // namespace latinime
 #endif /* LATINIME_HEADER_POLICY_H */

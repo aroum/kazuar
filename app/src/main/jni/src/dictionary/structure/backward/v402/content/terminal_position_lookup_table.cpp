@@ -82,6 +82,8 @@ bool TerminalPositionLookupTable::flushToFile(const char *const dictPath) const 
 }
 
 bool TerminalPositionLookupTable::runGCTerminalIds(TerminalIdMap *const terminalIdMap) {
+    if (getBuffer()->getTailPosition() > Ver4DictConstants::MAX_DICTIONARY_SIZE
+            || getBuffer()->getTailPosition() % Ver4DictConstants::TERMINAL_ADDRESS_TABLE_ADDRESS_SIZE) return false;
     int removedEntryCount = 0;
     int nextNewTerminalId = 0;
     for (int i = 0; i < mSize; ++i) {

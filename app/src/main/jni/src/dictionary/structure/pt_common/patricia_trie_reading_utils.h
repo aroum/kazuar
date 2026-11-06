@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "defines.h"
+#include "utils/int_array_view.h"
 #include "utils/byte_array_view.h"
 
 namespace latinime {
@@ -36,16 +37,16 @@ class PatriciaTrieReadingUtils {
     static NodeFlags getFlagsAndAdvancePosition(const ReadOnlyByteArrayView buffer, int *const pos);
 
     static int getCodePointAndAdvancePosition(const ReadOnlyByteArrayView buffer,
-            const int *const codePointTable, int *const pos);
+            const CodePointArrayView codePointTable, int *const pos);
 
     // Returns the number of read characters.
     static int getCharsAndAdvancePosition(const ReadOnlyByteArrayView buffer, const NodeFlags flags,
-            const int maxLength, const int *const codePointTable, int *const outBuffer,
+            const int maxLength, const CodePointArrayView codePointTable, int *const outBuffer,
             int *const pos);
 
     // Returns the number of skipped characters.
     static int skipCharacters(const ReadOnlyByteArrayView buffer, const NodeFlags flags,
-            const int maxLength, const int *const codePointTable, int *const pos);
+            const int maxLength, const CodePointArrayView codePointTable, int *const pos);
 
     static int readProbabilityAndAdvancePosition(const ReadOnlyByteArrayView buffer, int *const pos);
 
@@ -109,7 +110,7 @@ class PatriciaTrieReadingUtils {
     static bool readPtNodeInfo(const ReadOnlyByteArrayView dictBuf, const int ptNodePos,
             const DictionaryShortcutsStructurePolicy *const shortcutPolicy,
             const DictionaryBigramsStructurePolicy *const bigramPolicy,
-            const int *const codePointTable, NodeFlags *const outFlags,
+            const CodePointArrayView codePointTable, NodeFlags *const outFlags,
             int *const outCodePointCount, int *const outCodePoint, int *const outProbability,
             int *const outChildrenPos, int *const outShortcutPos, int *const outBigramPos,
             int *const outSiblingPos);
