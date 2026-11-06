@@ -44,8 +44,9 @@ class DicNodeProperties {
         mWordId = wordId;
         mDepth = std::min<int>(depth, MAX_WORD_LENGTH);
         mLeavingDepth = std::max<int>(mDepth, std::min<int>(leavingDepth, MAX_WORD_LENGTH));
-        prevWordIds.copyToArray(&mPrevWordIds, 0 /* offset */);
+        mPrevWordIds.fill(NOT_A_WORD_ID);
         mPrevWordCount = std::min(prevWordIds.size(), mPrevWordIds.size());
+        if (mPrevWordCount) prevWordIds.limit(mPrevWordCount).copyToArray(&mPrevWordIds, 0);
     }
 
     // Init for root with prevWordsPtNodePos which is used for n-gram
@@ -55,8 +56,9 @@ class DicNodeProperties {
         mWordId = NOT_A_WORD_ID;
         mDepth = 0;
         mLeavingDepth = 0;
-        prevWordIds.copyToArray(&mPrevWordIds, 0 /* offset */);
+        mPrevWordIds.fill(NOT_A_WORD_ID);
         mPrevWordCount = std::min(prevWordIds.size(), mPrevWordIds.size());
+        if (mPrevWordCount) prevWordIds.limit(mPrevWordCount).copyToArray(&mPrevWordIds, 0);
     }
 
     void initByCopy(const DicNodeProperties *const dicNodeProp) {
@@ -66,7 +68,7 @@ class DicNodeProperties {
         mDepth = dicNodeProp->mDepth;
         mLeavingDepth = dicNodeProp->mLeavingDepth;
         const WordIdArrayView prevWordIdArrayView = dicNodeProp->getPrevWordIds();
-        prevWordIdArrayView.copyToArray(&mPrevWordIds, 0 /* offset */);
+        if (!prevWordIdArrayView.empty()) prevWordIdArrayView.copyToArray(&mPrevWordIds, 0);
         mPrevWordCount = prevWordIdArrayView.size();
     }
 
@@ -78,7 +80,7 @@ class DicNodeProperties {
         mDepth = std::min<int>(MAX_WORD_LENGTH, dicNodeProp->mDepth + 1); // Increment the depth of a passing child
         mLeavingDepth = dicNodeProp->mLeavingDepth;
         const WordIdArrayView prevWordIdArrayView = dicNodeProp->getPrevWordIds();
-        prevWordIdArrayView.copyToArray(&mPrevWordIds, 0 /* offset */);
+        if (!prevWordIdArrayView.empty()) prevWordIdArrayView.copyToArray(&mPrevWordIds, 0);
         mPrevWordCount = prevWordIdArrayView.size();
     }
 

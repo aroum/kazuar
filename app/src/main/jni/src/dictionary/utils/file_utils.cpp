@@ -15,6 +15,7 @@
  */
 
 #include "dictionary/utils/file_utils.h"
+#include <climits>
 
 #include <cstdio>
 #include <cerrno>
@@ -46,7 +47,8 @@ namespace latinime {
         return -1;
     }
     close(fd);
-    return static_cast<int>(statBuf.st_size);
+    return statBuf.st_size >= 0 && statBuf.st_size <= INT_MAX
+            ? static_cast<int>(statBuf.st_size) : -1;
 }
 
 /* static */ bool FileUtils::existsDir(const char *const dirPath) {

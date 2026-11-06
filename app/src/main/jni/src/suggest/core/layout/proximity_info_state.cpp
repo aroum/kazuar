@@ -33,6 +33,7 @@
 namespace latinime {
 
 int ProximityInfoState::getPrimaryOriginalCodePointAt(const int index) const {
+    if (!mProximityInfo || index < 0 || index >= mSampledInputSize) return NOT_A_CODE_POINT;
     const int primaryCodePoint = getPrimaryCodePointAt(index);
     const int keyIndex = mProximityInfo->getKeyIndexOf(primaryCodePoint);
     return mProximityInfo->getOriginalCodePointOf(keyIndex);

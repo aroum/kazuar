@@ -180,7 +180,7 @@ TEST(SuggestionSafetyTest, QueueGrowthKeepsCandidatesAndZeroCapacityIsSafe) {
     queue.setMaxSize(0); queue.copyPush(&root); EXPECT_EQ(0, queue.getSize());
 }
 TEST(SuggestionSafetyTest, NormalDistributionAndRoundingAreFiniteAndEvaluateOnce) {
-    for (float sigma : {0.0f, -1.0f, INFINITY, std::nanf("")}) {
+    for (float sigma : {0.0f, -1.0f, FLT_MAX, INFINITY, std::nanf("")}) {
         NormalDistribution2D distribution(0, sigma, 0, sigma, 0);
         EXPECT_TRUE(std::isfinite(distribution.getProbabilityDensity(0, 0)));
     }
@@ -326,6 +326,15 @@ TEST(SuggestionSafetyTest, CyclicSerializedTrieBitmapHasBoundedDepth) {
     bytes[138] = 1; bytes[141] = 1; // Entry one points to itself.
     TrieMap map(ReadWriteByteArrayView(bytes.data(), bytes.size()));
     EXPECT_FALSE(map.get(0).mIsValid); EXPECT_FALSE(map.put(0, 123)); EXPECT_FALSE(map.remove(0));
+}
+TEST(SuggestionSafetyTest, NodePropertiesLimitContextAndDepthBeforeCopying) {
+    int ids[100]; std::fill(ids, ids + 100, 42);
+    DicNodeProperties properties;
+    properties.init(0, 'a', 1, UINT16_MAX, UINT16_MAX, WordIdArrayView(ids, 100));
+    EXPECT_EQ(MAX_PREV_WORD_COUNT_FOR_N_GRAM, properties.getPrevWordIds().size());
+    EXPECT_EQ(MAX_WORD_LENGTH, properties.getDepth());
+    DicNodeProperties passing; passing.init(&properties, 'b');
+    EXPECT_EQ(MAX_WORD_LENGTH, passing.getDepth());
 }
 } // namespace
 } // namespace latinime

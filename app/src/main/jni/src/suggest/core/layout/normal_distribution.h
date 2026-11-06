@@ -29,26 +29,26 @@ class NormalDistribution {
  public:
     NormalDistribution(const float u, const float sigma)
             : mU(u),
-              mPreComputedNonExpPart(1.0f / sqrtf(2.0f * M_PI_F
-                      * GeometryUtils::SQUARE_FLOAT(validSigma(sigma)))),
-              mPreComputedExponentPart(-1.0f / (2.0f * GeometryUtils::SQUARE_FLOAT(validSigma(sigma)))) {}
+              mPreComputedNonExpPart(1.0 / sqrt(2.0 * M_PI
+                      * validSigma(sigma) * validSigma(sigma))),
+              mPreComputedExponentPart(-0.5 / (validSigma(sigma) * validSigma(sigma))) {}
 
     float getProbabilityDensity(const float x) const {
         if (!std::isfinite(x) || !std::isfinite(mU)) return 0.0f;
-        const float shiftedX = x - mU;
+        const double shiftedX = static_cast<double>(x) - mU;
         return mPreComputedNonExpPart
-                * expf(mPreComputedExponentPart * GeometryUtils::SQUARE_FLOAT(shiftedX));
+                * exp(mPreComputedExponentPart * shiftedX * shiftedX);
     }
 
  private:
-    static float validSigma(float sigma) {
+    static double validSigma(float sigma) {
         return std::isfinite(sigma) && sigma >= 0.001f ? sigma : 0.001f;
     }
     DISALLOW_IMPLICIT_CONSTRUCTORS(NormalDistribution);
 
     const float mU; // mean value
-    const float mPreComputedNonExpPart; // = 1 / sqrt(2 * PI * sigma^2)
-    const float mPreComputedExponentPart; // = -1 / (2 * sigma^2)
+    const double mPreComputedNonExpPart; // = 1 / sqrt(2 * PI * sigma^2)
+    const double mPreComputedExponentPart; // = -1 / (2 * sigma^2)
 };
 } // namespace latinime
 #endif // LATINIME_NORMAL_DISTRIBUTION_H

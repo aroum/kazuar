@@ -107,7 +107,7 @@ ProximityInfo::ProximityInfo(JNIEnv *env, const int keyboardWidth, const int key
         mKeyHeights[i] = std::max(0, std::min(32767, mKeyHeights[i]));
         if (!std::isfinite(mSweetSpotCenterXs[i]) || !std::isfinite(mSweetSpotCenterYs[i])
                 || fabsf(mSweetSpotCenterXs[i]) > 32767 || fabsf(mSweetSpotCenterYs[i]) > 32767
-                || !std::isfinite(mSweetSpotRadii[i]) || mSweetSpotRadii[i] <= 0) {
+                || !std::isfinite(mSweetSpotRadii[i]) || mSweetSpotRadii[i] < 0.001f || mSweetSpotRadii[i] > 32767) {
             mSweetSpotCenterXs[i] = mKeyXCoordinates[i] + mKeyWidths[i] / 2;
             mSweetSpotCenterYs[i] = mKeyYCoordinates[i] + mKeyHeights[i] / 2;
             mSweetSpotRadii[i] = 0;
