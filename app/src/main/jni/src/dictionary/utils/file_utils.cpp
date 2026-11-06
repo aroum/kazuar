@@ -15,7 +15,6 @@
  */
 
 #include "dictionary/utils/file_utils.h"
-#include <climits>
 
 #include <cstdio>
 #include <cerrno>

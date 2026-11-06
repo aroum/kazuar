@@ -61,7 +61,7 @@ void Ver4PatriciaTriePolicy::createAndGetAllChildDicNodes(const DicNode *const d
     }
     DynamicPtReadingHelper readingHelper(&mNodeReader, &mPtNodeArrayReader);
     readingHelper.initWithPtNodeArrayPos(dicNode->getChildrenPtNodeArrayPos());
-    while (!readingHelper.isEnd()) {
+    while (!readingHelper.isEnd() && !childDicNodes->isFull()) {
         const PtNodeParams ptNodeParams = readingHelper.getPtNodeParams();
         if (!ptNodeParams.isValid()) {
             break;

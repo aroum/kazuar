@@ -18,6 +18,8 @@
 #define LATINIME_DIC_NODE_VECTOR_H
 
 #include <vector>
+#include <climits>
+#include <algorithm>
 
 #include "defines.h"
 #include "suggest/core/dicnode/dic_node.h"
@@ -33,11 +35,12 @@ class DicNodeVector {
 #else
     static const int DEFAULT_NODES_SIZE_FOR_OPTIMIZATION = 60;
 #endif
-    AK_FORCE_INLINE DicNodeVector() : mDicNodes(), mLock(false) {}
+    AK_FORCE_INLINE DicNodeVector() : mDicNodes(), mLock(false), mMaxSize(INT_MAX) {}
 
     // Specify the capacity of the vector
-    AK_FORCE_INLINE DicNodeVector(const int size) : mDicNodes(), mLock(false) {
-        mDicNodes.reserve(size);
+    AK_FORCE_INLINE DicNodeVector(const int size, const int maxSize = INT_MAX)
+            : mDicNodes(), mLock(false), mMaxSize(std::max(0, maxSize)) {
+        mDicNodes.reserve(std::min(std::max(0, size), mMaxSize));
     }
 
     // Non virtual inline destructor -- never inherit this class
@@ -53,8 +56,11 @@ class DicNodeVector {
         return static_cast<int>(mDicNodes.size());
     }
 
+    bool isFull() const { return mDicNodes.size() >= static_cast<size_t>(mMaxSize); }
+
     void pushPassingChild(const DicNode *dicNode) {
         ASSERT(!mLock);
+        if (isFull()) return;
         mDicNodes.emplace_back();
         mDicNodes.back().initAsPassingChild(dicNode);
     }
@@ -62,6 +68,7 @@ class DicNodeVector {
     void pushLeavingChild(const DicNode *const dicNode, const int childrenPtNodeArrayPos,
             const int wordId, const CodePointArrayView mergedCodePoints) {
         ASSERT(!mLock);
+        if (isFull()) return;
         mDicNodes.emplace_back();
         mDicNodes.back().initAsChild(dicNode, childrenPtNodeArrayPos, wordId, mergedCodePoints);
     }
@@ -80,6 +87,7 @@ class DicNodeVector {
     DISALLOW_COPY_AND_ASSIGN(DicNodeVector);
     std::vector<DicNode> mDicNodes;
     bool mLock;
+    const int mMaxSize;
 };
 } // namespace latinime
 #endif // LATINIME_DIC_NODE_VECTOR_H

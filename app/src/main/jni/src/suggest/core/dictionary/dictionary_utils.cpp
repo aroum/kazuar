@@ -33,7 +33,7 @@ namespace latinime {
     if (!dictionaryStructurePolicy || codePoints.empty() || codePoints.size() > MAX_WORD_LENGTH) {
         return NOT_A_PROBABILITY;
     }
-    int remainingWork = 65536;
+    int remainingWork = 16384;
     std::vector<DicNode> current;
     std::vector<DicNode> next;
 
@@ -80,10 +80,11 @@ namespace latinime {
         const int inputCodePoint, const DicNode *const parentDicNode,
         std::vector<DicNode> *const outDicNodes, int *const remainingWork) {
     if (*remainingWork <= 0 || parentDicNode->getNodeCodePointCount() >= MAX_WORD_LENGTH) return;
-    DicNodeVector childDicNodes;
+    DicNodeVector childDicNodes(0, *remainingWork);
     DicNodeUtils::getAllChildDicNodes(parentDicNode, dictionaryStructurePolicy, &childDicNodes);
-    for (int childIndex = 0; childIndex < childDicNodes.getSizeAndLock(); ++childIndex) {
-        if (--*remainingWork < 0) return;
+    const int childCount = childDicNodes.getSizeAndLock();
+    *remainingWork -= childCount;
+    for (int childIndex = 0; childIndex < childCount; ++childIndex) {
         DicNode *const childDicNode = childDicNodes[childIndex];
         const int codePoint = CharUtils::toBaseLowerCase(childDicNode->getNodeCodePoint());
         if (inputCodePoint == codePoint) {

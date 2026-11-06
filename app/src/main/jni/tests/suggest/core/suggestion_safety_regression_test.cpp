@@ -22,6 +22,7 @@
 #include "dictionary/utils/mmapped_buffer.h"
 #include "dictionary/utils/sparse_table.h"
 #include "suggest/core/dicnode/dic_node_priority_queue.h"
+#include "suggest/core/dicnode/dic_node_vector.h"
 #include "suggest/core/layout/normal_distribution_2d.h"
 #include "suggest/core/layout/proximity_info.h"
 #include "suggest/core/layout/proximity_info_state.h"
@@ -287,7 +288,7 @@ TEST(SuggestionSafetyTest, UnderflowingKeyDensitiesHaveFiniteNormalizedFallback)
     std::vector<std::unordered_map<int, float>> probabilities;
     ProximityInfoStateUtils::updateAlignPointProbabilities(1, 10, 2, 0, 1, &points, &points,
             &speeds, &length, &distances, &info, &probabilities);
-    float sum = 0; for (const auto &entry : probabilities[0]) { EXPECT_TRUE(std::isfinite(entry.second)); sum += entry.second; }
+    float sum = 0; for (const auto &entry : probabilities[0]) { EXPECT_TRUE(std::isfinite(entry.second)); sum += expf(-entry.second); }
     EXPECT_NEAR(1.0f, sum, 0.0001f);
 }
 TEST(SuggestionSafetyTest, ExactMatchesHandleDigraphsAndIntentionalOmissions) {
@@ -338,6 +339,15 @@ TEST(SuggestionSafetyTest, NodePropertiesLimitContextAndDepthBeforeCopying) {
     EXPECT_EQ(MAX_WORD_LENGTH, properties.getDepth());
     DicNodeProperties passing; passing.init(&properties, 'b');
     EXPECT_EQ(MAX_WORD_LENGTH, passing.getDepth());
+}
+TEST(SuggestionSafetyTest, ChildExpansionStopsAtSharedWorkCapacity) {
+    DicNode root; root.initAsRoot(0, WordIdArrayView());
+    DicNodeVector children(0, 2); int point = 'a';
+    for (int i = 0; i < 100; ++i) {
+        children.pushLeavingChild(&root, NOT_A_DICT_POS, i, CodePointArrayView(&point, 1));
+    }
+    EXPECT_TRUE(children.isFull()); EXPECT_EQ(2, children.getSizeAndLock());
+    children.clear(); EXPECT_FALSE(children.isFull());
 }
 } // namespace
 } // namespace latinime

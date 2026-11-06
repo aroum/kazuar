@@ -47,7 +47,7 @@ void PatriciaTriePolicy::createAndGetAllChildDicNodes(const DicNode *const dicNo
     const int childCount = PatriciaTrieReadingUtils::getPtNodeArraySizeAndAdvancePosition(
             mBuffer, &nextPos);
     if (childCount < 0) { mIsCorrupted = true; return; }
-    for (int i = 0; i < childCount; i++) {
+    for (int i = 0; i < childCount && !childDicNodes->isFull(); i++) {
         if (!isValidPos(nextPos)) {
             AKLOGE("Child PtNode position is invalid. pos: %d, dict size: %zd, childCount: %d / %d",
                     nextPos, mBuffer.size(), i, childCount);
