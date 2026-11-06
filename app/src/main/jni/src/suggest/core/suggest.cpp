@@ -45,14 +45,15 @@ const int Suggest::MIN_CONTINUOUS_SUGGESTION_INPUT_SIZE = 2;
  * automatically activated for sequential calls that share the same starting input.
  * TODO: Stop detecting continuous suggestion. Start using traverseSession instead.
  */
-void Suggest::getSuggestions(ProximityInfo *pInfo, void *traverseSession,
+void Suggest::getSuggestions(ProximityInfo *pInfo, DicTraverseSession *traverseSession,
         int *inputXs, int *inputYs, int *times, int *pointerIds, int *inputCodePoints,
         int inputSize, const float weightOfLangModelVsSpatialModel,
         SuggestionResults *const outSuggestionResults) const {
+    if (!TRAVERSAL || !SCORING || !WEIGHTING || !traverseSession || !pInfo || !outSuggestionResults) return;
     PROF_INIT;
     PROF_TIMER_START(0);
     const float maxSpatialDistance = TRAVERSAL->getMaxSpatialDistance();
-    DicTraverseSession *tSession = static_cast<DicTraverseSession *>(traverseSession);
+    DicTraverseSession *tSession = traverseSession;
     tSession->setupForGetSuggestions(pInfo, inputCodePoints, inputSize, inputXs, inputYs, times,
             pointerIds, maxSpatialDistance, TRAVERSAL->getMaxPointerCount());
     // TODO: Add the way to evaluate cache
@@ -122,7 +123,7 @@ void Suggest::expandCurrentDicNodes(DicTraverseSession *traverseSession) const {
         DicNode dicNode;
         traverseSession->getDicTraverseCache()->popActive(&dicNode);
         if (dicNode.isTotalInputSizeExceedingLimit()) {
-            return;
+            continue;
         }
         childDicNodes.clear();
         const int point0Index = dicNode.getInputIndex(0);

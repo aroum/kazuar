@@ -1058,8 +1058,10 @@ static int compare_pair_capital(const void *a, const void *b) {
 }
 
 /* static */ int CharUtils::latin_tolower(const int c) {
+    if (c < 0 || c > 0xFFFF) return c;
+    const unsigned short key = static_cast<unsigned short>(c);
     struct LatinCapitalSmallPair *p =
-            static_cast<struct LatinCapitalSmallPair *>(bsearch(&c, SORTED_CHAR_MAP,
+            static_cast<struct LatinCapitalSmallPair *>(bsearch(&key, SORTED_CHAR_MAP,
                     NELEMS(SORTED_CHAR_MAP), sizeof(SORTED_CHAR_MAP[0]), compare_pair_capital));
     return p ? static_cast<int>(p->small) : c;
 }

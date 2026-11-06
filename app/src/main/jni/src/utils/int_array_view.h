@@ -111,8 +111,8 @@ class IntArrayView {
 
     template <size_t N>
     void copyToArray(std::array<int, N> *const buffer, const size_t offset) const {
-        ASSERT(mSize + offset <= N);
-        memmove(buffer->data() + offset, mPtr, sizeof(int) * mSize);
+        if (!buffer || offset > N || mSize > N - offset || (mSize && !mPtr)) return;
+        if (mSize) memmove(buffer->data() + offset, mPtr, sizeof(int) * mSize);
     }
 
     AK_FORCE_INLINE int firstOrDefault(const int defaultValue) const {

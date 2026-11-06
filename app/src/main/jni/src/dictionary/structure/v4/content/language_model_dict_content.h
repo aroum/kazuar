@@ -212,10 +212,10 @@ class LanguageModelDictContent {
             DISALLOW_ASSIGNMENT_OPERATOR(Comparator);
         };
 
-        EntryInfoToTurncate(const int priority, const int count, const int key,
+        EntryInfoToTurncate(const int64_t priority, const int count, const int key,
                 const int prevWordCount, const int *const prevWordIds);
 
-        int mPriority;
+        int64_t mPriority;
         // TODO: Remove.
         int mCount;
         int mKey;

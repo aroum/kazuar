@@ -20,53 +20,35 @@
 #include <stdarg.h>
 
 #include "defines.h"
+#include <vector>
+#include "utils/unicode_utils.h"
+#include "utils/jni_local_frame.h"
 
 namespace latinime {
     /* static */ void LogUtils::logToJava(JNIEnv *const env, const char *const format, ...) {
-        static const char *TAG = "LatinIME:LogUtils";
-        const jclass androidUtilLogClass = env->FindClass("android/util/Log");
-        if (!androidUtilLogClass) {
-            // If we can't find the class, we are probably in off-device testing, and
-            // it's expected. Regardless, logging is not essential to functionality, so
-            // we should just return. However, FindClass has thrown an exception behind
-            // our back and there is no way to prevent it from doing that, so we clear
-            // the exception before we return.
-            env->ExceptionClear();
-            return;
-        }
-        const jmethodID logDotIMethodId = env->GetStaticMethodID(androidUtilLogClass, "i",
-                "(Ljava/lang/String;Ljava/lang/String;)I");
-        if (!logDotIMethodId) {
-            env->ExceptionClear();
-            if (androidUtilLogClass) env->DeleteLocalRef(androidUtilLogClass);
-            return;
-        }
-        const jstring javaTag = env->NewStringUTF(TAG);
-
-        static const int DEFAULT_LINE_SIZE = 128;
-        char fixedSizeCString[DEFAULT_LINE_SIZE];
-        va_list argList;
-        va_start(argList, format);
-        // Get the necessary size. Add 1 for the 0 terminator.
-        const int size = vsnprintf(fixedSizeCString, DEFAULT_LINE_SIZE, format, argList) + 1;
-        va_end(argList);
-
-        jstring javaString;
-        if (size <= DEFAULT_LINE_SIZE) {
-            // The buffer was large enough.
-            javaString = env->NewStringUTF(fixedSizeCString);
-        } else {
-            // The buffer was not large enough.
-            va_start(argList, format);
-            char variableSizeCString[size];
-            vsnprintf(variableSizeCString, size, format, argList);
-            va_end(argList);
-            javaString = env->NewStringUTF(variableSizeCString);
-        }
-
-        env->CallStaticIntMethod(androidUtilLogClass, logDotIMethodId, javaTag, javaString);
-        if (javaString) env->DeleteLocalRef(javaString);
-        if (javaTag) env->DeleteLocalRef(javaTag);
-        if (androidUtilLogClass) env->DeleteLocalRef(androidUtilLogClass);
+        if (!env || !format || env->ExceptionCheck()) return;
+        JniLocalFrame frame(env, 8);
+        if (!frame.valid()) return;
+        const jclass logClass = env->FindClass("android/util/Log");
+        if (!logClass) { env->ExceptionClear(); return; }
+        const jmethodID method = env->GetStaticMethodID(logClass, "i", "(Ljava/lang/String;Ljava/lang/String;)I");
+        if (!method) { env->ExceptionClear(); return; }
+        va_list args;
+        va_start(args, format);
+        va_list copied;
+        va_copy(copied, args);
+        const int needed = vsnprintf(nullptr, 0, format, copied);
+        va_end(copied);
+        if (needed < 0 || needed > 65536) { va_end(args); return; }
+        std::vector<char> bytes(needed + 1);
+        const int written = vsnprintf(bytes.data(), bytes.size(), format, args);
+        va_end(args);
+        if (written < 0 || written != needed) return;
+        const std::u16string text = UnicodeUtils::utf8ToUtf16(std::string(bytes.data(), written));
+        const jstring tag = env->NewStringUTF("LatinIME:LogUtils"); // ASCII is valid Modified UTF-8.
+        if (!tag || env->ExceptionCheck()) return;
+        const jstring message = env->NewString(reinterpret_cast<const jchar *>(text.data()), text.size());
+        if (!message || env->ExceptionCheck()) return;
+        env->CallStaticIntMethod(logClass, method, tag, message);
     }
 }

@@ -47,47 +47,22 @@ char (&ArraySizeHelper(T (&array)[N]))[N];
 
 AK_FORCE_INLINE static int intArrayToCharArray(const int *const source, const int sourceSize,
         char *dest, const int destSize) {
-    // We want to always terminate with a 0 char, so stop one short of the length to make
-    // sure there is room.
-    const int destLimit = destSize - 1;
-    int si = 0;
+    if (!dest || destSize <= 0) return 0;
+    dest[0] = 0;
+    if (!source || sourceSize <= 0) return 0;
     int di = 0;
-    while (si < sourceSize && di < destLimit && 0 != source[si]) {
-        const uint32_t codePoint = static_cast<uint32_t>(source[si++]);
-        if (codePoint < 0x7F) { // One byte
-            dest[di++] = codePoint;
-        } else if (codePoint < 0x7FF) { // Two bytes
-            if (di + 1 >= destLimit) break;
-            dest[di++] = 0xC0 + (codePoint >> 6);
-            dest[di++] = 0x80 + (codePoint & 0x3F);
-        } else if (codePoint < 0xFFFF) { // Three bytes
-            if (di + 2 >= destLimit) break;
-            dest[di++] = 0xE0 + (codePoint >> 12);
-            dest[di++] = 0x80 + ((codePoint >> 6) & 0x3F);
-            dest[di++] = 0x80 + (codePoint & 0x3F);
-        } else if (codePoint <= 0x1FFFFF) { // Four bytes
-            if (di + 3 >= destLimit) break;
-            dest[di++] = 0xF0 + (codePoint >> 18);
-            dest[di++] = 0x80 + ((codePoint >> 12) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 6) & 0x3F);
-            dest[di++] = 0x80 + (codePoint & 0x3F);
-        } else if (codePoint <= 0x3FFFFFF) { // Five bytes
-            if (di + 4 >= destLimit) break;
-            dest[di++] = 0xF8 + (codePoint >> 24);
-            dest[di++] = 0x80 + ((codePoint >> 18) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 12) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 6) & 0x3F);
-            dest[di++] = codePoint & 0x3F;
-        } else if (codePoint <= 0x7FFFFFFF) { // Six bytes
-            if (di + 5 >= destLimit) break;
-            dest[di++] = 0xFC + (codePoint >> 30);
-            dest[di++] = 0x80 + ((codePoint >> 24) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 18) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 12) & 0x3F);
-            dest[di++] = 0x80 + ((codePoint >> 6) & 0x3F);
-            dest[di++] = codePoint & 0x3F;
-        } else {
-            // Not a code point... skip.
+    for (int si = 0; si < sourceSize && source[si]; ++si) {
+        uint32_t c = static_cast<uint32_t>(source[si]);
+        if (c > 0x10FFFF || (c >= 0xD800 && c <= 0xDFFF)) c = 0xFFFD;
+        const int bytes = c <= 0x7F ? 1 : c <= 0x7FF ? 2 : c <= 0xFFFF ? 3 : 4;
+        if (bytes > destSize - di - 1) break;
+        if (bytes == 1) dest[di++] = c;
+        else {
+            dest[di++] = (bytes == 2 ? 0xC0 : bytes == 3 ? 0xE0 : 0xF0)
+                    | (c >> (6 * (bytes - 1)));
+            for (int shift = 6 * (bytes - 2); shift >= 0; shift -= 6) {
+                dest[di++] = 0x80 | ((c >> shift) & 0x3F);
+            }
         }
     }
     dest[di] = 0;
@@ -119,7 +94,7 @@ AK_FORCE_INLINE static int intArrayToCharArray(const int *const source, const in
 
 static inline void dumpWordInfo(const int *word, const int length, const int rank,
         const int probability) {
-    static char charBuf[50];
+    char charBuf[50];
     const int N = intArrayToCharArray(word, length, charBuf, NELEMS(charBuf));
     if (N > 0) {
         AKLOGI("%2d [ %s ] (%d)", rank, charBuf, probability);
@@ -127,7 +102,7 @@ static inline void dumpWordInfo(const int *word, const int length, const int ran
 }
 
 static AK_FORCE_INLINE void dumpWord(const int *word, const int length) {
-    static char charBuf[50];
+    char charBuf[50];
     const int N = intArrayToCharArray(word, length, charBuf, NELEMS(charBuf));
     if (N > 1) {
         AKLOGI("[ %s ]", charBuf);
@@ -171,7 +146,7 @@ static inline void showStackTrace() {
 #undef DO_ASSERT_TEST
 #define ASSERT(success)
 #define SHOW_STACK_TRACE
-#define INTS_TO_CHARS(input, length, output)
+#define INTS_TO_CHARS(input, length, output, outlength)
 #endif // defined(FLAG_DO_PROFILE) || defined(FLAG_DBG)
 
 #ifdef FLAG_DBG

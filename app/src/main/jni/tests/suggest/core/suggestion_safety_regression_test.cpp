@@ -59,6 +59,9 @@ struct JniArrayData {
 class FakeJni {
  public:
     FakeJni() : table(), env() {
+        table.PushLocalFrame = [](JNIEnv *, jint) -> jint { return JNI_OK; };
+        table.PopLocalFrame = [](JNIEnv *, jobject value) -> jobject { return value; };
+        table.ExceptionCheck = [](JNIEnv *) -> jboolean { return JNI_FALSE; };
         table.GetArrayLength = [](JNIEnv *, jarray array) -> jsize {
             EXPECT_NE(nullptr, array);
             if (!array) return 0;
@@ -256,7 +259,7 @@ TEST(SuggestionSafetyTest, ShortcutScoreIsReducedOnceAndWhitelistKeepsMaximum) {
             SuggestionResults results(4);
             SuggestionSafetyTestPeer::shortcuts(&it, base, true, &results);
             ASSERT_EQ(1, results.getSuggestionCount()); int scores[4] = {};
-            results.getSortedScores(scores);
+            results.getSortedScores(scores, 4);
             EXPECT_EQ(white ? S_INT_MAX : std::max(S_INT_MIN + 1, base) - 1, scores[0]);
         }
     }

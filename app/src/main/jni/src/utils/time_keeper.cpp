@@ -17,24 +17,42 @@
 #include "utils/time_keeper.h"
 
 #include <ctime>
+#if defined(__ANDROID__)
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 
 namespace latinime {
 
-int TimeKeeper::sCurrentTime;
+std::atomic<int64_t> TimeKeeper::sCurrentTime{0};
+std::mutex TimeKeeper::sWriteMutex;
 bool TimeKeeper::sSetForTesting;
 
 /* static  */ void TimeKeeper::setCurrentTime() {
-    if (!sSetForTesting) {
-        sCurrentTime = time(0);
+    std::lock_guard<std::mutex> lock(sWriteMutex);
+    if (sSetForTesting) return;
+#if defined(__ANDROID__) && !defined(__LP64__) && defined(__NR_clock_gettime64)
+    struct KernelTimespec64 { int64_t seconds; int64_t nanos; } ts;
+    if (syscall(__NR_clock_gettime64, CLOCK_REALTIME, &ts) == 0) {
+        sCurrentTime.store(ts.seconds, std::memory_order_relaxed);
+        return;
     }
+#endif
+    const time_t now = time(nullptr);
+    if (now == static_cast<time_t>(-1)) return;
+    // Legacy 32-bit bionic time_t preserves the unsigned epoch through 2106.
+    sCurrentTime.store(sizeof(time_t) == 4 ? static_cast<int64_t>(static_cast<uint32_t>(now))
+            : static_cast<int64_t>(now), std::memory_order_relaxed);
 }
 
-/* static */ void TimeKeeper::startTestModeWithForceCurrentTime(const int currentTime) {
+/* static */ void TimeKeeper::startTestModeWithForceCurrentTime(const int64_t currentTime) {
+    std::lock_guard<std::mutex> lock(sWriteMutex);
     sCurrentTime = currentTime;
     sSetForTesting = true;
 }
 
 /* static */ void TimeKeeper::stopTestMode() {
+    std::lock_guard<std::mutex> lock(sWriteMutex);
     sSetForTesting = false;
 }
 

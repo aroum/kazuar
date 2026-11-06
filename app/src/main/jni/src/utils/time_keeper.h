@@ -18,6 +18,9 @@
 #define LATINIME_TIME_KEEPER_H
 
 #include "defines.h"
+#include <atomic>
+#include <cstdint>
+#include <mutex>
 
 namespace latinime {
 
@@ -25,16 +28,17 @@ class TimeKeeper {
  public:
     static void setCurrentTime();
 
-    static void startTestModeWithForceCurrentTime(const int currentTime);
+    static void startTestModeWithForceCurrentTime(const int64_t currentTime);
 
     static void stopTestMode();
 
-    static int peekCurrentTime() { return sCurrentTime; };
+    static int64_t peekCurrentTime() { return sCurrentTime.load(std::memory_order_relaxed); }
 
  private:
     DISALLOW_IMPLICIT_CONSTRUCTORS(TimeKeeper);
 
-    static int sCurrentTime;
+    static std::atomic<int64_t> sCurrentTime;
+    static std::mutex sWriteMutex;
     static bool sSetForTesting;
 };
 } // namespace latinime

@@ -17,6 +17,7 @@
 #include "suggest/core/result/suggestion_results.h"
 
 #include "utils/jni_data_utils.h"
+#include <algorithm>
 
 namespace latinime {
 
@@ -24,10 +25,19 @@ void SuggestionResults::outputSuggestions(JNIEnv *env, jintArray outSuggestionCo
         jintArray outputCodePointsArray, jintArray outScoresArray, jintArray outSpaceIndicesArray,
         jintArray outTypesArray, jintArray outAutoCommitFirstWordConfidenceArray,
         jfloatArray outWeightOfLangModelVsSpatialModel) {
+    JniDataUtils::putIntToArray(env, outSuggestionCount, 0, 0);
+    if (!JniDataUtils::hasArrayRange(env, outSuggestionCount, 0, 1)
+            || !JniDataUtils::hasArrayRange(env, outAutoCommitFirstWordConfidenceArray, 0, 1)
+            || !JniDataUtils::hasArrayRange(env, outWeightOfLangModelVsSpatialModel, 0, 1)
+            || !outputCodePointsArray || !outScoresArray || !outSpaceIndicesArray || !outTypesArray) return;
+    const int capacity = std::max(0, std::min(mMaxSuggestionCount,
+            std::min(env->GetArrayLength(outputCodePointsArray) / MAX_WORD_LENGTH,
+            std::min(env->GetArrayLength(outScoresArray),
+            std::min(env->GetArrayLength(outSpaceIndicesArray), env->GetArrayLength(outTypesArray))))));
+    while (getSuggestionCount() > capacity) mSuggestedWords.pop(); // Keep the best candidates.
     int outputIndex = 0;
     while (!mSuggestedWords.empty()) {
         const SuggestedWord &suggestedWord = mSuggestedWords.top();
-        suggestedWord.getCodePointCount();
         const int start = outputIndex * MAX_WORD_LENGTH;
         JniDataUtils::outputCodePoints(env, outputCodePointsArray, start,
                 MAX_WORD_LENGTH /* maxLength */, suggestedWord.getCodePoint(),
@@ -61,7 +71,7 @@ void SuggestionResults::addPrediction(const int *const codePoints, const int cod
 void SuggestionResults::addSuggestion(const int *const codePoints, const int codePointCount,
         const int score, const int type, const int indexToPartialCommit,
         const int autocimmitFirstWordConfindence) {
-    if (codePointCount <= 0 || codePointCount > MAX_WORD_LENGTH) {
+    if (mMaxSuggestionCount <= 0 || !codePoints || codePointCount <= 0 || codePointCount > MAX_WORD_LENGTH) {
         // Invalid word.
         AKLOGE("Invalid word is added to the suggestion results. codePointCount: %d",
                 codePointCount);
@@ -80,13 +90,15 @@ void SuggestionResults::addSuggestion(const int *const codePoints, const int cod
             indexToPartialCommit, autocimmitFirstWordConfindence));
 }
 
-void SuggestionResults::getSortedScores(int *const outScores) const {
-    auto copyOfSuggestedWords = mSuggestedWords;
-    while (!copyOfSuggestedWords.empty()) {
-        const SuggestedWord &suggestedWord = copyOfSuggestedWords.top();
-        outScores[copyOfSuggestedWords.size() - 1] = suggestedWord.getScore();
-        copyOfSuggestedWords.pop();
-    }
+int SuggestionResults::getSortedScores(int *const outScores, const int capacity) const {
+    if (!outScores || capacity <= 0) return 0;
+    std::vector<int> scores;
+    scores.reserve(mSuggestedWords.size());
+    for (const auto &word : mSuggestedWords.words()) scores.push_back(word.getScore());
+    std::sort(scores.begin(), scores.end(), std::greater<int>());
+    const int count = std::min<int>(capacity, scores.size());
+    std::copy(scores.begin(), scores.begin() + count, outScores);
+    return count;
 }
 
 void SuggestionResults::dumpSuggestions() const {

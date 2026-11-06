@@ -21,12 +21,13 @@
 
 namespace latinime {
 
+class DicTraverseSession;
 class ProximityInfo;
 class SuggestionResults;
 
 class SuggestInterface {
  public:
-    virtual void getSuggestions(ProximityInfo *pInfo, void *traverseSession, int *inputXs,
+    virtual void getSuggestions(ProximityInfo *pInfo, DicTraverseSession *traverseSession, int *inputXs,
             int *inputYs, int *times, int *pointerIds, int *inputCodePoints, int inputSize,
             const float weightOfLangModelVsSpatialModel,
             SuggestionResults *const suggestionResults) const = 0;

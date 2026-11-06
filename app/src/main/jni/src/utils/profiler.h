@@ -38,7 +38,7 @@ class Profiler final {
         AKLOGI("Total time is %6.3f ms.", totalTime);
         for (const auto &time : mTimes) {
             AKLOGI("(%d): Used %4.2f%%, %8.4f ms. Called %d times.", time.first,
-                    time.second / totalTime * 100.0f, time.second, mCounters[time.first]);
+                    totalTime > 0.0f ? time.second / totalTime * 100.0f : 0.0f, time.second, mCounters[time.first]);
         }
     }
 

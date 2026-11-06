@@ -462,7 +462,7 @@ bool LanguageModelDictContent::getEntryInfo(const HeaderPolicy *const headerPoli
         }
         const ProbabilityEntry probabilityEntry =
                 ProbabilityEntry::decode(entry.value(), mHasHistoricalInfo);
-        const int priority = mHasHistoricalInfo
+        const int64_t priority = mHasHistoricalInfo
                 ? DynamicLanguageModelProbabilityUtils::getPriorityToPreventFromEviction(
                         *probabilityEntry.getHistoricalInfo())
                 : probabilityEntry.getProbability();
@@ -495,7 +495,7 @@ bool LanguageModelDictContent::EntryInfoToTurncate::Comparator::operator()(
     return false;
 }
 
-LanguageModelDictContent::EntryInfoToTurncate::EntryInfoToTurncate(const int priority,
+LanguageModelDictContent::EntryInfoToTurncate::EntryInfoToTurncate(const int64_t priority,
         const int count, const int key, const int prevWordCount, const int *const prevWordIds)
         : mPriority(priority), mCount(count), mKey(key),
           mPrevWordCount(prevWordCount >= 0 && prevWordCount <= MAX_PREV_WORD_COUNT_FOR_N_GRAM

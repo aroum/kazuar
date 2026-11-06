@@ -15,6 +15,9 @@ target_compile_options(native_regression_core PRIVATE -ffunction-sections -fdata
     -fsanitize=address,undefined,float-cast-overflow -fno-omit-frame-pointer)
 enable_testing()
 add_executable(native_regressions
+    utils/native_boundary_regression_test.cpp
+    utils/autocorrection_threshold_utils_test.cpp
+    suggest/policyimpl/utils/damerau_levenshtein_edit_distance_policy_test.cpp
     suggest/core/suggestion_safety_regression_test.cpp
     suggest/core/dicnode/dic_node_pool_test.cpp
     suggest/core/layout/normal_distribution_2d_test.cpp

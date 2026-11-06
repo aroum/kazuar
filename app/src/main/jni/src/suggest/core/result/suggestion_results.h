@@ -42,7 +42,7 @@ class SuggestionResults {
     void addSuggestion(const int *const codePoints, const int codePointCount,
             const int score, const int type, const int indexToPartialCommit,
             const int autocimmitFirstWordConfindence);
-    void getSortedScores(int *const outScores) const;
+    int getSortedScores(int *const outScores, int capacity) const;
     void dumpSuggestions() const;
 
     void setWeightOfLangModelVsSpatialModel(const float weightOfLangModelVsSpatialModel) {
@@ -58,8 +58,11 @@ class SuggestionResults {
 
     const int mMaxSuggestionCount;
     float mWeightOfLangModelVsSpatialModel;
-    std::priority_queue<
-            SuggestedWord, std::vector<SuggestedWord>, SuggestedWord::Comparator> mSuggestedWords;
+    class WordQueue : public std::priority_queue<SuggestedWord, std::vector<SuggestedWord>, SuggestedWord::Comparator> {
+     public:
+        const std::vector<SuggestedWord> &words() const { return this->c; }
+    };
+    WordQueue mSuggestedWords;
 };
 } // namespace latinime
 #endif // LATINIME_SUGGESTION_RESULTS_H

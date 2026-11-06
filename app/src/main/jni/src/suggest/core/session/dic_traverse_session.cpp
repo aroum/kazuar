@@ -17,6 +17,7 @@
 #include "suggest/core/session/dic_traverse_session.h"
 
 #include "defines.h"
+#include "suggest/core/suggest_options.h"
 #include "dictionary/interface/dictionary_header_structure_policy.h"
 #include "dictionary/interface/dictionary_structure_with_buffer_policy.h"
 #include "dictionary/property/ngram_context.h"
@@ -69,11 +70,7 @@ void DicTraverseSession::initializeProximityInfoStates(const int *const inputCod
     for (int i = 0; i < maxPointerCount; ++i) {
         mProximityInfoStates[i].initInputParams(i, maxSpatialDistance, getProximityInfo(),
                 inputCodePoints, inputSize, inputXs, inputYs, times, pointerIds,
-                // Right now the line below is trying to figure out whether this is a gesture by
-                // looking at the pointer count and assuming whatever is above the cutoff is
-                // a gesture and whatever is below is type. This is hacky and incorrect, we
-                // should pass the correct information instead.
-                maxPointerCount == MAX_POINTER_COUNT_G,
+                mSuggestOptions && mSuggestOptions->isGesture(),
                 getDictionaryStructurePolicy()->getHeaderStructurePolicy()->getLocale());
         mInputSize += mProximityInfoStates[i].size();
     }

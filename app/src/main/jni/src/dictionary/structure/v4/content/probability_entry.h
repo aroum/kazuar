@@ -102,7 +102,7 @@ class ProbabilityEntry {
         uint64_t encodedEntry = static_cast<uint8_t>(mFlags);
         if (hasHistoricalInfo) {
             encodedEntry = (encodedEntry << (Ver4DictConstants::TIME_STAMP_FIELD_SIZE * CHAR_BIT))
-                    | static_cast<uint32_t>(mHistoricalInfo.getTimestamp());
+                    | mHistoricalInfo.encodeTimestamp();
             encodedEntry = (encodedEntry << (Ver4DictConstants::WORD_LEVEL_FIELD_SIZE * CHAR_BIT))
                     | (Ver4DictConstants::WORD_LEVEL_FIELD_SIZE == 0 ? 0
                             : static_cast<uint8_t>(mHistoricalInfo.getLevel()));
@@ -122,10 +122,10 @@ class ProbabilityEntry {
                     Ver4DictConstants::TIME_STAMP_FIELD_SIZE
                             + Ver4DictConstants::WORD_LEVEL_FIELD_SIZE
                             + Ver4DictConstants::WORD_COUNT_FIELD_SIZE);
-            const int timestamp = readFromEncodedEntry(encodedEntry,
+            const int64_t timestamp = HistoricalInfo::decodeTimestamp(readFromEncodedEntry(encodedEntry,
                     Ver4DictConstants::TIME_STAMP_FIELD_SIZE,
                     Ver4DictConstants::WORD_LEVEL_FIELD_SIZE
-                            + Ver4DictConstants::WORD_COUNT_FIELD_SIZE);
+                            + Ver4DictConstants::WORD_COUNT_FIELD_SIZE));
             const int level = readFromEncodedEntry(encodedEntry,
                     Ver4DictConstants::WORD_LEVEL_FIELD_SIZE,
                     Ver4DictConstants::WORD_COUNT_FIELD_SIZE);
@@ -151,8 +151,8 @@ class ProbabilityEntry {
     const int mProbability;
     const HistoricalInfo mHistoricalInfo;
 
-    static int readFromEncodedEntry(const uint64_t encodedEntry, const int size, const int pos) {
-        return static_cast<int>(
+    static uint32_t readFromEncodedEntry(const uint64_t encodedEntry, const int size, const int pos) {
+        return static_cast<uint32_t>(
                 (encodedEntry >> (pos * CHAR_BIT)) & ((1ull << (size * CHAR_BIT)) - 1));
     }
 

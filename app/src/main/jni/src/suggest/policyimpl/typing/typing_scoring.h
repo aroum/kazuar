@@ -105,7 +105,7 @@ class TypingScoring : public Scoring {
     AK_FORCE_INLINE bool sameAsTyped(const DicTraverseSession *const traverseSession,
             const DicNode *const dicNode) const {
         return traverseSession->getProximityInfoState(0)->sameAsTyped(
-                dicNode->getOutputWordBuf(), dicNode->getNodeCodePointCount());
+                dicNode->getOutputWordBuf(), dicNode->getTotalNodeCodePointCount());
     }
 
  private:

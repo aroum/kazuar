@@ -31,9 +31,6 @@ class AutocorrectionThresholdUtils {
  private:
     DISALLOW_IMPLICIT_CONSTRUCTORS(AutocorrectionThresholdUtils);
 
-    static const int MAX_INITIAL_SCORE;
-    static const int TYPED_LETTER_MULTIPLIER;
-    static const int FULL_WORD_MULTIPLIER;
 };
 } // namespace latinime
 #endif // LATINIME_AUTOCORRECTION_THRESHOLD_UTILS_H

@@ -44,9 +44,9 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
               mRequiresGermanUmlautProcessing(readRequiresGermanUmlautProcessing()),
               mIsDecayingDict(HeaderReadWriteUtils::readBoolAttributeValue(&mAttributeMap,
                       IS_DECAYING_DICT_KEY, false /* defaultValue */)),
-              mDate(HeaderReadWriteUtils::readIntAttributeValue(&mAttributeMap,
+              mDate(HeaderReadWriteUtils::readLongAttributeValue(&mAttributeMap,
                       DATE_KEY, TimeKeeper::peekCurrentTime() /* defaultValue */)),
-              mLastDecayedTime(HeaderReadWriteUtils::readIntAttributeValue(&mAttributeMap,
+              mLastDecayedTime(HeaderReadWriteUtils::readLongAttributeValue(&mAttributeMap,
                       LAST_DECAYED_TIME_KEY, TimeKeeper::peekCurrentTime() /* defaultValue */)),
               mNgramCounts(readNgramCounts()), mMaxNgramCounts(readMaxNgramCounts()),
               mExtendedRegionSize(HeaderReadWriteUtils::readIntAttributeValue(&mAttributeMap,
@@ -69,10 +69,10 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
               mRequiresGermanUmlautProcessing(readRequiresGermanUmlautProcessing()),
               mIsDecayingDict(HeaderReadWriteUtils::readBoolAttributeValue(&mAttributeMap,
                       IS_DECAYING_DICT_KEY, false /* defaultValue */)),
-              mDate(HeaderReadWriteUtils::readIntAttributeValue(&mAttributeMap,
+              mDate(HeaderReadWriteUtils::readLongAttributeValue(&mAttributeMap,
                       DATE_KEY, TimeKeeper::peekCurrentTime() /* defaultValue */)),
-              mLastDecayedTime(HeaderReadWriteUtils::readIntAttributeValue(&mAttributeMap,
-                      DATE_KEY, TimeKeeper::peekCurrentTime() /* defaultValue */)),
+              mLastDecayedTime(HeaderReadWriteUtils::readLongAttributeValue(&mAttributeMap,
+                      LAST_DECAYED_TIME_KEY, TimeKeeper::peekCurrentTime() /* defaultValue */)),
               mNgramCounts(readNgramCounts()), mMaxNgramCounts(readMaxNgramCounts()),
               mExtendedRegionSize(0),
               mHasHistoricalInfoOfWords(HeaderReadWriteUtils::readBoolAttributeValue(
@@ -160,11 +160,11 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
         return mRequiresGermanUmlautProcessing;
     }
 
-    AK_FORCE_INLINE int getDate() const {
+    AK_FORCE_INLINE int64_t getDate() const {
         return mDate;
     }
 
-    AK_FORCE_INLINE int getLastDecayedTime() const {
+    AK_FORCE_INLINE int64_t getLastDecayedTime() const {
         return mLastDecayedTime;
     }
 
@@ -249,8 +249,8 @@ class HeaderPolicy : public DictionaryHeaderStructurePolicy {
     const float mMultiWordCostMultiplier;
     const bool mRequiresGermanUmlautProcessing;
     const bool mIsDecayingDict;
-    const int mDate;
-    const int mLastDecayedTime;
+    const int64_t mDate;
+    const int64_t mLastDecayedTime;
     const EntryCounts mNgramCounts;
     const EntryCounts mMaxNgramCounts;
     const int mExtendedRegionSize;

@@ -102,7 +102,7 @@ class ForgettingCurveUtils {
     static const ProbabilityTable sProbabilityTable;
 
     static int backoff(const int unigramProbability);
-    static int getElapsedTimeStepCount(const int timestamp, const int durationToLevelDown);
+    static int getElapsedTimeStepCount(const int64_t timestamp, const int durationToLevelDown);
     static int clampToVisibleEntryLevelRange(const int level);
     static int clampToValidLevelRange(const int level);
     static int clampToValidCountRange(const int count, const HeaderPolicy *const headerPolicy);

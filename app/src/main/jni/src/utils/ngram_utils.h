@@ -34,11 +34,11 @@ namespace AllNgramTypes {
 namespace {
 
 const NgramType ASCENDING[] = {
-   NgramType::Unigram, NgramType::Bigram, NgramType::Trigram
+   NgramType::Unigram, NgramType::Bigram, NgramType::Trigram, NgramType::Quadgram
 };
 
 const NgramType DESCENDING[] = {
-   NgramType::Trigram, NgramType::Bigram, NgramType::Unigram
+   NgramType::Quadgram, NgramType::Trigram, NgramType::Bigram, NgramType::Unigram
 };
 
 }  // namespace

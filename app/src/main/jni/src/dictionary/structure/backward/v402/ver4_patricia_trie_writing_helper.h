@@ -82,7 +82,7 @@ class Ver4PatriciaTrieWritingHelper {
     // For truncateUnigrams() and truncateBigrams().
     class DictProbability {
      public:
-        DictProbability(const int dictPos, const int probability, const int timestamp)
+        DictProbability(const int dictPos, const int probability, const int64_t timestamp)
                 : mDictPos(dictPos), mProbability(probability), mTimestamp(timestamp) {}
 
         int getDictPos() const {
@@ -93,7 +93,7 @@ class Ver4PatriciaTrieWritingHelper {
             return mProbability;
         }
 
-        int getTimestamp() const {
+        int64_t getTimestamp() const {
             return mTimestamp;
         }
 
@@ -102,7 +102,7 @@ class Ver4PatriciaTrieWritingHelper {
 
         int mDictPos;
         int mProbability;
-        int mTimestamp;
+        int64_t mTimestamp;
     };
 
     // For truncateUnigrams() and truncateBigrams().

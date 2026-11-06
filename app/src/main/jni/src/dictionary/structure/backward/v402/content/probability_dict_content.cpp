@@ -44,8 +44,8 @@ const ProbabilityEntry ProbabilityDictContent::getProbabilityEntry(const int ter
     const int probability = buffer->readUintAndAdvancePosition(
             Ver4DictConstants::PROBABILITY_SIZE, &entryPos);
     if (mHasHistoricalInfo) {
-        const int timestamp = buffer->readUintAndAdvancePosition(
-                Ver4DictConstants::TIME_STAMP_FIELD_SIZE, &entryPos);
+        const int64_t timestamp = HistoricalInfo::decodeTimestamp(buffer->readUintAndAdvancePosition(
+                Ver4DictConstants::TIME_STAMP_FIELD_SIZE, &entryPos));
         const int level = buffer->readUintAndAdvancePosition(
                 Ver4DictConstants::WORD_LEVEL_FIELD_SIZE, &entryPos);
         const int count = buffer->readUintAndAdvancePosition(
@@ -146,7 +146,7 @@ bool ProbabilityDictContent::writeEntry(const ProbabilityEntry *const probabilit
     }
     if (mHasHistoricalInfo) {
         const HistoricalInfo *const historicalInfo = probabilityEntry->getHistoricalInfo();
-        if (!bufferToWrite->writeUintAndAdvancePosition(historicalInfo->getTimestamp(),
+        if (!bufferToWrite->writeUintAndAdvancePosition(historicalInfo->encodeTimestamp(),
                 Ver4DictConstants::TIME_STAMP_FIELD_SIZE, &writingPos)) {
             AKLOGE("Cannot write timestamp in probability dict content. pos: %d", writingPos);
             return false;

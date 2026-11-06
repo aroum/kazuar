@@ -41,13 +41,14 @@ class Traversal;
 class Weighting;
 
 class Suggest : public SuggestInterface {
+    friend class NativeBoundaryTestPeer;
  public:
     AK_FORCE_INLINE Suggest(const SuggestPolicy *const suggestPolicy)
             : TRAVERSAL(suggestPolicy ? suggestPolicy->getTraversal() : nullptr),
               SCORING(suggestPolicy ? suggestPolicy->getScoring() : nullptr),
               WEIGHTING(suggestPolicy ? suggestPolicy->getWeighting() : nullptr) {}
     AK_FORCE_INLINE virtual ~Suggest() {}
-    void getSuggestions(ProximityInfo *pInfo, void *traverseSession, int *inputXs, int *inputYs,
+    void getSuggestions(ProximityInfo *pInfo, DicTraverseSession *traverseSession, int *inputXs, int *inputYs,
             int *times, int *pointerIds, int *inputCodePoints, int inputSize,
             const float weightOfLangModelVsSpatialModel,
             SuggestionResults *const outSuggestionResults) const;

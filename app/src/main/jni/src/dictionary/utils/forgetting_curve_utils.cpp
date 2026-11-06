@@ -15,6 +15,7 @@
  */
 
 #include "dictionary/utils/forgetting_curve_utils.h"
+#include <climits>
 
 #include <algorithm>
 #include <cmath>
@@ -46,7 +47,7 @@ const ForgettingCurveUtils::ProbabilityTable ForgettingCurveUtils::sProbabilityT
 /* static */ const HistoricalInfo ForgettingCurveUtils::createUpdatedHistoricalInfo(
         const HistoricalInfo *const originalHistoricalInfo, const int newProbability,
         const HistoricalInfo *const newHistoricalInfo, const HeaderPolicy *const headerPolicy) {
-    const int timestamp = newHistoricalInfo->getTimestamp();
+    const int64_t timestamp = newHistoricalInfo->getTimestamp();
     if (newProbability != NOT_A_PROBABILITY && originalHistoricalInfo->getLevel() == 0) {
         // Add entry as a valid word.
         const int level = clampToVisibleEntryLevelRange(newHistoricalInfo->getLevel());
@@ -118,7 +119,7 @@ const ForgettingCurveUtils::ProbabilityTable ForgettingCurveUtils::sProbabilityT
     const int maxLevelDownAmonut = elapsedTimeStep / (MAX_ELAPSED_TIME_STEP_COUNT + 1);
     const int levelDownAmount = (maxLevelDownAmonut >= originalHistoricalInfo->getLevel()) ?
             originalHistoricalInfo->getLevel() : maxLevelDownAmonut;
-    const int adjustedTimestampInSeconds = originalHistoricalInfo->getTimestamp() +
+    const int64_t adjustedTimestampInSeconds = originalHistoricalInfo->getTimestamp() +
             levelDownAmount * durationToLevelDownInSeconds;
     return HistoricalInfo(adjustedTimestampInSeconds,
             originalHistoricalInfo->getLevel() - levelDownAmount, 0 /* count */);
@@ -137,8 +138,8 @@ const ForgettingCurveUtils::ProbabilityTable ForgettingCurveUtils::sProbabilityT
     if (mindsBlockByDecay) {
         return false;
     }
-    if (headerPolicy->getLastDecayedTime() + DECAY_INTERVAL_SECONDS
-            < TimeKeeper::peekCurrentTime()) {
+    const int64_t last = headerPolicy->getLastDecayedTime(), now = TimeKeeper::peekCurrentTime();
+    if (last >= 0 && now >= last && now - last > DECAY_INTERVAL_SECONDS) {
         // Time to decay.
         return true;
     }
@@ -151,12 +152,14 @@ const ForgettingCurveUtils::ProbabilityTable ForgettingCurveUtils::sProbabilityT
     return unigramProbability;
 }
 
-/* static */ int ForgettingCurveUtils::getElapsedTimeStepCount(const int timestamp,
+/* static */ int ForgettingCurveUtils::getElapsedTimeStepCount(const int64_t timestamp,
         const int durationToLevelDownInSeconds) {
-    const int elapsedTimeInSeconds = TimeKeeper::peekCurrentTime() - timestamp;
+    const int64_t now = TimeKeeper::peekCurrentTime();
+    if (timestamp < 0 || timestamp > now) return 0;
+    const int64_t elapsedTimeInSeconds = now - timestamp;
     const int timeStepDurationInSeconds =
             durationToLevelDownInSeconds / (MAX_ELAPSED_TIME_STEP_COUNT + 1);
-    return elapsedTimeInSeconds / timeStepDurationInSeconds;
+    return static_cast<int>(std::min<int64_t>(INT_MAX, elapsedTimeInSeconds / timeStepDurationInSeconds));
 }
 
 /* static */ int ForgettingCurveUtils::clampToVisibleEntryLevelRange(const int level) {

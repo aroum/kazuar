@@ -142,12 +142,12 @@ void HeaderPolicy::fillInHeader(const bool updatesLastDecayedTime,
     HeaderReadWriteUtils::setIntAttribute(outAttributeMap, EXTENDED_REGION_SIZE_KEY,
             extendedRegionSize);
     // Set the current time as the generation time.
-    HeaderReadWriteUtils::setIntAttribute(outAttributeMap, DATE_KEY,
+    HeaderReadWriteUtils::setLongAttribute(outAttributeMap, DATE_KEY,
             TimeKeeper::peekCurrentTime());
     HeaderReadWriteUtils::setCodePointVectorAttribute(outAttributeMap, LOCALE_KEY, mLocale);
     if (updatesLastDecayedTime) {
         // Set current time as the last updated time.
-        HeaderReadWriteUtils::setIntAttribute(outAttributeMap, LAST_DECAYED_TIME_KEY,
+        HeaderReadWriteUtils::setLongAttribute(outAttributeMap, LAST_DECAYED_TIME_KEY,
                 TimeKeeper::peekCurrentTime());
     }
 }

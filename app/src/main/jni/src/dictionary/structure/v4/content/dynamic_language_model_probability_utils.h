@@ -42,8 +42,8 @@ class DynamicLanguageModelProbabilityUtils {
 
     static int getDecayedProbability(const int probability, const HistoricalInfo historicalInfo) {
         if (!historicalInfo.isValid()) return NOT_A_PROBABILITY;
-        const int64_t elapsedTime = static_cast<int64_t>(TimeKeeper::peekCurrentTime())
-                - historicalInfo.getTimestamp();
+        const int64_t now = TimeKeeper::peekCurrentTime();
+        const int64_t elapsedTime = now < historicalInfo.getTimestamp() ? -1 : now - historicalInfo.getTimestamp();
         if (elapsedTime < 0) {
             AKLOGE("The elapsed time is negatime value. Timestamp overflow?");
             return NOT_A_PROBABILITY;
@@ -54,14 +54,15 @@ class DynamicLanguageModelProbabilityUtils {
     }
 
     static bool shouldRemoveEntryDuringGC(const HistoricalInfo historicalInfo) {
+        if (!historicalInfo.isValid()) return true;
         // TODO: Improve this logic.
-        const int64_t elapsedTime = static_cast<int64_t>(TimeKeeper::peekCurrentTime())
-                - historicalInfo.getTimestamp();
+        const int64_t now = TimeKeeper::peekCurrentTime();
+        const int64_t elapsedTime = now < historicalInfo.getTimestamp() ? -1 : now - historicalInfo.getTimestamp();
         return !historicalInfo.isValid() || elapsedTime < 0
                 || elapsedTime > DURATION_TO_DISCARD_ENTRY_IN_SECONDS;
     }
 
-    static int getPriorityToPreventFromEviction(const HistoricalInfo historicalInfo) {
+    static int64_t getPriorityToPreventFromEviction(const HistoricalInfo historicalInfo) {
         // TODO: Improve this logic.
         // More recently input entries get higher priority.
         return historicalInfo.getTimestamp();

@@ -18,13 +18,17 @@
 #define LATINIME_SUGGEST_OPTIONS_H
 
 #include "defines.h"
+#include <vector>
+#include <climits>
 
 namespace latinime {
 
 class SuggestOptions{
  public:
     SuggestOptions(const int *const options, const int length)
-            : mOptions(options), mLength(length) {}
+            : mOptions(), mLength(options && length > 0 && length <= 1024 ? length : 0) {
+        if (mLength) mOptions.assign(options, options + mLength);
+    }
 
     AK_FORCE_INLINE bool isGesture() const {
         return getBoolOption(IS_GESTURE);
@@ -49,7 +53,8 @@ class SuggestOptions{
     }
 
     AK_FORCE_INLINE bool getAdditionalFeaturesBoolOption(const int key) const {
-        return getBoolOption(key + ADDITIONAL_FEATURES_OPTIONS);
+        return key >= 0 && key <= INT_MAX - ADDITIONAL_FEATURES_OPTIONS
+                && getBoolOption(key + ADDITIONAL_FEATURES_OPTIONS);
     }
 
  private:
@@ -66,11 +71,11 @@ class SuggestOptions{
     // experimental features.
     static const int ADDITIONAL_FEATURES_OPTIONS = 5;
 
-    const int *const mOptions;
+    std::vector<int> mOptions;
     const int mLength;
 
     AK_FORCE_INLINE bool isValidKey(const int key) const {
-        return 0 <= key && key < mLength;
+        return 0 <= key && key < mLength && static_cast<size_t>(key) < mOptions.size();
     }
 
     AK_FORCE_INLINE bool getBoolOption(const int key) const {

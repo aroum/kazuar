@@ -15,6 +15,9 @@
  */
 
 #include "dictionary/header/header_read_write_utils.h"
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
 
 #include <cctype>
 #include <cstdio>
@@ -213,28 +216,39 @@ typedef DictionaryHeaderStructurePolicy::AttributeMap AttributeMap;
     return readIntAttributeValueInner(headerAttributes, &keyVector, defaultValue);
 }
 
-/* static */ int HeaderReadWriteUtils::readIntAttributeValueInner(
-        const AttributeMap *const headerAttributes, const AttributeMap::key_type *const key,
-        const int defaultValue) {
-    AttributeMap::const_iterator it = headerAttributes->find(*key);
-    if (it != headerAttributes->end()) {
-        int value = 0;
-        bool isNegative = false;
-        for (size_t i = 0; i < it->second.size(); ++i) {
-            if (i == 0 && it->second.at(i) == '-') {
-                isNegative = true;
-            } else {
-                if (!isdigit(it->second.at(i))) {
-                    // If not a number.
-                    return defaultValue;
-                }
-                value *= 10;
-                value += it->second.at(i) - '0';
-            }
-        }
-        return isNegative ? -value : value;
+namespace {
+int64_t readInteger(const DictionaryHeaderStructurePolicy::AttributeMap *attributes,
+        const DictionaryHeaderStructurePolicy::AttributeMap::key_type &key, int64_t fallback) {
+    const auto it = attributes->find(key);
+    if (it == attributes->end() || it->second.empty() || it->second.size() > 20) return fallback;
+    char text[21] = {};
+    for (size_t i = 0; i < it->second.size(); ++i) {
+        const int c = it->second[i];
+        if (!(i == 0 && c == '-' && it->second.size() > 1) && (c < '0' || c > '9')) return fallback;
+        text[i] = c;
     }
-    return defaultValue;
+    errno = 0; char *end = nullptr;
+    const long long value = strtoll(text, &end, 10);
+    return errno == ERANGE || !end || *end ? fallback : static_cast<int64_t>(value);
+}
+}
+int HeaderReadWriteUtils::readIntAttributeValueInner(const AttributeMap *attributes,
+        const AttributeMap::key_type *key, const int fallback) {
+    const int64_t value = readInteger(attributes, *key, fallback);
+    return value < INT_MIN || value > INT_MAX ? fallback : static_cast<int>(value);
+}
+int64_t HeaderReadWriteUtils::readLongAttributeValue(const AttributeMap *attributes,
+        const char *key, int64_t fallback) {
+    AttributeMap::key_type keyVector;
+    insertCharactersIntoVector(key, &keyVector);
+    return readInteger(attributes, keyVector, fallback);
+}
+void HeaderReadWriteUtils::setLongAttribute(AttributeMap *attributes, const char *key, int64_t value) {
+    AttributeMap::key_type keyVector; AttributeMap::mapped_type valueVector;
+    insertCharactersIntoVector(key, &keyVector);
+    char text[32]; snprintf(text, sizeof(text), "%lld", static_cast<long long>(value));
+    insertCharactersIntoVector(text, &valueVector);
+    (*attributes)[keyVector] = valueVector;
 }
 
 /* static */ void HeaderReadWriteUtils::insertCharactersIntoVector(const char *const characters,

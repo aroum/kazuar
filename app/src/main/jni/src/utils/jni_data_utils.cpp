@@ -29,6 +29,12 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         jobject outNgramPrevWordIsBeginningOfSentenceArray, jobject outNgramTargets,
         jobject outNgramProbabilities, jobject outShortcutTargets,
         jobject outShortcutProbabilities) {
+    JniLocalFrame frame(env);
+    if (!frame.valid() || !JniDataUtils::hasArrayRange(env, outFlags, 0, 5)
+            || !JniDataUtils::hasArrayRange(env, outProbabilityInfo, 0, 4)
+            || !outNgramPrevWordsArray || !outNgramPrevWordIsBeginningOfSentenceArray
+            || !outNgramTargets || !outNgramProbabilities || !outShortcutTargets
+            || !outShortcutProbabilities) return;
     const CodePointArrayView codePoints = wordProperty.getCodePoints();
     JniDataUtils::outputCodePoints(env, outCodePoints, 0 /* start */,
             MAX_WORD_LENGTH /* maxLength */, codePoints.data(), codePoints.size(),
@@ -40,19 +46,24 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
             unigramProperty.representsBeginningOfSentence()};
     env->SetBooleanArrayRegion(outFlags, 0 /* start */, NELEMS(flags), flags);
     const HistoricalInfo &historicalInfo = unigramProperty.getHistoricalInfo();
-    int probabilityInfo[] = {unigramProperty.getProbability(), historicalInfo.getTimestamp(),
+    int probabilityInfo[] = {unigramProperty.getProbability(), historicalInfo.getLegacyTimestamp(),
             historicalInfo.getLevel(), historicalInfo.getCount()};
     env->SetIntArrayRegion(outProbabilityInfo, 0 /* start */, NELEMS(probabilityInfo),
             probabilityInfo);
 
     jclass integerClass = env->FindClass("java/lang/Integer");
+    if (!integerClass || env->ExceptionCheck()) return;
     jmethodID intToIntegerConstructorId = env->GetMethodID(integerClass, "<init>", "(I)V");
     jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    if (!intToIntegerConstructorId || !arrayListClass || env->ExceptionCheck()) return;
     jmethodID addMethodId = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
 
     // Output ngrams.
     jclass intArrayClass = env->FindClass("[I");
+    if (!addMethodId || !intArrayClass || env->ExceptionCheck()) return;
     for (const auto &ngramProperty : ngrams) {
+        JniLocalFrame ngramFrame(env);
+        if (!ngramFrame.valid()) return;
         const NgramContext *const ngramContext = ngramProperty.getNgramContext();
         jobjectArray prevWordWordCodePointsArray = env->NewObjectArray(
                 ngramContext->getPrevWordCount(), intArrayClass, nullptr);
@@ -83,9 +94,10 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         env->CallBooleanMethod(outNgramTargets, addMethodId, targetWordCodePointArray);
         env->DeleteLocalRef(targetWordCodePointArray);
 
+        if (env->ExceptionCheck()) return;
         const HistoricalInfo &ngramHistoricalInfo = ngramProperty.getHistoricalInfo();
         int bigramProbabilityInfo[] = {ngramProperty.getProbability(),
-                ngramHistoricalInfo.getTimestamp(), ngramHistoricalInfo.getLevel(),
+                ngramHistoricalInfo.getLegacyTimestamp(), ngramHistoricalInfo.getLevel(),
                 ngramHistoricalInfo.getCount()};
         jintArray bigramProbabilityInfoArray = env->NewIntArray(NELEMS(bigramProbabilityInfo));
         env->SetIntArrayRegion(bigramProbabilityInfoArray, 0 /* start */,
@@ -96,6 +108,8 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
 
     // Output shortcuts.
     for (const auto &shortcut : unigramProperty.getShortcuts()) {
+        JniLocalFrame shortcutFrame(env);
+        if (!shortcutFrame.valid()) return;
         const std::vector<int> *const targetCodePoints = shortcut.getTargetCodePoints();
         jintArray shortcutTargetCodePointArray = env->NewIntArray(targetCodePoints->size());
         JniDataUtils::outputCodePoints(env, shortcutTargetCodePointArray, 0 /* start */,
@@ -108,6 +122,8 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         env->CallBooleanMethod(outShortcutProbabilities, addMethodId, integerProbability);
         env->DeleteLocalRef(integerProbability);
     }
+    if (env->ExceptionCheck()) return;
+    env->DeleteLocalRef(intArrayClass);
     env->DeleteLocalRef(integerClass);
     env->DeleteLocalRef(arrayListClass);
 }

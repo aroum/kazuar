@@ -64,7 +64,7 @@ class CharUtils {
     }
 
     static AK_FORCE_INLINE int toBaseCodePoint(int c) {
-        if (c < BASE_CHARS_SIZE) {
+        if (c >= 0 && c < BASE_CHARS_SIZE) {
             return static_cast<int>(BASE_CHARS[c]);
         }
         return c;
@@ -81,7 +81,8 @@ class CharUtils {
     }
 
     static AK_FORCE_INLINE int isInUnicodeSpace(const int codePoint) {
-        return codePoint >= MIN_UNICODE_CODE_POINT && codePoint <= MAX_UNICODE_CODE_POINT;
+        return codePoint >= MIN_UNICODE_CODE_POINT && codePoint <= MAX_UNICODE_CODE_POINT
+                && !(codePoint >= 0xD800 && codePoint <= 0xDFFF);
     }
 
     // Returns updated code point count. Returns 0 when the code points cannot be marked as a

@@ -75,6 +75,9 @@ class HeaderReadWriteUtils {
             DictionaryHeaderStructurePolicy::AttributeMap *const headerAttributes,
             const char *const key, const bool value);
 
+    static void setLongAttribute(AttributeMap *attributes, const char *key, int64_t value);
+    static int64_t readLongAttributeValue(const AttributeMap *attributes, const char *key, int64_t fallback);
+
     static void setIntAttribute(
             DictionaryHeaderStructurePolicy::AttributeMap *const headerAttributes,
             const char *const key, const int value);

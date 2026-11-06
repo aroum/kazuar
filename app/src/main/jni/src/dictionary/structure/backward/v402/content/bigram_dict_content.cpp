@@ -45,12 +45,12 @@ const BigramEntry BigramDictContent::getBigramEntryAndAdvancePosition(
             Ver4DictConstants::BIGRAM_FLAGS_FIELD_SIZE, bigramEntryPos);
     const bool hasNext = (bigramFlags & Ver4DictConstants::BIGRAM_HAS_NEXT_MASK) != 0;
     int probability = NOT_A_PROBABILITY;
-    int timestamp = NOT_A_TIMESTAMP;
+    int64_t timestamp = NOT_A_TIMESTAMP;
     int level = 0;
     int count = 0;
     if (mHasHistoricalInfo) {
-        timestamp = bigramListBuffer->readUintAndAdvancePosition(
-                Ver4DictConstants::TIME_STAMP_FIELD_SIZE, bigramEntryPos);
+        timestamp = HistoricalInfo::decodeTimestamp(bigramListBuffer->readUintAndAdvancePosition(
+                Ver4DictConstants::TIME_STAMP_FIELD_SIZE, bigramEntryPos));
         level = bigramListBuffer->readUintAndAdvancePosition(
                 Ver4DictConstants::WORD_LEVEL_FIELD_SIZE, bigramEntryPos);
         count = bigramListBuffer->readUintAndAdvancePosition(
@@ -85,10 +85,10 @@ bool BigramDictContent::writeBigramEntryAndAdvancePosition(
     }
     if (mHasHistoricalInfo) {
         const HistoricalInfo *const historicalInfo = bigramEntryToWrite->getHistoricalInfo();
-        if (!bigramListBuffer->writeUintAndAdvancePosition(historicalInfo->getTimestamp(),
+        if (!bigramListBuffer->writeUintAndAdvancePosition(historicalInfo->encodeTimestamp(),
                 Ver4DictConstants::TIME_STAMP_FIELD_SIZE, entryWritingPos)) {
-            AKLOGE("Cannot write bigram timestamps. pos: %d, timestamp: %d", *entryWritingPos,
-                    historicalInfo->getTimestamp());
+            AKLOGE("Cannot write bigram timestamps. pos: %d, timestamp: %lld", *entryWritingPos,
+                    static_cast<long long>(historicalInfo->getTimestamp()));
             return false;
         }
         if (!bigramListBuffer->writeUintAndAdvancePosition(historicalInfo->getLevel(),

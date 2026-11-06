@@ -26,11 +26,18 @@
 #include "dictionary/property/word_property.h"
 #include "jni.h"
 #include "utils/char_utils.h"
+#include "utils/jni_local_frame.h"
+#include "utils/unicode_utils.h"
 
 namespace latinime {
 
 class JniDataUtils {
  public:
+    static bool hasArrayRange(JNIEnv *env, jarray array, int start, int count) {
+        if (!env || !array || start < 0 || count < 0) return false;
+        const int length = env->GetArrayLength(array);
+        return start <= length && count <= length - start;
+    }
     static void jintarrayToVector(JNIEnv *env, jintArray array, std::vector<int> *const outVector) {
         if (!array) {
             outVector->clear();
@@ -42,39 +49,39 @@ class JniDataUtils {
     }
 
     static DictionaryHeaderStructurePolicy::AttributeMap constructAttributeMap(JNIEnv *env,
-            jobjectArray attributeKeyStringArray, jobjectArray attributeValueStringArray) {
+            jobjectArray attributeKeyStringArray, jobjectArray attributeValueStringArray, bool *success = nullptr) {
+        if (success) *success = false;
         DictionaryHeaderStructurePolicy::AttributeMap attributeMap;
-        const int keyCount = env->GetArrayLength(attributeKeyStringArray);
-        for (int i = 0; i < keyCount; i++) {
-            jstring keyString = static_cast<jstring>(
-                    env->GetObjectArrayElement(attributeKeyStringArray, i));
-            const jsize keyUtf8Length = env->GetStringUTFLength(keyString);
-            char keyChars[keyUtf8Length + 1];
-            env->GetStringUTFRegion(keyString, 0, env->GetStringLength(keyString), keyChars);
-            env->DeleteLocalRef(keyString);
-            keyChars[keyUtf8Length] = '\0';
-            DictionaryHeaderStructurePolicy::AttributeMap::key_type key;
-            HeaderReadWriteUtils::insertCharactersIntoVector(keyChars, &key);
-
-            jstring valueString = static_cast<jstring>(
-                    env->GetObjectArrayElement(attributeValueStringArray, i));
-            const jsize valueUtf8Length = env->GetStringUTFLength(valueString);
-            char valueChars[valueUtf8Length + 1];
-            env->GetStringUTFRegion(valueString, 0, env->GetStringLength(valueString), valueChars);
-            env->DeleteLocalRef(valueString);
-            valueChars[valueUtf8Length] = '\0';
-            DictionaryHeaderStructurePolicy::AttributeMap::mapped_type value;
-            HeaderReadWriteUtils::insertCharactersIntoVector(valueChars, &value);
-            attributeMap[key] = value;
+        if (!env || !attributeKeyStringArray || !attributeValueStringArray) return attributeMap;
+        const int count = env->GetArrayLength(attributeKeyStringArray);
+        if (count > 256 || env->GetArrayLength(attributeValueStringArray) != count) return attributeMap;
+        for (int i = 0; i < count; ++i) {
+            JniLocalFrame frame(env, 4);
+            if (!frame.valid()) return {};
+            jstring keyString = static_cast<jstring>(env->GetObjectArrayElement(attributeKeyStringArray, i));
+            jstring valueString = static_cast<jstring>(env->GetObjectArrayElement(attributeValueStringArray, i));
+            if (!keyString || !valueString || env->ExceptionCheck()) return {};
+            const int keyLength = env->GetStringLength(keyString), valueLength = env->GetStringLength(valueString);
+            if (keyLength <= 0 || keyLength >= 256 || valueLength >= 2048) return {};
+            std::vector<jchar> key(keyLength), value(valueLength);
+            env->GetStringRegion(keyString, 0, keyLength, key.data());
+            if (valueLength) env->GetStringRegion(valueString, 0, valueLength, value.data());
+            if (env->ExceptionCheck()) return {};
+            attributeMap[UnicodeUtils::utf16ToCodePoints(key.data(), key.size())] =
+                    UnicodeUtils::utf16ToCodePoints(value.data(), value.size());
         }
+        if (success) *success = true;
         return attributeMap;
     }
 
     static void outputCodePoints(JNIEnv *env, jintArray intArrayToOutputCodePoints, const int start,
             const int maxLength, const int *const codePoints, const int codePointCount,
             const bool needsNullTermination) {
-        const int codePointBufSize = std::min(maxLength, codePointCount);
-        int outputCodePonts[codePointBufSize];
+        if (!env || !intArrayToOutputCodePoints || maxLength < 0 || codePointCount < 0
+                || (codePointCount && !codePoints) || !hasArrayRange(env, intArrayToOutputCodePoints, start, 0)) return;
+        const int available = std::min(maxLength, env->GetArrayLength(intArrayToOutputCodePoints) - start);
+        const int codePointBufSize = std::min(available, codePointCount);
+        std::vector<int> outputCodePonts(codePointBufSize);
         int outputCodePointCount = 0;
         for (int i = 0; i < codePointBufSize; ++i) {
             const int codePoint = codePoints[i];
@@ -91,9 +98,9 @@ class JniDataUtils {
             }
             outputCodePonts[outputCodePointCount++] = codePointToOutput;
         }
-        env->SetIntArrayRegion(intArrayToOutputCodePoints, start, outputCodePointCount,
-                outputCodePonts);
-        if (needsNullTermination && outputCodePointCount < maxLength) {
+        if (outputCodePointCount) env->SetIntArrayRegion(intArrayToOutputCodePoints, start, outputCodePointCount,
+                outputCodePonts.data());
+        if (needsNullTermination && outputCodePointCount < available) {
             env->SetIntArrayRegion(intArrayToOutputCodePoints, start + outputCodePointCount,
                     1 /* len */, &CODE_POINT_NULL);
         }
@@ -101,44 +108,43 @@ class JniDataUtils {
 
     static NgramContext constructNgramContext(JNIEnv *env, jobjectArray prevWordCodePointArrays,
             jbooleanArray isBeginningOfSentenceArray, const size_t prevWordCount) {
-        int prevWordCodePoints[MAX_PREV_WORD_COUNT_FOR_N_GRAM][MAX_WORD_LENGTH];
-        int prevWordCodePointCount[MAX_PREV_WORD_COUNT_FOR_N_GRAM];
-        bool isBeginningOfSentence[MAX_PREV_WORD_COUNT_FOR_N_GRAM];
+        int prevWordCodePoints[MAX_PREV_WORD_COUNT_FOR_N_GRAM][MAX_WORD_LENGTH] = {};
+        int prevWordCodePointCount[MAX_PREV_WORD_COUNT_FOR_N_GRAM] = {};
+        bool isBeginningOfSentence[MAX_PREV_WORD_COUNT_FOR_N_GRAM] = {};
+        if (!env || !prevWordCodePointArrays || !isBeginningOfSentenceArray
+                || prevWordCount > MAX_PREV_WORD_COUNT_FOR_N_GRAM
+                || !hasArrayRange(env, prevWordCodePointArrays, 0, prevWordCount)
+                || !hasArrayRange(env, isBeginningOfSentenceArray, 0, prevWordCount)) return NgramContext();
         for (size_t i = 0; i < prevWordCount; ++i) {
-            prevWordCodePointCount[i] = 0;
-            isBeginningOfSentence[i] = false;
-            jintArray prevWord = (jintArray)env->GetObjectArrayElement(prevWordCodePointArrays, i);
-            if (!prevWord) {
-                continue;
-            }
-            jsize prevWordLength = env->GetArrayLength(prevWord);
-            if (prevWordLength > MAX_WORD_LENGTH) {
-                continue;
-            }
-            env->GetIntArrayRegion(prevWord, 0, prevWordLength, prevWordCodePoints[i]);
-            env->DeleteLocalRef(prevWord);
-            prevWordCodePointCount[i] = prevWordLength;
-            jboolean isBeginningOfSentenceBoolean = JNI_FALSE;
-            env->GetBooleanArrayRegion(isBeginningOfSentenceArray, i, 1 /* len */,
-                    &isBeginningOfSentenceBoolean);
-            isBeginningOfSentence[i] = isBeginningOfSentenceBoolean == JNI_TRUE;
+            JniLocalFrame frame(env, 2);
+            if (!frame.valid()) return NgramContext();
+            jintArray prevWord = static_cast<jintArray>(env->GetObjectArrayElement(prevWordCodePointArrays, i));
+            if (env->ExceptionCheck()) return NgramContext();
+            if (!prevWord) continue;
+            const int length = env->GetArrayLength(prevWord);
+            if (length > MAX_WORD_LENGTH) continue;
+            if (length) env->GetIntArrayRegion(prevWord, 0, length, prevWordCodePoints[i]);
+            jboolean bos = JNI_FALSE;
+            env->GetBooleanArrayRegion(isBeginningOfSentenceArray, i, 1, &bos);
+            if (env->ExceptionCheck()) return NgramContext();
+            prevWordCodePointCount[i] = length;
+            isBeginningOfSentence[i] = bos == JNI_TRUE;
         }
-        return NgramContext(prevWordCodePoints, prevWordCodePointCount, isBeginningOfSentence,
-                prevWordCount);
+        return NgramContext(prevWordCodePoints, prevWordCodePointCount, isBeginningOfSentence, prevWordCount);
     }
 
     static void putBooleanToArray(JNIEnv *env, jbooleanArray array, const int index,
             const jboolean value) {
-        env->SetBooleanArrayRegion(array, index, 1 /* len */, &value);
+        if (hasArrayRange(env, array, index, 1)) env->SetBooleanArrayRegion(array, index, 1 /* len */, &value);
     }
 
     static void putIntToArray(JNIEnv *env, jintArray array, const int index, const int value) {
-        env->SetIntArrayRegion(array, index, 1 /* len */, &value);
+        if (hasArrayRange(env, array, index, 1)) env->SetIntArrayRegion(array, index, 1 /* len */, &value);
     }
 
     static void putFloatToArray(JNIEnv *env, jfloatArray array, const int index,
             const float value) {
-        env->SetFloatArrayRegion(array, index, 1 /* len */, &value);
+        if (hasArrayRange(env, array, index, 1)) env->SetFloatArrayRegion(array, index, 1 /* len */, &value);
     }
 
     static void outputWordProperty(JNIEnv *const env, const WordProperty &wordProperty,
