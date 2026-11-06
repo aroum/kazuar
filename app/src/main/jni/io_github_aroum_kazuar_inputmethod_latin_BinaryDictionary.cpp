@@ -464,13 +464,13 @@ static int latinime_BinaryDictionary_updateEntriesForInputEvents(JNIEnv *env, jc
     const auto field = [env, wordInputEventClass](const char *name, const char *signature) -> jfieldID {
         return env->ExceptionCheck() ? nullptr : env->GetFieldID(wordInputEventClass, name, signature);
     };
-    jfieldID targetWordFieldId = field( "mTargetWord", "[I");
-    jfieldID prevWordCountFieldId = field( "mPrevWordsCount", "I");
-    jfieldID prevWordArrayFieldId = field( "mPrevWordArray", "[[I");
+    jfieldID targetWordFieldId = field("mTargetWord", "[I");
+    jfieldID prevWordCountFieldId = field("mPrevWordsCount", "I");
+    jfieldID prevWordArrayFieldId = field("mPrevWordArray", "[[I");
     jfieldID isPrevWordBoSArrayFieldId =
-            field( "mIsPrevWordBeginningOfSentenceArray", "[Z");
-    jfieldID isValidFieldId = field( "mIsValid", "Z");
-    jfieldID timestampFieldId = field( "mTimestamp", "I");
+            field("mIsPrevWordBeginningOfSentenceArray", "[Z");
+    jfieldID isValidFieldId = field("mIsValid", "Z");
+    jfieldID timestampFieldId = field("mTimestamp", "I");
     if (!targetWordFieldId || !prevWordCountFieldId || !prevWordArrayFieldId
             || !isPrevWordBoSArrayFieldId || !isValidFieldId || !timestampFieldId
             || env->ExceptionCheck()) return startIndex;

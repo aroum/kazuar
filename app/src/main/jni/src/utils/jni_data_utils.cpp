@@ -73,6 +73,7 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
         if (!prevWordWordCodePointsArray || env->ExceptionCheck()) return;
         jbooleanArray prevWordIsBeginningOfSentenceArray =
                 env->NewBooleanArray(ngramContext->getPrevWordCount());
+        if (!prevWordIsBeginningOfSentenceArray || env->ExceptionCheck()) return;
         for (size_t i = 0; i < ngramContext->getPrevWordCount(); ++i) {
             const CodePointArrayView codePoints = ngramContext->getNthPrevWordCodePoints(i + 1);
             jintArray prevWordCodePoints = env->NewIntArray(codePoints.size());
@@ -81,6 +82,7 @@ const int JniDataUtils::CODE_POINT_NULL = 0;
                     codePoints.size(), codePoints.data(), codePoints.size(),
                     false /* needsNullTermination */);
             env->SetObjectArrayElement(prevWordWordCodePointsArray, i, prevWordCodePoints);
+            if (env->ExceptionCheck()) return;
             env->DeleteLocalRef(prevWordCodePoints);
             JniDataUtils::putBooleanToArray(env, prevWordIsBeginningOfSentenceArray, i,
                     ngramContext->isNthPrevWordBeginningOfSentence(i + 1));
