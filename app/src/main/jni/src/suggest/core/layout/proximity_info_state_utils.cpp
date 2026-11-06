@@ -561,12 +561,13 @@ namespace latinime {
         return 0.0f;
     }
     if (DEBUG_DOUBLE_LETTER) {
-        AKLOGI("--- (%d, %d) double letter: start = %d, end = %d, dist = %d, time = %d,"
-                " speed = %f, ave = %f, val = %f, start time = %d, end time = %d",
-                id, (*sampledInputIndices)[id], start, end, beelineDistance, time,
+        AKLOGI("--- (%d, %d) double letter: start = %d, end = %d, dist = %d, time = %lld,"
+                " speed = %f, ave = %f, val = %f, start time = %lld, end time = %lld",
+                id, (*sampledInputIndices)[id], start, end, beelineDistance, static_cast<long long>(time),
                 (static_cast<float>(beelineDistance) / static_cast<float>(time)), averageSpeed,
                 ((static_cast<float>(beelineDistance) / static_cast<float>(time))
-                        / averageSpeed), adjustedStartTime, adjustedEndTime);
+                        / averageSpeed), static_cast<long long>(adjustedStartTime),
+                static_cast<long long>(adjustedEndTime));
     }
     // Offset 1%
     // TODO: Detect double letter more smartly
