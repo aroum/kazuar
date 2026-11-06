@@ -29,4 +29,4 @@ target_compile_options(native_regressions PRIVATE -ffunction-sections -fdata-sec
 target_link_options(native_regressions PRIVATE -Wl,--gc-sections -fsanitize=address,undefined)
 target_link_libraries(native_regressions PRIVATE GTest::gtest_main native_regression_core dl)
 include(GoogleTest)
-gtest_discover_tests(native_regressions)
+gtest_discover_tests(native_regressions PROPERTIES TIMEOUT 60)

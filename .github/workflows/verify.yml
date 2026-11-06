@@ -31,6 +31,8 @@ jobs:
       - name: Install project SDK and NDK
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529' 'cmake;3.22.1'
       - name: Run native dictionary regressions with sanitizers
+        env:
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtest-dev

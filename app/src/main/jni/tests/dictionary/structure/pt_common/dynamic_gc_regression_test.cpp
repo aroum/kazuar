@@ -7,6 +7,8 @@
 #include "dictionary/property/unigram_property.h"
 #include "dictionary/property/ngram_property.h"
 #include "dictionary/property/word_property.h"
+#include "dictionary/header/header_read_write_utils.h"
+#include "dictionary/structure/pt_common/dynamic_pt_writing_utils.h"
 #include "dictionary/utils/file_utils.h"
 #include <type_traits>
 #include <vector>
@@ -172,6 +174,16 @@ TEST(DynamicGcTest, WriterChecksAllRelocationsBeforeModifyingBuffer) {
     EXPECT_EQ(20, DynamicPtReadingUtils::readChildrenPositionAndAdvancePosition(buffer.getBuffer(true), &pos));
 }
 
+TEST(DynamicGcTest, AbsentOffsetDoesNotSubtractTheIntMinSentinel) {
+    BufferWithExtendableBuffer buffer(1024);
+    int pos = 0;
+    ASSERT_TRUE(buffer.writeUintAndAdvancePosition(0, 2, &pos));
+    ASSERT_TRUE(DynamicPtWritingUtils::writeChildrenPositionAndAdvancePosition(
+            &buffer, NOT_A_DICT_POS, &pos));
+    EXPECT_EQ(5, pos);
+    EXPECT_EQ(0u, buffer.readUint(3, 2));
+}
+
 class TemporaryDictionary {
  public:
     TemporaryDictionary() {
@@ -195,10 +207,13 @@ TEST(DynamicGcTest, SplitMovedAndRemovedWordsSurviveGcAndReopenInBothFormats) {
         TemporaryDictionary temporary;
         ASSERT_FALSE(temporary.path.empty());
         DictionaryHeaderStructurePolicy::AttributeMap attributes;
+        HeaderReadWriteUtils::setBoolAttribute(&attributes, "HAS_HISTORICAL_INFO", version == 402);
+        TimeKeeper::setCurrentTime();
+        const HistoricalInfo history(TimeKeeper::peekCurrentTime(), 2, 0);
         auto policy = DictionaryStructureWithBufferPolicyFactory::newPolicyForOnMemoryDict(
                 version, {'e', 'n'}, &attributes);
         ASSERT_TRUE(policy);
-        const UnigramProperty property(false, false, false, 200, HistoricalInfo(),
+        const UnigramProperty property(false, false, false, 200, history,
                 {UnigramProperty::ShortcutProperty({'X'}, 10)});
         const std::vector<std::string> inserted = {"abcd", "abef", "ab", "xyz", "xy", "mnop", "mn", "m"};
         const std::vector<std::string> removed = {"abef", "xyz", "mnop"};
@@ -210,9 +225,17 @@ TEST(DynamicGcTest, SplitMovedAndRemovedWordsSurviveGcAndReopenInBothFormats) {
             const std::vector<int> points(word.begin(), word.end());
             ASSERT_TRUE(policy->removeUnigramEntry(CodePointArrayView(points.data(), points.size())));
         }
+        std::map<std::string, int> probabilitiesBeforeGc;
+        for (const auto &word : inserted) {
+            if (std::find(removed.begin(), removed.end(), word) != removed.end()) continue;
+            const std::vector<int> points(word.begin(), word.end());
+            const int id = policy->getWordId(CodePointArrayView(points.data(), points.size()), false);
+            ASSERT_NE(NOT_A_WORD_ID, id);
+            probabilitiesBeforeGc[word] = policy->getProbabilityOfWord(WordIdArrayView(), id);
+        }
         const int contextWord[] = {'a', 'b'};
         const NgramProperty bigram(NgramContext(contextWord, 2, false), {'a', 'b', 'c', 'd'},
-                180, HistoricalInfo());
+                180, history);
         ASSERT_TRUE(policy->addNgramEntry(&bigram));
         ASSERT_TRUE(policy->flushWithGC(temporary.path.c_str()));
         ASSERT_FALSE(policy->isCorrupted());
@@ -231,7 +254,7 @@ TEST(DynamicGcTest, SplitMovedAndRemovedWordsSurviveGcAndReopenInBothFormats) {
                 const int count = reopened->getCodePointsAndReturnCodePointCount(id, MAX_WORD_LENGTH, restored);
                 ASSERT_EQ(static_cast<int>(points.size()), count) << word;
                 EXPECT_EQ(points, std::vector<int>(restored, restored + count));
-                EXPECT_EQ(200, reopened->getProbabilityOfWord(WordIdArrayView(), id)) << word;
+                EXPECT_EQ(probabilitiesBeforeGc.at(word), reopened->getProbabilityOfWord(WordIdArrayView(), id)) << word;
                 const auto wordProperty = reopened->getWordProperty(CodePointArrayView(points.data(), points.size()));
                 const auto &shortcuts = wordProperty.getUnigramProperty().getShortcuts();
                 ASSERT_EQ(1u, shortcuts.size()) << word;

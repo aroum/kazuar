@@ -109,15 +109,16 @@ const int DynamicPtWritingUtils::NODE_FLAG_FIELD_SIZE = 1;
 
 /* static */ bool DynamicPtWritingUtils::writeDictOffset(BufferWithExtendableBuffer *const buffer,
         const int targetPos, const int basePos, int *const offsetFieldPos) {
-    int offset = targetPos - basePos;
-    if (targetPos == NOT_A_DICT_POS) {
-        offset = DynamicPtReadingUtils::DICT_OFFSET_INVALID;
-    } else if (offset == 0) {
+    if (basePos < 0 || (targetPos < 0 && targetPos != NOT_A_DICT_POS)) return false;
+    // NOT_A_DICT_POS is INT_MIN: subtracting the base before checking it overflows.
+    int64_t offset = targetPos == NOT_A_DICT_POS ? DynamicPtReadingUtils::DICT_OFFSET_INVALID
+            : static_cast<int64_t>(targetPos) - basePos;
+    if (targetPos != NOT_A_DICT_POS && offset == 0) {
         offset = DynamicPtReadingUtils::DICT_OFFSET_ZERO_OFFSET;
     }
     if (offset > MAX_DICT_OFFSET_VALUE || offset < MIN_DICT_OFFSET_VALUE) {
         AKLOGI("offset cannot be written because the offset is too large or too small: %d",
-                offset);
+                static_cast<int>(offset));
         ASSERT(false);
         return false;
     }
@@ -125,7 +126,7 @@ const int DynamicPtWritingUtils::NODE_FLAG_FIELD_SIZE = 1;
     if (offset >= 0) {
         data = offset;
     } else {
-        data = abs(offset) | DICT_OFFSET_NEGATIVE_FLAG;
+        data = static_cast<uint32_t>(-offset) | DICT_OFFSET_NEGATIVE_FLAG;
     }
     return buffer->writeUintAndAdvancePosition(data, DICT_OFFSET_FIELD_SIZE, offsetFieldPos);
 }
