@@ -60,13 +60,13 @@ namespace latinime {
         close(mmapFd);
         return nullptr;
     }
-    uint8_t *const buffer = static_cast<uint8_t *>(mmappedBuffer) + offset;
-    if (!buffer) {
-        AKLOGE("DICT: buffer is null");
+    if (!mmappedBuffer) {
+        AKLOGE("DICT: mapping base is null");
         munmap(mmappedBuffer, alignedSize);
         close(mmapFd);
         return nullptr;
     }
+    uint8_t *const buffer = static_cast<uint8_t *>(mmappedBuffer) + offset;
     return MmappedBufferPtr(new MmappedBuffer(buffer, bufferSize, mmappedBuffer, alignedSize,
             mmapFd, isUpdatable));
 }
