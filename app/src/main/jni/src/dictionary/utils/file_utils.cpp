@@ -18,6 +18,7 @@
 
 #include <cstdio>
 #include <cerrno>
+#include <cstdint>
 #include <climits>
 #include <memory>
 #include <string>
@@ -59,7 +60,7 @@ namespace latinime {
 
 namespace {
 bool removeTree(const std::string &root) {
-    struct Frame { std::string path; int depth; bool visited; dev_t device; ino_t inode; };
+    struct Frame { std::string path; int depth; bool visited; uint64_t device; uint64_t inode; };
     std::vector<Frame> pending{{root, 0, false, 0, 0}};
     size_t entries = 0;
     while (!pending.empty()) {
