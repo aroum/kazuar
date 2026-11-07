@@ -108,6 +108,12 @@ android {
         }
     }
 
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+
     androidResources {
         noCompress 'dict'
     }

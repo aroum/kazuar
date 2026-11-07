@@ -50,7 +50,6 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:defaultToDeviceProtectedStorage="false"
         android:directBootAware="true"
-        android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/english_ime_name"
         android:roundIcon="@mipmap/ic_launcher_round"
