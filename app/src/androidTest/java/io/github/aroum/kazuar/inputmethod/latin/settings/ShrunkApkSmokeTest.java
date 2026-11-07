@@ -55,7 +55,15 @@ public class ShrunkApkSmokeTest {
                 try (XmlResourceParser xml = context.getResources().getXml(id)) {
                     boolean hasRoot = false;
                     while (xml.next() != XmlPullParser.END_DOCUMENT) {
-                        hasRoot |= xml.getEventType() == XmlPullParser.START_TAG;
+                        if (!hasRoot && xml.getEventType() == XmlPullParser.START_TAG) {
+                            boolean expectedRoot = false;
+                            JSONArray roots = entry.getJSONArray(2);
+                            for (int r = 0; r < roots.length(); r++) {
+                                expectedRoot |= roots.getString(r).equals(xml.getName());
+                            }
+                            assertTrue(name + " has unexpected/placeholder root " + xml.getName(), expectedRoot);
+                            hasRoot = true;
+                        }
                     }
                     assertTrue(name + " is a shrinker placeholder", hasRoot);
                 }
