@@ -96,7 +96,7 @@ jobs:
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
           echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
 
-      - name: Build debug APK
+      - name: Build signed CI APK
         run: bash ./gradlew assembleCi --stacktrace
         env:
           VERSION_NAME: ${{ env.VERSION_NAME }}
@@ -104,6 +104,21 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Verify published APK signing certificate
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          keytool -exportcert -keystore release.jks -storepass:env KEYSTORE_PASSWORD \
+            -alias "$KEY_ALIAS" -file "$RUNNER_TEMP/nightly-cert.der"
+          expected=$(sha256sum "$RUNNER_TEMP/nightly-cert.der" | cut -d ' ' -f 1)
+          for apk in app/build/outputs/apk/ci/*.apk; do
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$apk" > "$RUNNER_TEMP/apk-signature.txt"
+            actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt")
+            test "$actual" = "$expected"
+            echo "$(basename "$apk"): signer SHA-256 $actual"
+          done
 
       - name: Verify 16 KiB ELF and APK alignment
         run: >-
@@ -179,7 +194,7 @@ jobs:
           tag_name: nightly
           target_commitish: ${{ github.sha }}
           name: ${{ env.RELEASE_TITLE }}
-          body: "Automated nightly build (${{ env.BUILD_DATE }}) from master branch."
+          body_path: .github/release-notes/nightly.md
           files: app/build/outputs/apk/ci/*.apk
           prerelease: true
           make_latest: false
