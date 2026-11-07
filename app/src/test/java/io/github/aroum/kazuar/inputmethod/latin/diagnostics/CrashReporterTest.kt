@@ -65,12 +65,15 @@ class CrashReporterTest {
 
     @Test fun aReportWriteFailureStillDelegatesTheOriginalException() {
         val context: android.app.Application = RuntimeEnvironment.getApplication()
-        val target = CrashReporter.file(context).baseFile
-        target.delete(); assertTrue(target.mkdir())
+        val target = File(context.cacheDir, "not-a-directory").apply { writeText("blocked") }
+        val blocked = object : android.content.ContextWrapper(context) {
+            override fun getNoBackupFilesDir(): File = target
+        }
         val failure = IllegalStateException("original failure")
         var delegated = false
         try {
-            CrashReporter.Handler(context) { _, error ->
+            assertFalse(CrashReporter.save(blocked, 1, 1, "cannot write"))
+            CrashReporter.Handler(blocked) { _, error ->
                 assertSame(failure, error); delegated = true
             }.uncaughtException(Thread.currentThread(), failure)
             assertTrue(delegated)

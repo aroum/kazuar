@@ -17,6 +17,7 @@ import androidx.fragment.app.FragmentActivity;
 import io.github.aroum.kazuar.inputmethod.latin.R;
 
 /** Local viewing and explicit copying only. No sharing or external destinations. */
+@androidx.annotation.Keep
 public final class CrashReportDialog extends DialogFragment {
     private static final String REPORT_TAG = "kazuar.crash.report", NOTICE_TAG = "kazuar.crash.notice";
 

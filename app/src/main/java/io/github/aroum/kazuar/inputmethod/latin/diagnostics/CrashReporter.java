@@ -156,7 +156,8 @@ public final class CrashReporter {
                         && Math.abs(exit.getTimestamp() - previous.optLong("timestamp")) < 120000))) return;
                 String text = "System-only crash report; previous build and Java stack are unavailable.\n"
                         + "Collector: " + metadata(context) + "\nProcess: " + exit.getProcessName()
-                        + "\nReason: " + reason + "\nStatus/signal: " + exit.getStatus()
+                        + "\nReason: " + (reason == ApplicationExitInfo.REASON_CRASH_NATIVE ? "Native crash"
+                        : reason == ApplicationExitInfo.REASON_ANR ? "Application not responding" : "Java crash") + "\nStatus/signal: " + exit.getStatus()
                         + "\nTime (UTC epoch ms): " + exit.getTimestamp()
                         + "\nDescription: " + limit(exit.getDescription(), 2048);
                 save(context, exit.getTimestamp(), exit.getPid(), text);

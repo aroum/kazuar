@@ -56,12 +56,15 @@ public class CompatPreferenceFragment extends PreferenceFragmentCompat {
     }
 
     // Public no-argument constructors let FragmentManager restore the themed dialogs.
+    @androidx.annotation.Keep
     public static class ThemedListDialog extends ListPreferenceDialogFragmentCompat {
         @Override public Context getContext() { return dialogContext(super.getContext()); }
     }
+    @androidx.annotation.Keep
     public static class ThemedMultiSelectDialog extends MultiSelectListPreferenceDialogFragmentCompat {
         @Override public Context getContext() { return dialogContext(super.getContext()); }
     }
+    @androidx.annotation.Keep
     public static class ThemedEditTextDialog extends EditTextPreferenceDialogFragmentCompat {
         @Override public Context getContext() { return dialogContext(super.getContext()); }
     }
