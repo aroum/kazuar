@@ -72,7 +72,9 @@ jobs:
             -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" \
             -file "$RUNNER_TEMP/expected-signing-cert.der"
       - name: Build APKs and native libraries for all configured ABIs
-        run: ./gradlew :app:assembleDebug :app:assembleCi --stacktrace --console=plain
+        run: |
+          python3 tools/make-resource-smoke-manifest.py
+          ./gradlew :app:assembleDebug :app:assembleCi :app:assembleCiAndroidTest --stacktrace --console=plain
         env:
           RELEASE_KEYSTORE_PATH: ${{ runner.temp }}/verification.jks
           RELEASE_KEYSTORE_PASSWORD: ${{ github.event_name == 'pull_request' && 'android' || secrets.KEYSTORE_PASSWORD }}
@@ -108,9 +110,14 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: kazuar-apks-${{ github.sha }}
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/ci/*.apk
+          path: app/build/outputs/apk/ci/*.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload instrumentation APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: kazuar-smoke-tests-${{ github.sha }}
+          path: app/build/outputs/apk/androidTest/ci/*.apk
           if-no-files-found: error
           retention-days: 7
       - name: Upload test and lint reports
@@ -123,3 +130,54 @@ jobs:
             app/build/reports/tests/
             app/build/test-results/
             app/build/reports/lint-results-debug.*
+
+  shrunk-apk-runtime:
+    name: Test shrunk CI APK on 16 KiB Android
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: kazuar-apks-${{ github.sha }}
+          path: runtime-apks
+      - uses: actions/download-artifact@v8
+        with:
+          name: kazuar-smoke-tests-${{ github.sha }}
+          path: runtime-tests
+      - name: Install 16 KiB Android emulator
+        run: |
+          sdkmanager 'emulator' 'system-images;android-35;google_apis_ps16k;x86_64'
+          sudo chmod 666 /dev/kvm
+          echo no | avdmanager create avd --force --name kazuar16k --package 'system-images;android-35;google_apis_ps16k;x86_64'
+      - name: Run packaged resource and keyboard smoke tests
+        timeout-minutes: 12
+        run: |
+          "$ANDROID_HOME/emulator/emulator" -avd kazuar16k -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
+          trap 'adb logcat -d > logcat.txt; adb emu kill || true' EXIT
+          timeout 240 adb wait-for-device
+          for attempt in {1..120}; do
+            if [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+          adb shell input keyevent 82
+          test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "16384"
+          adb install runtime-apks/*-x86_64.apk
+          adb install runtime-tests/*.apk
+          adb shell am instrument -w -r io.github.aroum.kazuar.inputmethod.latin.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
+          grep -q '^OK (3 tests)' instrumentation.txt
+          ! grep -Eq 'FAILURES|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: shrunk-apk-runtime-${{ github.sha }}
+          path: |
+            instrumentation.txt
+            emulator.log
+            logcat.txt
