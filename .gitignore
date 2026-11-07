@@ -14,3 +14,5 @@ fastlane/Appfile
 /log
 ICON_COMPARISON.md
 /icon_preview/
+
+.kotlin/

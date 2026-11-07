@@ -4,8 +4,8 @@ apply plugin: 'kotlin-android'
 android {
 
     namespace "io.github.aroum.kazuar.inputmethod.latin"
-    compileSdk 34
-    buildToolsVersion = '34.0.0'
+    compileSdk 36
+    buildToolsVersion = '35.0.0'
 
     defaultConfig {
         applicationId "io.github.aroum.kazuar.inputmethod.latin"
@@ -61,7 +61,6 @@ android {
             shrinkResources false
             debuggable false
             jniDebuggable false
-            renderscriptDebuggable false
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -90,7 +89,7 @@ android {
         unitTests.includeAndroidResources = true
     }
 
-    lintOptions {
+    lint {
         abortOnError false
     }
 
@@ -101,9 +100,6 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     sourceSets {
         main {
@@ -127,13 +123,11 @@ android.applicationVariants.all { variant ->
 
 dependencies {
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.core:core-ktx:1.13.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    implementation 'androidx.collection:collection:1.4.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.collection:collection:1.5.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'androidx.fragment:fragment:1.6.2'
+    implementation 'androidx.fragment:fragment:1.8.9'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.14.1'
     testImplementation 'org.json:json:20240303'
@@ -146,4 +140,11 @@ repositories {
 // Generation precedes Kotlin/Java compilation and Android resource merging.
 tasks.named('preBuild').configure {
     dependsOn ':tools:make-keyboard-text:makeText', ':tools:make-emoji-keys:makeEmoji'
+}
+
+// Use the plugin-provided standard library and typed compiler options for app and generators.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }

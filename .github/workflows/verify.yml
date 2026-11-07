@@ -29,7 +29,7 @@ jobs:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
       - name: Install project SDK and NDK
-        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'ndk;21.4.7075529' 'cmake;3.22.1'
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;21.4.7075529' 'cmake;3.22.1'
       - name: Run native dictionary regressions with sanitizers
         env:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
@@ -59,7 +59,7 @@ jobs:
       - name: Verify APK minimum Android version
         run: |
           for apk in app/build/outputs/apk/{debug,ci}/*.apk; do
-            "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
+            "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
             grep -qx "sdkVersion:'33'" "$RUNNER_TEMP/apk-badging.txt"
           done
       - name: Run Android lint

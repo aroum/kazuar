@@ -208,7 +208,7 @@ class Event private constructor(// The type of event - one of the constants abov
         @JvmStatic
         fun createPunctuationSuggestionPickedEvent(
                 suggestedWordInfo: SuggestedWordInfo): Event {
-            val primaryCode = suggestedWordInfo.mWord[0].toInt()
+            val primaryCode = suggestedWordInfo.mWord[0].code
             return Event(EVENT_TYPE_SUGGESTION_PICKED, suggestedWordInfo.mWord, primaryCode,
                     NOT_A_KEY_CODE, Constants.SUGGESTION_STRIP_COORDINATE,
                     Constants.SUGGESTION_STRIP_COORDINATE, suggestedWordInfo, FLAG_NONE,
