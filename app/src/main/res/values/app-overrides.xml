@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_override_enabled">Use individual settings</string>
+    <string name="app_override_explanation">Tap the checkbox in the app list to enable these settings. When enabled, your choices override app requests, including private browsing and password fields. Learning may save entered text; suggestions may display it.</string>
+    <string name="app_override_learning">Learn from typing</string>
+    <string name="app_override_suggestions">Show suggestions</string>
+    <string name="app_override_correction">Autocorrection</string>
+    <string name="app_override_personalized">Use personal dictionaries</string>
+    <string name="app_override_predictions">Next-word predictions</string>
+    <string name="app_override_caps">Automatic capitalization</string>
+</resources>

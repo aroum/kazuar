@@ -172,10 +172,12 @@ public class SettingsValues {
         mSpacingAndPunctuations = new SpacingAndPunctuations(res);
 
         // Store the input attributes
-        mInputAttributes = inputAttributes;
+        final String app = inputAttributes.mTargetApplicationPackageName;
+        final boolean override = AppOverrides.enabled(prefs, app);
+        mInputAttributes = inputAttributes.withAppOverride(override);
 
         // Get the settings preferences
-        mAutoCap = prefs.getBoolean(Settings.PREF_AUTO_CAP, true)
+        mAutoCap = AppOverrides.value(prefs, app, AppOverrides.CAPS, prefs.getBoolean(Settings.PREF_AUTO_CAP, true))
                 && ScriptUtils.scriptSupportsUppercase(mLocale != null ? mLocale.getLanguage() : "");
         mVibrateOn = Settings.readVibrationEnabled(prefs, res);
         mSoundOn = Settings.readKeypressSoundEnabled(prefs, res);
@@ -193,18 +195,20 @@ public class SettingsValues {
         mShowsLanguageSwitchKey = prefs.getBoolean(Settings.PREF_SHOW_LANGUAGE_SWITCH_KEY, false);
         mShowsEmojiKey = prefs.getBoolean(Settings.PREF_SHOW_EMOJI_KEY, false);
         mShowsClipboardKey = prefs.getBoolean(Settings.PREF_SHOW_CLIPBOARD_KEY, false);
-        mUsePersonalizedDicts = prefs.getBoolean(Settings.PREF_KEY_USE_PERSONALIZED_DICTS, true);
+        mUsePersonalizedDicts = AppOverrides.value(prefs, app, AppOverrides.PERSONALIZED,
+                prefs.getBoolean(Settings.PREF_KEY_USE_PERSONALIZED_DICTS, true));
         mUseDoubleSpacePeriod = prefs.getBoolean(Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD, true)
                 && inputAttributes.mIsGeneralTextInput;
         mUseMultiSpacePunctuation = prefs.getBoolean(Settings.PREF_KEY_USE_MULTI_SPACE_PUNCTUATION, false);
         mBlockPotentiallyOffensive = Settings.readBlockPotentiallyOffensive(prefs, res);
         mReplaceYoWithYe = prefs.getBoolean(Settings.PREF_REPLACE_YO_WITH_YE, false);
         mSplitSpaceNeighborWords = Settings.readSplitSpaceNeighborWordsEnabled(prefs);
-        mAutoCorrectEnabled = Settings.readAutoCorrectEnabled(prefs, res);
+        mAutoCorrectEnabled = AppOverrides.value(prefs, app, AppOverrides.CORRECTION,
+                Settings.readAutoCorrectEnabled(prefs, res));
         mAutoCorrectionThreshold = mAutoCorrectEnabled
                 ? readAutoCorrectionThreshold(res, prefs)
                 : AUTO_CORRECTION_DISABLED_THRESHOLD;
-        mBigramPredictionEnabled = readBigramPredictionEnabled(prefs, res);
+        mBigramPredictionEnabled = AppOverrides.value(prefs, app, AppOverrides.PREDICTIONS, readBigramPredictionEnabled(prefs, res));
         mDoubleSpacePeriodTimeout = res.getInteger(R.integer.config_double_space_period_timeout);
         mHasHardwareKeyboard = Settings.readHasHardwareKeyboard(res.getConfiguration());
         mEnableMetricsLogging = prefs.getBoolean(Settings.PREF_ENABLE_METRICS_LOGGING, true);
@@ -238,16 +242,13 @@ public class SettingsValues {
                 null /* default */);
         mGestureFloatingPreviewTextEnabled = !mInputAttributes.mDisableGestureFloatingPreviewText
                 && prefs.getBoolean(Settings.PREF_GESTURE_FLOATING_PREVIEW_TEXT, true);
-        mAutoCorrectionEnabledPerUserSettings = mAutoCorrectEnabled;
-                //&& !mInputAttributes.mInputTypeNoAutoCorrect;
-        mSuggestionsEnabledPerUserSettings = !mInputAttributes.mIsPasswordField &&
-                readSuggestionsEnabled(prefs);
-        if (Settings.isIncognitoModeIgnoredForApp(prefs, mInputAttributes.mTargetApplicationPackageName)) {
-            mIncognitoModeEnabled = false;
-        } else {
-            mIncognitoModeEnabled = Settings.readAlwaysIncognitoMode(prefs) || mInputAttributes.mNoLearning
-                    || mInputAttributes.mIsPasswordField;
-        }
+        mAutoCorrectionEnabledPerUserSettings = mAutoCorrectEnabled
+                && !mInputAttributes.mInputTypeNoAutoCorrect;
+        mSuggestionsEnabledPerUserSettings = (override || !mInputAttributes.mIsPasswordField)
+                && AppOverrides.value(prefs, app, AppOverrides.SUGGESTIONS, readSuggestionsEnabled(prefs));
+        mIncognitoModeEnabled = override
+                ? !AppOverrides.value(prefs, app, AppOverrides.LEARNING, !Settings.readAlwaysIncognitoMode(prefs))
+                : Settings.readAlwaysIncognitoMode(prefs) || mInputAttributes.mNoLearning || mInputAttributes.mIsPasswordField;
         mIsInternal = Settings.isInternal(prefs);
         mHasCustomKeyPreviewAnimationParams = prefs.getBoolean(
                 DebugSettings.PREF_HAS_CUSTOM_KEY_PREVIEW_ANIMATION_PARAMS, false);
@@ -336,7 +337,8 @@ public class SettingsValues {
 
     public boolean needsToLookupSuggestions() {
         return mInputAttributes.mShouldShowSuggestions
-                && (mAutoCorrectionEnabledPerUserSettings || isSuggestionsEnabledPerUserSettings());
+                && (mAutoCorrectionEnabledPerUserSettings || isSuggestionsEnabledPerUserSettings()
+                    || (mInputAttributes.mHasAppOverride && !mIncognitoModeEnabled && mUsePersonalizedDicts));
     }
 
     public boolean isSuggestionsEnabledPerUserSettings() {

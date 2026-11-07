@@ -319,13 +319,6 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
         return prefs.getBoolean(PREF_ALWAYS_INCOGNITO_MODE, false);
     }
 
-    public static boolean isIncognitoModeIgnoredForApp(final SharedPreferences prefs, final String packageName) {
-        if (packageName == null) {
-            return false;
-        }
-        return prefs.getBoolean("incognito_ignore_" + packageName.toLowerCase(Locale.US), false);
-    }
-
     public static String readPrefAdditionalSubtypes(final SharedPreferences prefs,
                                                     final Resources res) {
         final String predefinedPrefSubtypes = AdditionalSubtypeUtils.createPrefSubtypes(

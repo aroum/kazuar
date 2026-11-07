@@ -103,6 +103,7 @@ internal object BackupPreferenceSchema {
         "voice_mode" to "string")
 
     fun typeOf(key: String): String? = types[key] ?: when {
+        key.matches(Regex("app_override_[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+:(enabled|learning|suggestions|correction|personalized|predictions|caps)")) -> "boolean"
         key.matches(Regex("incognito_ignore_[a-z0-9_]+(?:\\.[a-z0-9_]+)+")) -> "boolean"
         key.matches(Regex("pref_keyboard_layout_(ru|en|zz|editing|num|usr[012])")) -> "string"
         key.matches(Regex("pref_custom_layout_(ru|en|zz|editing|num|usr[012]|symbols|symbols_shift|number|phone|phone_symbols|pin)")) -> "string"

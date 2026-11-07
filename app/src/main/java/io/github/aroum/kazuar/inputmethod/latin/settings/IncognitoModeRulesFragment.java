@@ -68,8 +68,13 @@ public final class IncognitoModeRulesFragment extends SubScreenFragment
             handler.post(() -> {
                 if (destroyed || !isAdded()) return;
                 for (AppItem app : apps) {
-                    CheckBoxPreference pref = new CheckBoxPreference(requireContext());
-                    pref.setKey("incognito_ignore_" + app.packageName.toLowerCase(Locale.US));
+                    AppOverridePreference pref = new AppOverridePreference(requireContext(), () -> {
+                        Bundle arguments = new Bundle();
+                        arguments.putString(AppOverrideSettingsFragment.ARG_PACKAGE, app.packageName);
+                        ((PreferenceHostActivity) requireActivity()).startPreferencePanel(
+                                AppOverrideSettingsFragment.class.getName(), arguments, 0, app.label, this, 0);
+                    });
+                    pref.setKey(AppOverrides.key(app.packageName, AppOverrides.ENABLED));
                     pref.setTitle(app.label);
                     pref.setSummary(app.packageName);
                     pref.setIcon(app.icon);
@@ -99,6 +104,13 @@ public final class IncognitoModeRulesFragment extends SubScreenFragment
         handler.removeCallbacks(filter);
         handler.postDelayed(filter, 150);
         return true;
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        for (CheckBoxPreference pref : preferences) {
+            pref.setChecked(getSharedPreferences().getBoolean(pref.getKey(), false));
+        }
     }
 
     @Override public void onDestroy() {

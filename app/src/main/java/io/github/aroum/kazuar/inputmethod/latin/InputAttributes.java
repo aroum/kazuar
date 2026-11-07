@@ -56,10 +56,23 @@ public final class InputAttributes {
     final public boolean mIsUriField;
     final private int mInputType;
     final private EditorInfo mEditorInfo;
+    final private boolean mFullscreenMode;
+    public final boolean mHasAppOverride;
     final private String mPackageNameForPrivateImeOptions;
 
     public InputAttributes(final EditorInfo editorInfo, final boolean isFullscreenMode,
             final String packageNameForPrivateImeOptions) {
+        this(editorInfo, isFullscreenMode, packageNameForPrivateImeOptions, false);
+    }
+
+    public InputAttributes withAppOverride(boolean enabled) {
+        return new InputAttributes(mEditorInfo, mFullscreenMode, mPackageNameForPrivateImeOptions, enabled);
+    }
+
+    private InputAttributes(final EditorInfo editorInfo, final boolean isFullscreenMode,
+            final String packageNameForPrivateImeOptions, final boolean override) {
+        mFullscreenMode = isFullscreenMode;
+        mHasAppOverride = override;
         mEditorInfo = editorInfo;
         mPackageNameForPrivateImeOptions = packageNameForPrivateImeOptions;
         mTargetApplicationPackageName = null != editorInfo ? editorInfo.packageName : null;
@@ -68,7 +81,7 @@ public final class InputAttributes {
         mInputType = inputType;
         mIsPasswordField = InputTypeUtils.isPasswordInputType(inputType)
                 || InputTypeUtils.isVisiblePasswordInputType(inputType);
-        final boolean hasNoPersonalizedLearning = editorInfo != null
+        final boolean hasNoPersonalizedLearning = !override && editorInfo != null
                 && (editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0;
         if (inputClass != InputType.TYPE_CLASS_TEXT) {
             // If we are not looking at a TYPE_CLASS_TEXT field, the following strange
@@ -109,18 +122,18 @@ public final class InputAttributes {
 
         // TODO: Have a helper method in InputTypeUtils
         // Make sure that passwords are not displayed in {@link SuggestionStripView}.
-        mShouldShowSuggestions = !(mIsPasswordField || flagNoSuggestions);
+        mShouldShowSuggestions = override || !(mIsPasswordField || flagNoSuggestions);
 
         mShouldInsertSpacesAutomatically = InputTypeUtils.isAutoSpaceFriendlyType(inputType);
 
-        final boolean noMicrophone = mIsPasswordField
+        final boolean noMicrophone = !RichInputMethodManager.getInstance().hasShortcutIme()
+                || (!override && (mIsPasswordField
                 || InputTypeUtils.isEmailVariation(variation)
                 || InputType.TYPE_TEXT_VARIATION_URI == variation
-                || hasNoMicrophoneKeyOption()
-                || !RichInputMethodManager.getInstance().hasShortcutIme();
+                || hasNoMicrophoneKeyOption()));
         mShouldShowVoiceInputKey = !noMicrophone;
 
-        mDisableGestureFloatingPreviewText = InputAttributes.inPrivateImeOptions(
+        mDisableGestureFloatingPreviewText = !override && InputAttributes.inPrivateImeOptions(
                 mPackageNameForPrivateImeOptions, NO_FLOATING_GESTURE_PREVIEW, editorInfo);
 
         // If it's a browser edit field and auto correct is not ON explicitly, then
@@ -128,11 +141,11 @@ public final class InputAttributes {
         // If NO_SUGGESTIONS is set, don't do prediction.
         // If it's not multiline and the autoCorrect flag is not set, then don't correct
         mInputTypeNoAutoCorrect =
-                (variation == InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT && !flagAutoCorrect)
+                !override && ((variation == InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT && !flagAutoCorrect)
                 || flagNoSuggestions
-                || (!flagAutoCorrect && !flagMultiLine);
+                || (!flagAutoCorrect && !flagMultiLine));
 
-        mApplicationSpecifiedCompletionOn = flagAutoComplete && isFullscreenMode;
+        mApplicationSpecifiedCompletionOn = !override && flagAutoComplete && isFullscreenMode;
 
         // If we come here, inputClass is always TYPE_CLASS_TEXT
         mIsGeneralTextInput = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS != variation
@@ -144,7 +157,7 @@ public final class InputAttributes {
                 && InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != variation;
         mIsUriField = (variation == InputType.TYPE_TEXT_VARIATION_URI);
 
-        mNoLearning = hasNoPersonalizedLearning || flagNoSuggestions;
+        mNoLearning = !override && (hasNoPersonalizedLearning || flagNoSuggestions);
     }
 
     public boolean isTypeNull() {

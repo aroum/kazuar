@@ -953,6 +953,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        // Apply the new package policy before any composition or learning can start.
+        loadSettings();
 
         // If the primary hint language does not match the current subtype language, then try
         // to switch to the primary hint language.
@@ -1032,10 +1034,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         // The EditorInfo might have a flag that affects fullscreen mode.
         // Note: This call should be done by InputMethodService?
         updateFullscreenMode();
-
-        // ALERT: settings have not been reloaded and there is a chance they may be stale.
-        // In the practice, if it is, we should have gotten onConfigurationChanged so it should
-        // be fine, but this is horribly confusing and must be fixed AS SOON AS POSSIBLE.
+        loadSettings();
+        currentSettingsValues = mSettings.getCurrent();
 
         // In some cases the input connection has not been reset yet and we can't access it. In
         // this case we will need to call loadKeyboard() later, when it's accessible, so that we
@@ -1095,10 +1095,6 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         final int expectedWidth = ResourceUtils.getKeyboardWidth(this, currentSettingsValues);
         final boolean widthMismatched = (currentKbWidth > 0 && Math.abs(currentKbWidth - expectedWidth) > 5);
 
-        if (isDifferentTextField || orientationChanged || widthMismatched ||
-                (currentSettingsValues != null && !currentSettingsValues.hasSameOrientation(getResources().getConfiguration()))) {
-            loadSettings();
-        }
         if (isDifferentTextField || orientationChanged || widthMismatched) {
             mainKeyboardView.closing();
             currentSettingsValues = mSettings.getCurrent();
@@ -1697,7 +1693,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                 || shouldShowSuggestionCandidates
                 || currentSettingsValues.isApplicationSpecifiedCompletionsOn();
         final boolean shouldShowSuggestionsStrip = shouldShowSuggestionsStripUnlessPassword
-                && (!currentSettingsValues.mInputAttributes.mIsPasswordField || currentSettingsValues.mShowsClipboardKey);
+                && (currentSettingsValues.mInputAttributes.mHasAppOverride
+                    || !currentSettingsValues.mInputAttributes.mIsPasswordField || currentSettingsValues.mShowsClipboardKey);
         mSuggestionStripView.updateVisibility(shouldShowSuggestionsStrip, isFullscreenMode());
         if (!shouldShowSuggestionsStrip) {
             return;

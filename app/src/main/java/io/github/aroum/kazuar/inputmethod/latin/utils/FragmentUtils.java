@@ -54,6 +54,7 @@ public class FragmentUtils {
             AdvancedSettingsFragment.class.getName(),
             DebugSettingsFragment.class.getName(),
             IncognitoModeRulesFragment.class.getName(),
+            io.github.aroum.kazuar.inputmethod.latin.settings.AppOverrideSettingsFragment.class.getName(),
             SettingsFragment.class.getName(),
             BackupSettingsFragment.class.getName(),
             DoubleTapSettingsFragment.class.getName(),

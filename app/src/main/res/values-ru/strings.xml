@@ -244,8 +244,8 @@
     <string name="use_multi_space_punctuation_summary">2 пробела -> ., 3 -> ,, 4 -> ?, 5 -> !</string>
     <string name="english_ime_name">Kazuar</string>
     <string name="auto_correction_confidence">Точность автоисправления</string>
-    <string name="prefs_incognito_mode_rules_title">Правила режима инкогнито</string>
-    <string name="prefs_incognito_apps_category_title">Отключить режим инкогнито</string>
+    <string name="prefs_incognito_mode_rules_title">Настройки приложений</string>
+    <string name="prefs_incognito_apps_category_title">Индивидуальные настройки</string>
     <string name="setup_step1_bullet">1</string>
     <string name="setup_step2_bullet">2</string>
     <string name="setup_step3_bullet">3</string>

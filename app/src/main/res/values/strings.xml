@@ -203,8 +203,8 @@
     <!-- Description for "prefs_force_incognito_mode" option. -->
     <string name="prefs_force_incognito_mode_summary">Disable learning of new words</string>
     <!-- Title for Incognito Mode Rules settings screen -->
-    <string name="prefs_incognito_mode_rules_title">Incognito Mode Rules</string>
-    <string name="prefs_incognito_apps_category_title">Disable incognito mode</string>
+    <string name="prefs_incognito_mode_rules_title">App settings</string>
+    <string name="prefs_incognito_apps_category_title">Individual overrides</string>
     <!-- Content description for "more keys" suggestions view -->
     <string name="more_keys_strip_description">More keys</string>
     <!-- Title for configuring input method settings [CHAR LIMIT=35] -->

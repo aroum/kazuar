@@ -1782,10 +1782,9 @@ public final class InputLogic {
 
     private void performAdditionToUserHistoryDictionary(final SettingsValues settingsValues,
             final String suggestion, @Nonnull final NgramContext ngramContext) {
-        // If correction is not enabled, we don't add words to the user history dictionary.
-        // That's to avoid unintended additions in some sensitive fields, or fields that
-        // expect to receive non-words.
-        if (!settingsValues.mAutoCorrectionEnabledPerUserSettings
+        // Explicit per-app learning is independent of autocorrection.
+        if ((!settingsValues.mInputAttributes.mHasAppOverride
+                && !settingsValues.mAutoCorrectionEnabledPerUserSettings)
             || settingsValues.mIncognitoModeEnabled)
             return;
         if (mConnection.hasSlowInputConnection()) {
