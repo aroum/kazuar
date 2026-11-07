@@ -62,6 +62,12 @@ jobs:
             "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
             grep -qx "sdkVersion:'33'" "$RUNNER_TEMP/apk-badging.txt"
           done
+      - name: Verify 16 KiB ELF and APK alignment
+        run: >-
+          python3 tools/check-apk-page-alignment.py
+          --zipalign "$ANDROID_HOME/build-tools/35.0.0/zipalign"
+          app/build/outputs/apk/{debug,ci}/*.apk
+
       - name: Run Android lint
         run: ./gradlew :app:lintDebug --console=plain
       - name: Upload APKs

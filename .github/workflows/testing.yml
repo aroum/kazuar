@@ -105,6 +105,12 @@ jobs:
           RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
+      - name: Verify 16 KiB ELF and APK alignment
+        run: >-
+          python3 tools/check-apk-page-alignment.py
+          --zipalign "$ANDROID_HOME/build-tools/35.0.0/zipalign"
+          app/build/outputs/apk/ci/*.apk
+
       - name: Prepare APK artifact names
         run: |
           cd app/build/outputs/apk/ci

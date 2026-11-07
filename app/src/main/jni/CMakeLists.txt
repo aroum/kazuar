@@ -122,3 +122,10 @@ elseif(FLAG_DBG)
 endif()
 target_link_libraries(jni_latinime PRIVATE dl)
 target_link_options(jni_latinime PRIVATE -Wl,--gc-sections -Wl,--strip-all)
+
+# Support both 4 KiB and 16 KiB Android pages, including RELRO boundaries.
+# NDK r21 predates the flexible-page-size CMake option.
+if(ANDROID_ABI STREQUAL "arm64-v8a" OR ANDROID_ABI STREQUAL "x86_64")
+    target_link_options(jni_latinime PRIVATE
+        -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384)
+endif()
