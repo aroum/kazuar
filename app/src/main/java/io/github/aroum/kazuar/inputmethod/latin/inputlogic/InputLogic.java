@@ -20,6 +20,7 @@ import android.graphics.Color;
 import android.os.SystemClock;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputType;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -2118,7 +2119,12 @@ public final class InputLogic {
 
         final EditorInfo ei = getCurrentInputEditorInfo();
         if (ei == null) return Constants.TextUtils.CAP_MODE_OFF;
-        final int inputType = ei.inputType;
+        int inputType = ei.inputType;
+        if (settingsValues.mInputAttributes.mHasAppOverride
+                && (inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT) {
+            inputType = (inputType & ~(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+                    | InputType.TYPE_TEXT_FLAG_CAP_WORDS)) | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+        }
         // Warning: this depends on mSpaceState, which may not be the most current value. If
         // mSpaceState gets updated later, whoever called this may need to be told about it.
         return mConnection.getCursorCapsMode(inputType, settingsValues.mSpacingAndPunctuations,

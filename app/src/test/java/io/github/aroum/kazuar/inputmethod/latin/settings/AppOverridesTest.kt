@@ -13,6 +13,7 @@ import androidx.preference.SwitchPreferenceCompat
 import io.github.aroum.kazuar.inputmethod.latin.InputAttributes
 import io.github.aroum.kazuar.inputmethod.latin.utils.DeviceProtectedUtils
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -26,6 +27,13 @@ class AppOverridesTest {
     private val context: Application get() = RuntimeEnvironment.getApplication()
     private val prefs get() = DeviceProtectedUtils.getSharedPreferences(context)
     private val app = "org.example.browser"
+    @Before fun provideInputMethodManagerForAttributeTests() {
+        // Attribute construction only needs shortcut availability, not a registered live IME.
+        val type = io.github.aroum.kazuar.inputmethod.latin.RichInputMethodManager::class.java
+        val singleton = type.getDeclaredField("sInstance").apply { isAccessible = true }.get(null)
+        type.getDeclaredField("mImm").apply { isAccessible = true }
+                .set(singleton, context.getSystemService(android.view.inputmethod.InputMethodManager::class.java))
+    }
     private fun put(option: String, value: Boolean) {
         prefs.edit().putBoolean(AppOverrides.key(app, option), value).commit()
     }
@@ -151,6 +159,15 @@ class AppOverridesTest {
         assertFalse(v.isSuggestionsEnabledPerUserSettings)
         assertFalse(v.mAutoCorrectionEnabledPerUserSettings)
         assertTrue(v.needsToLookupSuggestions()) // Compose and learn without displaying candidates.
+    }
+    @Test fun appPersonalizationSwitchDoesNotDeleteSharedHistory() {
+        put(AppOverrides.ENABLED, true); put(AppOverrides.PERSONALIZED, false)
+        val file = java.io.File(context.filesDir, "history.en_US.dict").apply { writeText("shared history") }
+        val service = Robolectric.buildService(io.github.aroum.kazuar.inputmethod.latin.LatinIME::class.java).get()
+        val method = service.javaClass.getDeclaredMethod("refreshPersonalizationDictionarySession", SettingsValues::class.java)
+        method.isAccessible = true
+        method.invoke(service, values())
+        assertEquals("shared history", file.readText())
     }
     @Test fun absentOrInvalidPackageNeverEnablesOverride() {
         assertFalse(AppOverrides.enabled(prefs, null))

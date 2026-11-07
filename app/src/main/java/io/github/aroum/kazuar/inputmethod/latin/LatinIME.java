@@ -690,12 +690,15 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         resetDictionaryFacilitatorIfNecessary();
     }
 
+    private Boolean mLoadedPersonalizedDicts;
+
     private void refreshPersonalizationDictionarySession(
             final SettingsValues currentSettingsValues) {
         if (currentSettingsValues == null) {
             return;
         }
-        if (!currentSettingsValues.mUsePersonalizedDicts) {
+        if (!currentSettingsValues.mUsePersonalizedDicts
+                && !currentSettingsValues.mInputAttributes.mHasAppOverride) {
             // Remove user history dictionaries.
             PersonalizationHelper.removeAllUserHistoryDictionaries(this);
             mDictionaryFacilitator.clearUserHistoryDictionary(this);
@@ -732,7 +735,8 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
             subtypeLocale = subtypeSwitcherLocale;
         }
         if (mDictionaryFacilitator.isForLocale(subtypeLocale)
-                && mDictionaryFacilitator.isForAccount(mSettings.getCurrent().mAccount)) {
+                && mDictionaryFacilitator.isForAccount(mSettings.getCurrent().mAccount)
+                && java.util.Objects.equals(mLoadedPersonalizedDicts, mSettings.getCurrent().mUsePersonalizedDicts)) {
             return;
         }
         resetDictionaryFacilitator(subtypeLocale);
@@ -752,6 +756,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
                 false /* forceReloadMainDictionary */,
                 settingsValues.mAccount, "" /* dictNamePrefix */,
                 this /* DictionaryInitializationListener */);
+        mLoadedPersonalizedDicts = settingsValues.mUsePersonalizedDicts;
         if (mInputLogic != null && mInputLogic.mSuggest != null) {
             mInputLogic.mSuggest.clearPredictionCache();
         }

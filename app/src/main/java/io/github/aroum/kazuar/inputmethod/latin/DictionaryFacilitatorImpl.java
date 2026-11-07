@@ -336,7 +336,7 @@ public class DictionaryFacilitatorImpl implements DictionaryFacilitator {
                 && existingGroup != null
                 && TextUtils.equals(existingGroup.mAccount, account)
                 && existingGroup.hasDict(Dictionary.TYPE_MAIN, account)
-                && existingGroup.mSubDictMap.keySet().containsAll(subDictTypesToUse);
+                && existingGroup.mSubDictMap.keySet().equals(subDictTypesToUse);
 
         if (canReuseEntireGroup) {
             synchronized (mLock) {
