@@ -13,6 +13,8 @@ Before uninstalling an older version:
 3. If Android rejects the update because of the signature, uninstall the old version and install this nightly.
 4. Enable/select Kazuar again and **manually import the saved backup**. Settings, custom layouts, the personal dictionary and learning history must be transferred through the backup; they are not migrated automatically after uninstalling.
 
+**Legacy backups:** current full/history imports require the portable archive containing `history.json`. Old binary learning-history archives are rejected. When migrating from a much older build, also export settings and the personal dictionary as separate JSON files and import those separately. Binary learning history cannot be restored by this version. Check the backup format and keep your original files before uninstalling.
+
 Current installable CI builds and nightly builds use the same persistent signing key. Builds already using that key can normally be updated in place.
 
 ## Main changes
