@@ -147,6 +147,7 @@ dependencies {
     implementation 'androidx.collection:collection:1.5.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.fragment:fragment:1.8.9'
+    androidTestImplementation 'com.google.errorprone:error_prone_annotations:2.36.0'
     androidTestImplementation 'androidx.test:core:1.7.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
