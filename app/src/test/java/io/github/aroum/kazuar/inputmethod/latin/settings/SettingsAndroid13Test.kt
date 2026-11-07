@@ -16,7 +16,7 @@ import android.os.Looper
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33])
+@Config(sdk = [33, 36])
 class SettingsAndroid13Test {
     @Test fun settingsOpenAndNavigateOnAndroid13() {
         Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->
@@ -36,7 +36,7 @@ class SettingsAndroid13Test {
         Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
             val activity = controller.get()
             activity.supportFragmentManager.executePendingTransactions()
-            val screen = activity.supportFragmentManager.fragments.single() as LayoutSettingsFragment
+            val screen = activity.supportFragmentManager.fragments.filterIsInstance<LayoutSettingsFragment>().single()
             val history = screen.findPreference<Preference>(Settings.PREF_ENABLE_CLIPBOARD_HISTORY)!!
             val sensitive = screen.findPreference<Preference>(Settings.PREF_SAVE_SENSITIVE_CLIPS)!!
             assertEquals(history.parent, sensitive.parent)
@@ -66,7 +66,7 @@ class SettingsAndroid13Test {
         Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
             val activity = controller.get()
             activity.supportFragmentManager.executePendingTransactions()
-            val screen = activity.supportFragmentManager.fragments.single() as LayoutSettingsFragment
+            val screen = activity.supportFragmentManager.fragments.filterIsInstance<LayoutSettingsFragment>().single()
             val preference = screen.findPreference<ListPreference>(key)!!
             preference.performClick()
             activity.supportFragmentManager.executePendingTransactions()
@@ -83,6 +83,29 @@ class SettingsAndroid13Test {
                         .getString("pref_keyboard_layout_zz", null))
             }
             assertFalse(dialog.isShowing)
+        }
+    }
+
+    @Test fun layoutDialogSurvivesActivityRecreation() {
+        val intent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
+                LayoutSettingsFragment::class.java.name)
+        Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
+            controller.get().supportFragmentManager.executePendingTransactions()
+            val screen = controller.get().supportFragmentManager.fragments
+                    .filterIsInstance<LayoutSettingsFragment>().single()
+            screen.findPreference<ListPreference>("pref_keyboard_layout_ru")!!.performClick()
+            controller.get().supportFragmentManager.executePendingTransactions()
+            controller.recreate()
+            controller.get().supportFragmentManager.executePendingTransactions()
+            val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+            assertTrue(dialog.isShowing)
+            val restored = controller.get().supportFragmentManager.fragments
+                    .filterIsInstance<LayoutSettingsFragment>().single()
+            val preference = restored.findPreference<ListPreference>("pref_keyboard_layout_ru")!!
+            val index = preference.findIndexOfValue("v2")
+            dialog.listView.performItemClick(null, index, index.toLong())
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals("v2", preference.value)
         }
     }
 

@@ -51,4 +51,8 @@
         android:title="@string/settings_screen_backup"
         android:key="screen_backup"
         android:icon="@drawable/ic_settings_backup"/>
+    <androidx.preference.Preference
+        android:key="pref_crash_report"
+        android:title="@string/crash_report_title"
+        android:summary="@string/crash_report_summary" />
 </androidx.preference.PreferenceScreen>

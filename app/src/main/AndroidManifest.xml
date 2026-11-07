@@ -45,6 +45,7 @@
         android:protectionLevel="signature" />
 
     <application
+        android:name=".diagnostics.KazuarApplication"
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"

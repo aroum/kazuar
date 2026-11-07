@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="crash_report_title">Отчёт о последнем сбое</string>
+    <string name="crash_report_summary">Просмотреть и скопировать технические сведения о последнем падении</string>
+    <string name="crash_report_saved">kazuar завершился с ошибкой. Сохранён локальный отчёт: его можно просмотреть и скопировать.</string>
+    <string name="crash_report_open">Посмотреть отчёт</string>
+    <string name="crash_report_copy">Скопировать отчёт</string>
+    <string name="crash_report_copied">Отчёт скопирован</string>
+    <string name="crash_report_empty">Отчётов о сбоях пока нет.</string>
+</resources>

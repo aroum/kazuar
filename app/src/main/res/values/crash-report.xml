@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="crash_report_title">Last crash report</string>
+    <string name="crash_report_summary">View and copy technical details of the last crash</string>
+    <string name="crash_report_saved">kazuar stopped unexpectedly. A local error report is available; you can view and copy it.</string>
+    <string name="crash_report_open">View report</string>
+    <string name="crash_report_copy">Copy report</string>
+    <string name="crash_report_copied">Report copied</string>
+    <string name="crash_report_empty">No crash report has been saved yet.</string>
+</resources>

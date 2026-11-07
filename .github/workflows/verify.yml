@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: gradle
       - uses: android-actions/setup-android@v4
         with:
@@ -41,7 +41,7 @@ jobs:
           ctest --test-dir "$RUNNER_TEMP/native-tests" --output-on-failure --output-junit "$RUNNER_TEMP/native-results.xml"
       - name: Verify generated sources follow input edits
         run: python3 tools/check-generated-sources.py
-      - name: Test Android 13 settings and backup regressions
+      - name: Test Android 13 and 16 settings and backup regressions
         run: ./gradlew :app:testDebugUnitTest --stacktrace --console=plain
       - name: Create temporary verification signing key
         run: >-

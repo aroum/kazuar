@@ -63,6 +63,12 @@ public final class SettingsActivity extends PreferenceHostActivity
     }
 
     @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        io.github.aroum.kazuar.inputmethod.latin.diagnostics.CrashReportDialog.notifyIfNew(this);
+    }
+
+    @Override
     public Intent getIntent() {
         final Intent intent = super.getIntent();
         final String fragment = intent.getStringExtra(EXTRA_SHOW_FRAGMENT);
