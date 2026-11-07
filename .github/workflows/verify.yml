@@ -170,6 +170,11 @@ jobs:
           test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "16384"
           adb install runtime-apks/*-x86_64.apk
           adb install runtime-tests/*.apk
+          # Match a real installed keyboard. BOOT_COMPLETED can be deferred until
+          # first launch; its receiver stops a process when Kazuar is not current.
+          adb shell ime enable io.github.aroum.kazuar.inputmethod.latin/.LatinIME
+          adb shell ime set io.github.aroum.kazuar.inputmethod.latin/.LatinIME
+          adb shell am wait-for-broadcast-idle
           adb shell am instrument -w -r io.github.aroum.kazuar.inputmethod.latin.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
           grep -q '^OK (3 tests)' instrumentation.txt
           ! grep -Eq 'FAILURES|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.txt
