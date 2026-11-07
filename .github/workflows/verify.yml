@@ -43,19 +43,53 @@ jobs:
         run: python3 tools/check-generated-sources.py
       - name: Test Android 13 and 16 settings and backup regressions
         run: ./gradlew :app:testDebugUnitTest --stacktrace --console=plain
-      - name: Create temporary verification signing key
-        run: >-
-          keytool -genkeypair -noprompt
-          -keystore "$RUNNER_TEMP/verification.jks"
-          -storepass android -keypass android -alias verification
-          -dname "CN=kazuar verification" -keyalg RSA -keysize 2048 -validity 365
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ github.event_name != 'pull_request' && secrets.KEYSTORE_BASE64 || '' }}
+          KEYSTORE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.KEYSTORE_PASSWORD || '' }}
+          KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.KEY_ALIAS || '' }}
+          KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.KEY_PASSWORD || '' }}
+        run: |
+          umask 077
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            # PRs only verify builds; they never receive the persistent private key.
+            export KEYSTORE_PASSWORD=android
+            export KEY_ALIAS=verification
+            keytool -genkeypair -noprompt \
+              -keystore "$RUNNER_TEMP/verification.jks" \
+              -storepass android -keypass android -alias verification \
+              -dname "CN=kazuar PR verification" -keyalg RSA -keysize 2048 -validity 365
+          else
+            for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+              if [[ -z "${!name}" ]]; then
+                echo "::error::Missing persistent signing secret: $name"
+                exit 1
+              fi
+            done
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/verification.jks"
+          fi
+          keytool -exportcert -keystore "$RUNNER_TEMP/verification.jks" \
+            -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" \
+            -file "$RUNNER_TEMP/expected-signing-cert.der"
       - name: Build APKs and native libraries for all configured ABIs
         run: ./gradlew :app:assembleDebug :app:assembleCi --stacktrace --console=plain
         env:
           RELEASE_KEYSTORE_PATH: ${{ runner.temp }}/verification.jks
-          RELEASE_KEYSTORE_PASSWORD: android
-          RELEASE_KEY_ALIAS: verification
-          RELEASE_KEY_PASSWORD: android
+          RELEASE_KEYSTORE_PASSWORD: ${{ github.event_name == 'pull_request' && 'android' || secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ github.event_name == 'pull_request' && 'verification' || secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ github.event_name == 'pull_request' && 'android' || secrets.KEY_PASSWORD }}
+      - name: Verify CI APK signing certificate
+        run: |
+          expected=$(sha256sum "$RUNNER_TEMP/expected-signing-cert.der" | cut -d ' ' -f 1)
+          for apk in app/build/outputs/apk/ci/*.apk; do
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$apk" > "$RUNNER_TEMP/apk-signature.txt"
+            actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt")
+            if [[ "$actual" != "$expected" ]]; then
+              echo "::error::CI APK signing certificate mismatch: $apk"
+              exit 1
+            fi
+            echo "$(basename "$apk"): signer SHA-256 $actual"
+          done
       - name: Verify APK minimum Android version
         run: |
           for apk in app/build/outputs/apk/{debug,ci}/*.apk; do
