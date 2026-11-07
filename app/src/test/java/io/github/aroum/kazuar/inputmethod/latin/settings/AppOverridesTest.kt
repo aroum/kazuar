@@ -7,9 +7,9 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import android.view.LayoutInflater
-import android.widget.CheckBox
+import android.widget.Switch
 import androidx.preference.PreferenceViewHolder
-import androidx.preference.SwitchPreferenceCompat
+import androidx.preference.SwitchPreference
 import io.github.aroum.kazuar.inputmethod.latin.InputAttributes
 import io.github.aroum.kazuar.inputmethod.latin.utils.DeviceProtectedUtils
 import org.junit.Assert.*
@@ -113,19 +113,27 @@ class AppOverridesTest {
         Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
             controller.get().supportFragmentManager.executePendingTransactions()
             var fragment = controller.get().supportFragmentManager.fragments.single() as AppOverrideSettingsFragment
-            val learning = fragment.findPreference<SwitchPreferenceCompat>(AppOverrides.key(app, AppOverrides.LEARNING))!!
+            val learning = fragment.findPreference<SwitchPreference>(AppOverrides.key(app, AppOverrides.LEARNING))!!
             assertFalse(learning.isEnabled)
-            fragment.findPreference<SwitchPreferenceCompat>(AppOverrides.key(app, AppOverrides.ENABLED))!!.performClick()
+            val row = LayoutInflater.from(controller.get()).inflate(learning.layoutResource, null)
+            val frame = row.findViewById<android.view.ViewGroup>(android.R.id.widget_frame)
+            LayoutInflater.from(controller.get()).inflate(learning.widgetLayoutResource, frame)
+            learning.onBindViewHolder(PreferenceViewHolder.createInstanceForTests(row))
+            val toggle = row.findViewById<Switch>(0x01020040)
+            assertNotNull(toggle)
+            assertNotNull(toggle.thumbDrawable)
+            assertNotNull(toggle.trackDrawable)
+            fragment.findPreference<SwitchPreference>(AppOverrides.key(app, AppOverrides.ENABLED))!!.performClick()
             assertTrue(learning.isEnabled)
             assertFalse(learning.isChecked)
             controller.recreate()
             controller.get().supportFragmentManager.executePendingTransactions()
             fragment = controller.get().supportFragmentManager.fragments.single() as AppOverrideSettingsFragment
-            fragment.findPreference<SwitchPreferenceCompat>(AppOverrides.key(app, AppOverrides.ENABLED))!!.performClick()
+            fragment.findPreference<SwitchPreference>(AppOverrides.key(app, AppOverrides.ENABLED))!!.performClick()
             assertFalse(prefs.getBoolean(AppOverrides.key(app, AppOverrides.LEARNING), true))
         }
     }
-    @Test fun rowOpensPageButOnlyCheckboxChangesOverride() {
+    @Test fun rowOpensPageButOnlySwitchChangesOverride() {
         val intent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
                 IncognitoModeRulesFragment::class.java.name)
         Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
@@ -144,7 +152,11 @@ class AppOverridesTest {
             val frame = row.findViewById<android.view.ViewGroup>(android.R.id.widget_frame)
             LayoutInflater.from(activity).inflate(pref.widgetLayoutResource, frame)
             pref.onBindViewHolder(PreferenceViewHolder.createInstanceForTests(row))
-            row.findViewById<CheckBox>(android.R.id.checkbox).performClick()
+            val toggle = row.findViewById<Switch>(0x01020040)
+            assertNotNull(toggle)
+            assertNotNull(toggle.thumbDrawable)
+            assertNotNull(toggle.trackDrawable)
+            toggle.performClick()
             assertTrue(pref.isChecked)
             assertTrue(AppOverrides.enabled(prefs, app))
             assertEquals(1, opened)
@@ -171,6 +183,27 @@ class AppOverridesTest {
         method.isAccessible = true
         method.invoke(service, values())
         assertEquals("shared history", file.readText())
+    }
+    @Test fun geminiPageLinksToItsGoogleHostedEditorWithoutEnablingAnotherApp() {
+        val gemini = "com.google.android.apps.bard"
+        val google = "com.google.android.googlequicksearchbox"
+        val intent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
+                AppOverrideSettingsFragment::class.java.name)
+                .putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT_ARGUMENTS,
+                        Bundle().apply { putString(AppOverrideSettingsFragment.ARG_PACKAGE, gemini) })
+        Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
+            val activity = controller.get()
+            activity.supportFragmentManager.executePendingTransactions()
+            val fragment = activity.supportFragmentManager.fragments.single() as AppOverrideSettingsFragment
+            val link = fragment.findPreference<androidx.preference.Preference>("app_override_editor_host")!!
+            link.performClick()
+            activity.supportFragmentManager.executePendingTransactions()
+            val editor = activity.supportFragmentManager.fragments.filterIsInstance<AppOverrideSettingsFragment>()
+                    .single { it.arguments?.getString(AppOverrideSettingsFragment.ARG_PACKAGE) == google }
+            assertNotNull(editor.findPreference<SwitchPreference>(AppOverrides.key(google, AppOverrides.ENABLED)))
+            assertFalse(AppOverrides.enabled(prefs, google))
+            assertFalse(AppOverrides.enabled(prefs, gemini))
+        }
     }
     @Test fun absentOrInvalidPackageNeverEnablesOverride() {
         assertFalse(AppOverrides.enabled(prefs, null))

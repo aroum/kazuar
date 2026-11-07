@@ -11,7 +11,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.SearchView;
-import androidx.preference.CheckBoxPreference;
 import androidx.preference.PreferenceCategory;
 import io.github.aroum.kazuar.inputmethod.latin.R;
 import java.util.ArrayList;
@@ -25,12 +24,12 @@ public final class IncognitoModeRulesFragment extends SubScreenFragment
         implements SearchView.OnQueryTextListener {
     private final ExecutorService loader = Executors.newSingleThreadExecutor();
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final List<CheckBoxPreference> preferences = new ArrayList<>();
+    private final List<AppOverridePreference> preferences = new ArrayList<>();
     private PreferenceCategory appsCategory;
     private String query = "";
     private boolean destroyed;
     private final Runnable filter = () -> {
-        for (CheckBoxPreference pref : preferences) {
+        for (AppOverridePreference pref : preferences) {
             String text = pref.getTitle() + " " + pref.getSummary();
             pref.setVisible(text.toLowerCase(Locale.ROOT).contains(query));
         }
@@ -108,7 +107,7 @@ public final class IncognitoModeRulesFragment extends SubScreenFragment
 
     @Override public void onResume() {
         super.onResume();
-        for (CheckBoxPreference pref : preferences) {
+        for (AppOverridePreference pref : preferences) {
             pref.setChecked(getSharedPreferences().getBoolean(pref.getKey(), false));
         }
     }

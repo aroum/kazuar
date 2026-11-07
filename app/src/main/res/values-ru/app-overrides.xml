@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_override_enabled">Использовать индивидуальные настройки</string>
-    <string name="app_override_explanation">Галочка в списке приложений включает эти настройки. Они имеют приоритет над запросами приложения, в том числе в приватных вкладках и полях пароля. Обучение может сохранять введённый текст, а подсказки — показывать его.</string>
+    <string name="app_override_explanation">Тумблер в списке приложений включает эти настройки. Они имеют приоритет над запросами приложения, в том числе в приватных вкладках и полях пароля. Обучение может сохранять введённый текст, а подсказки — показывать его.</string>
     <string name="app_override_learning">Обучение на вводимом тексте</string>
     <string name="app_override_suggestions">Показывать подсказки</string>
     <string name="app_override_correction">Автокоррекция</string>
     <string name="app_override_personalized">Использовать персональные словари</string>
     <string name="app_override_predictions">Предсказание следующего слова</string>
     <string name="app_override_caps">Автоматические заглавные буквы</string>
+    <string name="app_override_gemini_host_title">Настроить редактор Gemini (Google)</string>
+    <string name="app_override_gemini_host_summary">Gemini может открывать поле ввода внутри приложения Google (com.google.android.googlequicksearchbox). Для такого поля настройте Google; его правила действуют также в поиске Google.</string>
 </resources>

@@ -4,7 +4,7 @@ package io.github.aroum.kazuar.inputmethod.latin.settings;
 import android.os.Bundle;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
-import androidx.preference.SwitchPreferenceCompat;
+import androidx.preference.SwitchPreference;
 import io.github.aroum.kazuar.inputmethod.latin.R;
 
 public final class AppOverrideSettingsFragment extends SubScreenFragment {
@@ -20,6 +20,15 @@ public final class AppOverrideSettingsFragment extends SubScreenFragment {
         explanation.setTitle(app);
         explanation.setSummary(R.string.app_override_explanation);
         explanation.setSelectable(false); screen.addPreference(explanation);
+        if ("com.google.android.apps.bard".equals(app)) {
+            Preference host = new Preference(requireContext());
+            host.setKey("app_override_editor_host");
+            host.setTitle(R.string.app_override_gemini_host_title);
+            host.setSummary(R.string.app_override_gemini_host_summary);
+            host.setFragment(AppOverrideSettingsFragment.class.getName());
+            host.getExtras().putString(ARG_PACKAGE, "com.google.android.googlequicksearchbox");
+            screen.addPreference(host);
+        }
         add(app, AppOverrides.ENABLED, R.string.app_override_enabled, false, null);
         String dependency = AppOverrides.key(app, AppOverrides.ENABLED);
         add(app, AppOverrides.LEARNING, R.string.app_override_learning,
@@ -37,7 +46,8 @@ public final class AppOverrideSettingsFragment extends SubScreenFragment {
                 getSharedPreferences().getBoolean(Settings.PREF_AUTO_CAP, true), dependency);
     }
     private void add(String app, String option, int title, boolean defaultValue, String dependency) {
-        SwitchPreferenceCompat pref = new SwitchPreferenceCompat(requireContext());
+        SwitchPreference pref = new SwitchPreference(requireContext());
+        pref.setSwitchTextOn(""); pref.setSwitchTextOff("");
         pref.setKey(AppOverrides.key(app, option)); pref.setTitle(title); pref.setDefaultValue(defaultValue);
         getPreferenceScreen().addPreference(pref);
         if (dependency != null) pref.setDependency(dependency);
