@@ -52,6 +52,7 @@ class AppearanceSettingsFragment : SubScreenFragment(), Preference.OnPreferenceC
         }
         setupTheme()
         setupLayoutsAndIcon()
+        KeyPreviewSettings.setup(this)
 
         if (!ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED) {
             removePreference(Settings.PREF_ENABLE_SPLIT_KEYBOARD_PORTRAIT)

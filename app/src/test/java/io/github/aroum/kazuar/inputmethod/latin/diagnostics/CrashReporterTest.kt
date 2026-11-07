@@ -8,7 +8,8 @@ import android.os.Looper
 import android.app.AlertDialog
 import io.github.aroum.kazuar.inputmethod.latin.R
 import io.github.aroum.kazuar.inputmethod.latin.settings.SettingsActivity
-import io.github.aroum.kazuar.inputmethod.latin.settings.SettingsFragment
+import io.github.aroum.kazuar.inputmethod.latin.settings.DebugSettingsFragment
+import io.github.aroum.kazuar.inputmethod.latin.settings.PreferenceHostActivity
 import androidx.preference.Preference
 import org.junit.Assert.*
 import org.junit.Test
@@ -81,10 +82,11 @@ class CrashReporterTest {
     }
 
     @Test fun reportCanBeViewedAndCopiedWithoutAnExternalIntent() {
-        Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->
+        Robolectric.buildActivity(SettingsActivity::class.java, android.content.Intent().putExtra(
+                PreferenceHostActivity.EXTRA_SHOW_FRAGMENT, DebugSettingsFragment::class.java.name)).setup().use { controller ->
             val activity = controller.get()
             activity.supportFragmentManager.executePendingTransactions()
-            val screen = activity.supportFragmentManager.fragments.filterIsInstance<SettingsFragment>().single()
+            val screen = activity.supportFragmentManager.fragments.filterIsInstance<DebugSettingsFragment>().single()
             val clipboard = activity.getSystemService(ClipboardManager::class.java)
             clipboard.clearPrimaryClip()
             val startedBefore = shadowOf(activity).nextStartedActivity

@@ -109,4 +109,47 @@ class SettingsAndroid13Test {
         }
     }
 
+    @Test fun appearanceOwnsAnimationsAndSizingWhileDebugOwnsCrashReport() {
+        val context: android.app.Application = org.robolectric.RuntimeEnvironment.getApplication()
+        val prefs = DeviceProtectedUtils.getSharedPreferences(context)
+        prefs.edit().putFloat(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_START_X_SCALE, 0.42f)
+                .putInt(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_DURATION, 73).commit()
+        val appearanceIntent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
+                AppearanceSettingsFragment::class.java.name)
+        Robolectric.buildActivity(SettingsActivity::class.java, appearanceIntent).setup().use { controller ->
+            val activity = controller.get()
+            activity.supportFragmentManager.executePendingTransactions()
+            val screen = activity.supportFragmentManager.fragments.single() as AppearanceSettingsFragment
+            assertNotNull(screen.findPreference<Preference>(DebugSettings.PREF_RESIZE_KEYBOARD))
+            assertNotNull(screen.findPreference<Preference>(DebugSettings.PREF_SLIDING_KEY_INPUT_PREVIEW))
+            val scale = screen.findPreference<SeekBarDialogPreference>(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_START_X_SCALE)!!
+            assertEquals("42%", scale.summary.toString())
+            assertTrue(screen.findPreference<Preference>(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_DURATION)!!
+                    .summary.toString().contains("73"))
+            screen.findPreference<Preference>(DebugSettings.PREF_HAS_CUSTOM_KEY_PREVIEW_ANIMATION_PARAMS)!!.performClick()
+            assertTrue(scale.isEnabled)
+            scale.performClick()
+            activity.supportFragmentManager.executePendingTransactions()
+            val dialog = ShadowDialog.getLatestDialog() as android.app.AlertDialog
+            assertTrue(dialog.isShowing)
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick()
+            assertEquals(0.42f, prefs.getFloat(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_START_X_SCALE, 0f), 0.0001f)
+        }
+        val debugIntent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
+                DebugSettingsFragment::class.java.name)
+        Robolectric.buildActivity(SettingsActivity::class.java, debugIntent).setup().use { controller ->
+            controller.get().supportFragmentManager.executePendingTransactions()
+            val screen = controller.get().supportFragmentManager.fragments.single() as DebugSettingsFragment
+            assertNotNull(screen.findPreference<Preference>("pref_crash_report"))
+            assertNull(screen.findPreference<Preference>(DebugSettings.PREF_RESIZE_KEYBOARD))
+            assertNull(screen.findPreference<Preference>(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_START_X_SCALE))
+            assertNull(screen.findPreference<Preference>(DebugSettings.PREF_SLIDING_KEY_INPUT_PREVIEW))
+        }
+        Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->
+            controller.get().supportFragmentManager.executePendingTransactions()
+            val screen = controller.get().supportFragmentManager.fragments.single() as SettingsFragment
+            assertNull(screen.findPreference<Preference>("pref_crash_report"))
+        }
+    }
+
 }

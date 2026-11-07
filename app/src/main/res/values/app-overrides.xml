@@ -10,4 +10,5 @@
     <string name="app_override_caps">Automatic capitalization</string>
     <string name="app_override_gemini_host_title">Configure Gemini’s editor (Google)</string>
     <string name="app_override_gemini_host_summary">Gemini can open its input field inside the Google app (com.google.android.googlequicksearchbox). Configure Google for that field; these settings also affect Google Search.</string>
+    <string name="settings_category_key_animations">Key animations</string>
 </resources>

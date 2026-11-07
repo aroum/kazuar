@@ -50,10 +50,6 @@ public final class SettingsFragment extends InputMethodSettingsFragment {
         setSubtypeEnablerTitle(R.string.select_language);
         setSubtypeEnablerIcon(R.drawable.ic_settings_languages);
         addPreferencesFromResource(R.xml.prefs);
-        findPreference("pref_crash_report").setOnPreferenceClickListener(preference -> {
-            io.github.aroum.kazuar.inputmethod.latin.diagnostics.CrashReportDialog.showReport(requireActivity());
-            return true;
-        });
         final PreferenceScreen preferenceScreen = getPreferenceScreen();
         preferenceScreen.setTitle(
                 ApplicationUtils.getActivityTitleResId(getActivity(), SettingsActivity.class));
