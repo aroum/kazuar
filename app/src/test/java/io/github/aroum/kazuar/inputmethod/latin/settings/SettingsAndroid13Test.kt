@@ -2,6 +2,7 @@
 package io.github.aroum.kazuar.inputmethod.latin.settings
 
 import android.content.Intent
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import io.github.aroum.kazuar.inputmethod.latin.utils.DeviceProtectedUtils
 import org.junit.Assert.*
@@ -10,6 +11,9 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
+import android.os.Looper
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -48,4 +52,38 @@ class SettingsAndroid13Test {
             assertTrue(controller.get().isFinishing)
         }
     }
+    @Test fun russianLayoutDialogOpensAndPersistsSelection() {
+        chooseLayout("pref_keyboard_layout_ru")
+    }
+
+    @Test fun englishLayoutDialogAlsoUpdatesFallbackLayout() {
+        chooseLayout("pref_keyboard_layout_en")
+    }
+
+    private fun chooseLayout(key: String) {
+        val intent = Intent().putExtra(PreferenceHostActivity.EXTRA_SHOW_FRAGMENT,
+                LayoutSettingsFragment::class.java.name)
+        Robolectric.buildActivity(SettingsActivity::class.java, intent).setup().use { controller ->
+            val activity = controller.get()
+            activity.supportFragmentManager.executePendingTransactions()
+            val screen = activity.supportFragmentManager.fragments.single() as LayoutSettingsFragment
+            val preference = screen.findPreference<ListPreference>(key)!!
+            preference.performClick()
+            activity.supportFragmentManager.executePendingTransactions()
+            val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+            assertTrue(dialog.isShowing)
+            val index = preference.findIndexOfValue("v2")
+            assertTrue(index >= 0)
+            dialog.listView.performItemClick(null, index, index.toLong())
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals("v2", preference.value)
+            assertEquals("v2", DeviceProtectedUtils.getSharedPreferences(activity).getString(key, null))
+            if (key == "pref_keyboard_layout_en") {
+                assertEquals("v2", DeviceProtectedUtils.getSharedPreferences(activity)
+                        .getString("pref_keyboard_layout_zz", null))
+            }
+            assertFalse(dialog.isShowing)
+        }
+    }
+
 }
