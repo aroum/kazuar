@@ -162,7 +162,10 @@ class AppOverridesTest {
     }
     @Test fun appPersonalizationSwitchDoesNotDeleteSharedHistory() {
         put(AppOverrides.ENABLED, true); put(AppOverrides.PERSONALIZED, false)
-        val file = java.io.File(context.filesDir, "history.en_US.dict").apply { writeText("shared history") }
+        val file = java.io.File(context.filesDir, "UserHistoryDictionary.en_US.dict").apply { writeText("shared history") }
+        assertTrue(io.github.aroum.kazuar.inputmethod.latin.personalization.PersonalizationHelper.DictFilter(
+                io.github.aroum.kazuar.inputmethod.latin.personalization.UserHistoryDictionary.NAME)
+                .accept(context.filesDir, file.name))
         val service = Robolectric.buildService(io.github.aroum.kazuar.inputmethod.latin.LatinIME::class.java).get()
         val method = service.javaClass.getDeclaredMethod("refreshPersonalizationDictionarySession", SettingsValues::class.java)
         method.isAccessible = true
