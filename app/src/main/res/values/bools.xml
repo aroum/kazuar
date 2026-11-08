@@ -21,4 +21,6 @@
     <!-- Whether this input method should be used as the default for a locale. Override it
          for supported languages. -->
     <bool name="im_is_default">false</bool>
+    <!-- Disable reserving icon space for preferences without icons so submenu items align flush left -->
+    <bool name="config_materialPreferenceIconSpaceReserved">false</bool>
 </resources>
