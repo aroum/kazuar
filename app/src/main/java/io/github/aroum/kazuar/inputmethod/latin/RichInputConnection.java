@@ -441,6 +441,11 @@ public final class RichInputConnection {
                 n, flags);
     }
 
+    public CharSequence getCurrentTextBeforeCursor(final int n) {
+        mIC = mParent.getCurrentInputConnection();
+        return isConnected() ? mIC.getTextBeforeCursor(n, 0) : null;
+    }
+
     private CharSequence getTextBeforeCursorAndDetectLaggyConnection(
             final int operation, final long timeout, final int n, final int flags) {
         mIC = mParent.getCurrentInputConnection();

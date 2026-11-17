@@ -1366,7 +1366,11 @@ public final class InputLogic {
             }
             inputTransaction.setRequiresUpdateSuggestions();
         } else {
-            if (mLastComposedWord.canRevertCommit()) {
+            if (mLastComposedWord.canRevertCommit()
+                    && mLastComposedWord.matchesTextBeforeCursor(
+                            mConnection.getCurrentTextBeforeCursor(
+                                    mLastComposedWord.mCommittedWord.length()
+                                            + mLastComposedWord.mSeparatorString.length()))) {
                 final String lastComposedWord = mLastComposedWord.mTypedWord;
                 revertCommit(inputTransaction, inputTransaction.getMSettingsValues());
                 // Restart suggestions when backspacing into a reverted word. This is required for
@@ -1385,6 +1389,9 @@ public final class InputLogic {
                 }
                 return;
             }
+            // An editor may have changed the corrected text or removed its separator. In that
+            // case, the saved deletion length could consume the space before the word.
+            mLastComposedWord.deactivate();
             if (mEnteredText != null && mConnection.sameAsTextBeforeCursor(mEnteredText)) {
                 // Cancel multi-character input: remove the text we just entered.
                 // This is triggered on backspace after a key that inputs multiple characters,
