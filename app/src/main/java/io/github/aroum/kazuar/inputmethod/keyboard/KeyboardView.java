@@ -234,15 +234,16 @@ public class KeyboardView extends View {
         final int themeId = theme != null ? theme.mThemeId : -1;
         final int currentNightMode = getContext().getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK;
-        if (themeId == mLastThemeId && currentNightMode == mLastNightMode && (themeId != KeyboardTheme.THEME_ID_CUSTOM || mCustomColors != null)) {
+        if (themeId == mLastThemeId && currentNightMode == mLastNightMode
+                && (!KeyboardTheme.isDynamicTheme(themeId) || mCustomColors != null)) {
             return;
         }
         mLastThemeId = themeId;
         mLastNightMode = currentNightMode;
         mCustomColors = null;
         mIsCustomTheme = false;
-        if (themeId == KeyboardTheme.THEME_ID_CUSTOM) {
-            mCustomColors = CustomThemeHelper.getCustomThemeColors(getContext());
+        if (KeyboardTheme.isDynamicTheme(themeId)) {
+            mCustomColors = CustomThemeHelper.getActiveThemeColors(getContext());
             mIsCustomTheme = (mCustomColors != null);
         }
     }

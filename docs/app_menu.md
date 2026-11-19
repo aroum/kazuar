@@ -28,7 +28,7 @@
 ### Theme
 
 * Load theme from file
-* Theme family
+* Theme family [Gruvbox, Material You, Holo (Legacy), Custom]
 * Theme variant
 * Auto day/night mode
 * Key borders

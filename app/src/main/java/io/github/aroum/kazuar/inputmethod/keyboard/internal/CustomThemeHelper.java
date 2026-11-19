@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.util.Log;
+import io.github.aroum.kazuar.inputmethod.keyboard.KeyboardTheme;
 import io.github.aroum.kazuar.inputmethod.latin.utils.DeviceProtectedUtils;
 import org.json.JSONObject;
 
@@ -31,6 +32,25 @@ public class CustomThemeHelper {
         sCachedThemeJson = null;
         sCachedIsDark = null;
         sCachedColors = null;
+    }
+
+    /**
+     * Returns the programmatic palette for the currently selected theme, or {@code null} when the
+     * selected theme is rendered from regular resources.
+     */
+    public static ThemeColors getActiveThemeColors(Context context) {
+        final KeyboardTheme theme = KeyboardTheme.getKeyboardTheme(context);
+        if (theme == null) {
+            return null;
+        }
+        final int themeId = theme.mThemeId;
+        if (themeId == KeyboardTheme.THEME_ID_CUSTOM) {
+            return getCustomThemeColors(context);
+        }
+        if (KeyboardTheme.isMaterialYou(themeId)) {
+            return MaterialYouThemeHelper.getThemeColors(context, themeId);
+        }
+        return null;
     }
 
     public static synchronized ThemeColors getCustomThemeColors(Context context) {
