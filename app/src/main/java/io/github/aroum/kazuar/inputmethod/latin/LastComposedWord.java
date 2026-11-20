@@ -87,6 +87,12 @@ public final class LastComposedWord {
         return mActive && !TextUtils.isEmpty(mCommittedWord) && !didCommitTypedWord();
     }
 
+    public boolean matchesTextBeforeCursor(final CharSequence textBeforeCursor) {
+        if (textBeforeCursor == null) return false;
+        final String expected = mCommittedWord.toString() + mSeparatorString;
+        return TextUtils.equals(expected, textBeforeCursor);
+    }
+
     private boolean didCommitTypedWord() {
         return TextUtils.equals(mTypedWord, mCommittedWord);
     }

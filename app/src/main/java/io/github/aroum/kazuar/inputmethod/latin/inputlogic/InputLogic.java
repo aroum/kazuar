@@ -556,6 +556,7 @@ public final class InputLogic {
                 processedEvent, SystemClock.uptimeMillis(), mSpaceState,
                 getActualCapsMode(settingsValues, keyboardShiftMode));
         if (processedEvent.getMKeyCode() != Constants.CODE_DELETE
+                || !processedEvent.isKeyRepeat()
                 || inputTransaction.getMTimestamp() > mLastKeyTime + Constants.LONG_PRESS_MILLISECONDS) {
             mDeleteCount = 0;
         }
@@ -1324,6 +1325,8 @@ public final class InputLogic {
             final int currentKeyboardScriptId) {
         mSpaceState = SpaceState.NONE;
         mDeleteCount++;
+        final boolean accelerateDeletion =
+                event.isKeyRepeat() && mDeleteCount > Constants.DELETE_ACCELERATE_AT;
 
         // In many cases after backspace, we need to update the shift state. Normally we need
         // to do this right away to avoid the shift state being out of date in case the user types
@@ -1366,7 +1369,11 @@ public final class InputLogic {
             }
             inputTransaction.setRequiresUpdateSuggestions();
         } else {
-            if (mLastComposedWord.canRevertCommit()) {
+            if (mLastComposedWord.canRevertCommit()
+                    && mLastComposedWord.matchesTextBeforeCursor(
+                            mConnection.getCurrentTextBeforeCursor(
+                                    mLastComposedWord.mCommittedWord.length()
+                                            + mLastComposedWord.mSeparatorString.length()))) {
                 final String lastComposedWord = mLastComposedWord.mTypedWord;
                 revertCommit(inputTransaction, inputTransaction.getMSettingsValues());
                 // Restart suggestions when backspacing into a reverted word. This is required for
@@ -1385,6 +1392,9 @@ public final class InputLogic {
                 }
                 return;
             }
+            // An editor may have changed the corrected text or removed its separator. In that
+            // case, the saved deletion length could consume the space before the word.
+            mLastComposedWord.deactivate();
             if (mEnteredText != null && mConnection.sameAsTextBeforeCursor(mEnteredText)) {
                 // Cancel multi-character input: remove the text we just entered.
                 // This is triggered on backspace after a key that inputs multiple characters,
@@ -1448,7 +1458,7 @@ public final class InputLogic {
                     // best thing is to leave it to whatever it thinks is best.
                     sendDownUpKeyEvent(KeyEvent.KEYCODE_DEL);
                     int totalDeletedLength = 1;
-                    if (mDeleteCount > Constants.DELETE_ACCELERATE_AT) {
+                    if (accelerateDeletion) {
                         // If this is an accelerated (i.e., double) deletion, then we need to
                         // consider unlearning here because we may have already reached
                         // the previous word, and will lose it after next deletion.
@@ -1473,7 +1483,7 @@ public final class InputLogic {
                             Character.isSupplementaryCodePoint(codePointBeforeCursor) ? 2 : 1;
                     mConnection.deleteTextBeforeCursor(lengthToDelete);
                     int totalDeletedLength = lengthToDelete;
-                    if (mDeleteCount > Constants.DELETE_ACCELERATE_AT) {
+                    if (accelerateDeletion) {
                         // If this is an accelerated (i.e., double) deletion, then we need to
                         // consider unlearning here because we may have already reached
                         // the previous word, and will lose it after next deletion.

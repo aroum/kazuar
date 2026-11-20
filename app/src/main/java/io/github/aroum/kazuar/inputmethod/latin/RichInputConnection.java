@@ -441,6 +441,11 @@ public final class RichInputConnection {
                 n, flags);
     }
 
+    public CharSequence getCurrentTextBeforeCursor(final int n) {
+        mIC = mParent.getCurrentInputConnection();
+        return isConnected() ? mIC.getTextBeforeCursor(n, 0) : null;
+    }
+
     private CharSequence getTextBeforeCursorAndDetectLaggyConnection(
             final int operation, final long timeout, final int n, final int flags) {
         mIC = mParent.getCurrentInputConnection();
@@ -576,6 +581,7 @@ public final class RichInputConnection {
         final CharSequence textBeforeCursor =
                 getTextBeforeCursor(Constants.EDITOR_CONTENTS_CACHE_SIZE + (end - start), 0);
         mCommittedTextBeforeComposingText.setLength(0);
+        mComposingText.setLength(0);
         if (!TextUtils.isEmpty(textBeforeCursor)) {
             // The cursor is not necessarily at the end of the composing text, but we have its
             // position in mExpectedSelStart and mExpectedSelEnd. In this case we want the start
