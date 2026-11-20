@@ -235,6 +235,7 @@ public class KeyboardView extends View {
         final int currentNightMode = getContext().getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK;
         if (themeId == mLastThemeId && currentNightMode == mLastNightMode
+                && !KeyboardTheme.isMaterialYou(themeId)
                 && (!KeyboardTheme.isDynamicTheme(themeId) || mCustomColors != null)) {
             return;
         }
