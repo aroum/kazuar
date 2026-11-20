@@ -1004,7 +1004,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private void onUpEventInternal(final int x, final int y, final long eventTime) {
         sTimerProxy.cancelKeyTimersOf(this);
         final Keyboard keyboard = mKeyDetector.getKeyboard();
-        if (keyboard != null) {
+        if (keyboard != null && !isShowingMoreKeysPanel()) {
             final SettingsValues settingsValues = Settings.getInstance().getCurrent();
             final int keyboardWidth = keyboard.mOccupiedWidth;
             final int keyboardHeight = keyboard.mOccupiedHeight;

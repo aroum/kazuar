@@ -33,6 +33,7 @@ import java.util.Map;
 public final class KeyboardTheme implements Comparable<KeyboardTheme> {
 
     public static final String THEME_FAMILY_MATERIAL = "Gruvbox";
+    public static final String THEME_FAMILY_MATERIAL_YOU = "Material You";
     public static final String THEME_FAMILY_HOLO = "Holo (Legacy)";
     public static final String THEME_FAMILY_CUSTOM = "Custom";
     public static final String THEME_VARIANT_LIGHT = "Light";
@@ -41,11 +42,14 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
     public static final String THEME_VARIANT_BLUE = "Blue";
     public static final String THEME_VARIANT_CUSTOM = "Custom";
 
-    public static final String[] THEME_FAMILIES = {THEME_FAMILY_MATERIAL, THEME_FAMILY_HOLO, THEME_FAMILY_CUSTOM};
+    public static final String[] THEME_FAMILIES = {THEME_FAMILY_MATERIAL, THEME_FAMILY_MATERIAL_YOU,
+            THEME_FAMILY_HOLO, THEME_FAMILY_CUSTOM};
     public static final Map<String, String[]> THEME_VARIANTS = new HashMap<>();
 
     static {
         THEME_VARIANTS.put(THEME_FAMILY_MATERIAL,
+                new String[] {THEME_VARIANT_LIGHT, THEME_VARIANT_DARK});
+        THEME_VARIANTS.put(THEME_FAMILY_MATERIAL_YOU,
                 new String[] {THEME_VARIANT_LIGHT, THEME_VARIANT_DARK});
         THEME_VARIANTS.put(THEME_FAMILY_HOLO,
                 new String[] {THEME_VARIANT_WHITE, THEME_VARIANT_BLUE});
@@ -71,6 +75,12 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
     public static final int THEME_ID_LXX_AUTO = 9;
     public static final int THEME_ID_LXX_AUTO_BORDER = 8;
     public static final int THEME_ID_CUSTOM = 11;
+    public static final int THEME_ID_MATERIAL_YOU_LIGHT = 12;
+    public static final int THEME_ID_MATERIAL_YOU_DARK = 13;
+    public static final int THEME_ID_MATERIAL_YOU_LIGHT_BORDER = 14;
+    public static final int THEME_ID_MATERIAL_YOU_DARK_BORDER = 15;
+    public static final int THEME_ID_MATERIAL_YOU_AUTO = 16;
+    public static final int THEME_ID_MATERIAL_YOU_AUTO_BORDER = 17;
     public static final int DEFAULT_THEME_ID = THEME_ID_LXX_DARK_BORDER;
 
     private static KeyboardTheme[] AVAILABLE_KEYBOARD_THEMES;
@@ -107,6 +117,36 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
         new KeyboardTheme(THEME_ID_LXX_AUTO_AMOLED, "LXXAutoAmoled", R.style.KeyboardTheme_LXX_Auto_Amoled,
                 // This has never been selected as default theme.
                 VERSION_CODES.LOLLIPOP),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_LIGHT, "MaterialYouLight",
+                R.style.KeyboardTheme_MaterialYou_Light,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_DARK, "MaterialYouDark",
+                R.style.KeyboardTheme_MaterialYou_Dark,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_LIGHT_BORDER, "MaterialYouLightBorder",
+                R.style.KeyboardTheme_MaterialYou_Light,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_DARK_BORDER, "MaterialYouDarkBorder",
+                R.style.KeyboardTheme_MaterialYou_Dark,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_AUTO, "MaterialYouAuto",
+                R.style.KeyboardTheme_MaterialYou_Auto,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
+        new KeyboardTheme(THEME_ID_MATERIAL_YOU_AUTO_BORDER, "MaterialYouAutoBorder",
+                R.style.KeyboardTheme_MaterialYou_Auto,
+                // Material You uses dynamic system colors at runtime. Keep the base version so
+                // that it does not become the default theme for fresh installs.
+                VERSION_CODES.BASE),
         new KeyboardTheme(THEME_ID_CUSTOM, "Custom", R.style.KeyboardTheme_LXX_Dark,
                 VERSION_CODES.BASE),
     };
@@ -245,6 +285,7 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
 
     public static String getThemeFamily(int themeId) {
         if (themeId == THEME_ID_CUSTOM) return THEME_FAMILY_CUSTOM;
+        if (isMaterialYou(themeId)) return THEME_FAMILY_MATERIAL_YOU;
         if (themeId == THEME_ID_ICS || themeId == THEME_ID_KLP) return THEME_FAMILY_HOLO;
         return THEME_FAMILY_MATERIAL;
     }
@@ -256,9 +297,13 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
             case THEME_ID_LXX_DARK:
             case THEME_ID_LXX_DARK_AMOLED:
             case THEME_ID_LXX_DARK_BORDER:
+            case THEME_ID_MATERIAL_YOU_DARK:
+            case THEME_ID_MATERIAL_YOU_DARK_BORDER:
                 return THEME_VARIANT_DARK;
             case THEME_ID_LXX_LIGHT:
             case THEME_ID_LXX_LIGHT_BORDER:
+            case THEME_ID_MATERIAL_YOU_LIGHT:
+            case THEME_ID_MATERIAL_YOU_LIGHT_BORDER:
                 return THEME_VARIANT_LIGHT;
             case THEME_ID_KLP:
                 return THEME_VARIANT_WHITE;
@@ -274,6 +319,9 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
             case THEME_ID_LXX_DARK_BORDER:
             case THEME_ID_LXX_LIGHT_BORDER:
             case THEME_ID_LXX_AUTO_BORDER:
+            case THEME_ID_MATERIAL_YOU_LIGHT_BORDER:
+            case THEME_ID_MATERIAL_YOU_DARK_BORDER:
+            case THEME_ID_MATERIAL_YOU_AUTO_BORDER:
             case THEME_ID_ICS:
             case THEME_ID_KLP:
                 return true;
@@ -287,10 +335,30 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
             case THEME_ID_LXX_AUTO:
             case THEME_ID_LXX_AUTO_AMOLED:
             case THEME_ID_LXX_AUTO_BORDER:
+            case THEME_ID_MATERIAL_YOU_AUTO:
+            case THEME_ID_MATERIAL_YOU_AUTO_BORDER:
                 return true;
             default:
                 return false;
         }
+    }
+
+    public static boolean isMaterialYou(int themeId) {
+        switch (themeId) {
+            case THEME_ID_MATERIAL_YOU_LIGHT:
+            case THEME_ID_MATERIAL_YOU_DARK:
+            case THEME_ID_MATERIAL_YOU_LIGHT_BORDER:
+            case THEME_ID_MATERIAL_YOU_DARK_BORDER:
+            case THEME_ID_MATERIAL_YOU_AUTO:
+            case THEME_ID_MATERIAL_YOU_AUTO_BORDER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isDynamicTheme(int themeId) {
+        return themeId == THEME_ID_CUSTOM || isMaterialYou(themeId);
     }
 
     public static boolean getIsAmoledMode(int themeId) {
@@ -307,6 +375,18 @@ public final class KeyboardTheme implements Comparable<KeyboardTheme> {
             boolean keyBorders, boolean dayNight, boolean amoledMode) {
         if (THEME_FAMILY_CUSTOM.equals(family)) {
             return THEME_ID_CUSTOM;
+        }
+        if (THEME_FAMILY_MATERIAL_YOU.equals(family)) {
+            if (dayNight) {
+                return keyBorders ? THEME_ID_MATERIAL_YOU_AUTO_BORDER
+                        : THEME_ID_MATERIAL_YOU_AUTO;
+            }
+            if (THEME_VARIANT_DARK.equals(variant)) {
+                return keyBorders ? THEME_ID_MATERIAL_YOU_DARK_BORDER
+                        : THEME_ID_MATERIAL_YOU_DARK;
+            }
+            return keyBorders ? THEME_ID_MATERIAL_YOU_LIGHT_BORDER
+                    : THEME_ID_MATERIAL_YOU_LIGHT;
         }
         if (THEME_FAMILY_HOLO.equals(family)) {
             if (THEME_VARIANT_BLUE.equals(variant)) return THEME_ID_ICS;

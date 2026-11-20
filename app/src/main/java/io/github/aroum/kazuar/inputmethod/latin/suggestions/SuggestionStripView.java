@@ -199,7 +199,7 @@ public final class SuggestionStripView extends RelativeLayout implements OnClick
         final int visibility = shouldBeVisible ? VISIBLE : (isFullscreenMode ? GONE : INVISIBLE);
         setVisibility(visibility);
         final io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomThemeHelper.ThemeColors customColors =
-                io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomThemeHelper.getCustomThemeColors(getContext());
+                io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomThemeHelper.getActiveThemeColors(getContext());
         if (customColors != null) {
             setBackgroundColor(customColors.keyboardBackground);
         }
