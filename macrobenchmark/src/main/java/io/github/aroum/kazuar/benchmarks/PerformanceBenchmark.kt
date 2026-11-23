@@ -36,6 +36,10 @@ class PerformanceBenchmark {
     @Before fun requireDisposableDevice() {
         check(args.getString("ephemeralDevice") == "true")
         check(Build.HARDWARE in listOf("ranchu", "goldfish") || Build.FINGERPRINT.contains("generic"))
+        selectKeyboard()
+    }
+
+    private fun selectKeyboard() {
         // Gradle installs the target again before instrumentation, resetting IME selection.
         device.executeShellCommand("ime enable $IME")
         device.executeShellCommand("ime set $IME")
@@ -87,6 +91,7 @@ class PerformanceBenchmark {
         compilationMode = CompilationMode.Full(),
         iterations = iterations,
         setupBlock = {
+            selectKeyboard()
             startActivityAndWait(editorIntent())
             device.pressBack()
             device.waitForIdle()
@@ -102,6 +107,7 @@ class PerformanceBenchmark {
         compilationMode = CompilationMode.Full(),
         iterations = iterations,
         setupBlock = {
+            selectKeyboard()
             startActivityAndWait(editorIntent())
             editor().click()
             key("a")
@@ -119,6 +125,7 @@ class PerformanceBenchmark {
         compilationMode = CompilationMode.Full(),
         iterations = iterations,
         setupBlock = {
+            selectKeyboard()
             startActivityAndWait(editorIntent("one testing"))
             editor().click()
             key("Delete")
