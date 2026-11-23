@@ -40,6 +40,7 @@ class PerformanceBenchmark {
     }
 
     private fun selectKeyboard() {
+        device.executeShellCommand("settings put secure show_ime_with_hard_keyboard 1")
         // Gradle installs the target again before instrumentation, resetting IME selection.
         device.executeShellCommand("ime enable $IME")
         device.executeShellCommand("ime set $IME")
@@ -93,7 +94,6 @@ class PerformanceBenchmark {
         setupBlock = {
             selectKeyboard()
             startActivityAndWait(editorIntent())
-            device.pressBack()
             device.waitForIdle()
         }
     ) {
