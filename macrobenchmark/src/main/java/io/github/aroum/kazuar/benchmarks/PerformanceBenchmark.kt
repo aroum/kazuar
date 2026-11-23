@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
@@ -40,6 +42,10 @@ class PerformanceBenchmark {
     }
 
     private fun selectKeyboard() {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        automation.serviceInfo = automation.serviceInfo.apply {
+            flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        }
         device.executeShellCommand("settings put secure show_ime_with_hard_keyboard 1")
         // Gradle installs the target again before instrumentation, resetting IME selection.
         device.executeShellCommand("ime enable $IME")
@@ -62,6 +68,27 @@ class PerformanceBenchmark {
         device.wait(Until.findObject(By.pkg(PACKAGE).desc(
             Pattern.compile(Pattern.quote(description), Pattern.CASE_INSENSITIVE))), 10_000)
             ?: error("Keyboard key missing: $description")
+
+    private fun pressKey(description: String) {
+        key(description)
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        fun find(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+            if (node.packageName?.toString() == PACKAGE
+                && node.contentDescription?.toString().equals(description, ignoreCase = true)) {
+                return node
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                find(child)?.let { return it }
+            }
+            return null
+        }
+        val node = automation.windows.mapNotNull { it.root }.firstNotNullOfOrNull { find(it) }
+            ?: error("Accessibility key missing: $description")
+        check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            "Keyboard rejected click: $description"
+        }
+    }
 
     private fun awaitText(expected: String) {
         val deadline = SystemClock.uptimeMillis() + 10_000
@@ -114,7 +141,7 @@ class PerformanceBenchmark {
         }
     ) {
         for (letter in "test test test") {
-            key(if (letter == ' ') "Space" else letter.toString()).click()
+            pressKey(if (letter == ' ') "Space" else letter.toString())
         }
         awaitText("test test test")
     }
@@ -131,7 +158,7 @@ class PerformanceBenchmark {
             key("Delete")
         }
     ) {
-        repeat(7) { key("Delete").click() }
+        repeat(7) { pressKey("Delete") }
         awaitText("one ")
     }
 
