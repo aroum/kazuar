@@ -47,7 +47,15 @@ class PerformanceBenchmark {
             flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         }
         device.executeShellCommand("settings put secure show_ime_with_hard_keyboard 1")
-        // Gradle installs the target again before instrumentation, resetting IME selection.
+        // Wait until the system has processed the target installation broadcast.
+        val deadline = SystemClock.uptimeMillis() + 30_000
+        var methods: String
+        do {
+            methods = device.executeShellCommand("ime list -a -s")
+            if (IME in methods.lineSequence().map { it.trim() }.toList()) break
+            SystemClock.sleep(100)
+        } while (SystemClock.uptimeMillis() < deadline)
+        check(IME in methods) { "Profiling IME was not registered: $methods" }
         device.executeShellCommand("ime enable $IME")
         // Pin the declared en_US subtype, rather than relying on implicit selection.
         device.executeShellCommand("settings put secure enabled_input_methods '$IME;$ENGLISH_SUBTYPE'")
