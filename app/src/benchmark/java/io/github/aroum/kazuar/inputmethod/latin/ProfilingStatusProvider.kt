@@ -22,7 +22,7 @@ class ProfilingStatusProvider : ContentProvider() {
             val settings = Settings.getInstance().current
             MatrixCursor(arrayOf("locale", "main_dictionary", "slow_connection",
                 "suggestions", "learning")).apply {
-                addRow(arrayOf(
+                addRow(arrayOf<Any>(
                     if (ime == null) "" else RichInputMethodManager.getInstance()
                         .currentSubtypeLocale.toString(),
                     if (ime?.mainDictionaryReady == true) 1 else 0,
