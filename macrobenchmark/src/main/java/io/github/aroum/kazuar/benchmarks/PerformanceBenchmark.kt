@@ -32,7 +32,7 @@ class PerformanceBenchmark {
     private val device get() = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private val args get() = InstrumentationRegistry.getArguments()
     private val iterations get() = (args.getString("performanceIterations") ?: "3").toInt().also {
-        require(it in 1..10)
+        require(it in 1..30)
     }
 
     @Before fun requireDisposableDevice() {
@@ -49,7 +49,10 @@ class PerformanceBenchmark {
         device.executeShellCommand("settings put secure show_ime_with_hard_keyboard 1")
         // Gradle installs the target again before instrumentation, resetting IME selection.
         device.executeShellCommand("ime enable $IME")
+        // Pin the declared en_US subtype, rather than relying on implicit selection.
+        device.executeShellCommand("settings put secure enabled_input_methods '$IME;$ENGLISH_SUBTYPE'")
         device.executeShellCommand("ime set $IME")
+        device.executeShellCommand("settings put secure selected_input_method_subtype $ENGLISH_SUBTYPE")
         check(device.executeShellCommand("settings get secure default_input_method").trim() == IME)
         device.executeShellCommand("am wait-for-broadcast-idle")
     }
@@ -99,6 +102,39 @@ class PerformanceBenchmark {
         error("Editor text mismatch, expected '$expected', got '${editor().text}'")
     }
 
+    private fun status(): String =
+        device.executeShellCommand("content query --uri content://$PACKAGE.performance")
+
+    private fun ready(status: String) =
+        listOf("locale=en_US", "main_dictionary=1", "slow_connection=0",
+            "suggestions=1", "learning=1").all { it in status }
+
+    private fun awaitReady() {
+        val deadline = SystemClock.uptimeMillis() + 15_000
+        var state: String
+        do {
+            state = status()
+            if (ready(state)) return
+            SystemClock.sleep(50)
+        } while (SystemClock.uptimeMillis() < deadline)
+        error("IME is not ready for measurement: $state")
+    }
+
+    private fun checkReady() {
+        val state = status()
+        check(ready(state)) { "Measured IME path is incomplete: $state" }
+    }
+
+    private var snapshotIndex = 0
+    private fun snapshot(scenario: String) {
+        // Capture a live, prepared process outside the measured block. Download survives uninstall.
+        val base = "/sdcard/Download/kazuar-performance/$scenario-${snapshotIndex++}"
+        device.executeShellCommand("mkdir -p /sdcard/Download/kazuar-performance")
+        device.executeShellCommand("sh -c 'dumpsys meminfo $PACKAGE > $base-memory.txt'")
+        device.executeShellCommand("sh -c 'dumpsys gfxinfo $PACKAGE > $base-frames.txt'")
+        device.executeShellCommand("sh -c 'content query --uri content://$PACKAGE.performance > $base-status.txt'")
+    }
+
     @Test fun coldStartup() = benchmark.measureRepeated(
         packageName = PACKAGE,
         metrics = listOf(StartupTimingMetric(), FrameTimingMetric()),
@@ -115,13 +151,18 @@ class PerformanceBenchmark {
 
     @Test fun keyboardShow() = benchmark.measureRepeated(
         packageName = PACKAGE,
-        metrics = listOf(FrameTimingMetric(), TraceSectionMetric("Kazuar.createInputView")),
+        metrics = listOf(FrameTimingMetric()),
         compilationMode = CompilationMode.Full(),
         iterations = iterations,
         setupBlock = {
             selectKeyboard()
             startActivityAndWait(editorIntent())
-            device.waitForIdle()
+            editor().click()
+            key("a")
+            awaitReady()
+            snapshot("show")
+            device.pressBack()
+            editor()
         }
     ) {
         editor().click()
@@ -138,12 +179,15 @@ class PerformanceBenchmark {
             startActivityAndWait(editorIntent())
             editor().click()
             key("a")
+            awaitReady()
+            snapshot("typing")
         }
     ) {
         for (letter in "test test test") {
             pressKey(if (letter == ' ') "Space" else letter.toString())
         }
         awaitText("test test test")
+        checkReady()
     }
 
     @Test fun keyboardDeletion() = benchmark.measureRepeated(
@@ -156,15 +200,20 @@ class PerformanceBenchmark {
             startActivityAndWait(editorIntent("one testing"))
             editor().click()
             key("Delete")
+            awaitReady()
+            snapshot("deletion")
         }
     ) {
         repeat(7) { pressKey("Delete") }
         awaitText("one ")
+        checkReady()
     }
 
     companion object {
         private const val NAMESPACE = "io.github.aroum.kazuar.inputmethod.latin"
         private const val PACKAGE = "$NAMESPACE.benchmark"
-        private const val IME = "$PACKAGE/$NAMESPACE.LatinIME"
+        private const val IME = "$PACKAGE/$NAMESPACE.ProfilingIme"
+        // Explicit subtypeId from res/xml/method.xml (0xc9194f98).
+        private const val ENGLISH_SUBTYPE = -921088104
     }
 }

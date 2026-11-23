@@ -1,12 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application>
+        <service android:name="io.github.aroum.kazuar.inputmethod.latin.LatinIME"
+            tools:node="remove" />
+        <service android:name="io.github.aroum.kazuar.inputmethod.latin.ProfilingIme"
+            android:exported="true" android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
+        <provider android:name="io.github.aroum.kazuar.inputmethod.latin.ProfilingStatusProvider"
+            android:authorities="${applicationId}.performance"
+            android:exported="true" android:readPermission="android.permission.DUMP" />
         <profileable android:shell="true" />
         <!-- Macrobenchmark force-stops the IME between measurements. Its boot receiver
              otherwise kills the process when Android has switched to the fallback IME. -->
         <receiver android:name="io.github.aroum.kazuar.inputmethod.latin.SystemBroadcastReceiver"
             android:enabled="false" tools:replace="android:enabled" />
         <activity android:name=".performance.BenchmarkEditorActivity"
-            android:exported="true" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
+            android:process=":editor" android:exported="true" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
     </application>
 </manifest>

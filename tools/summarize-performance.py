@@ -36,7 +36,7 @@ def summarize(source: Path, destination: Path) -> bool:
             if scenario:
                 scenarios.add(scenario)
             repeats = item.get("repeatIterations", 0)
-            valid &= isinstance(repeats, int) and 1 <= repeats <= 10
+            valid &= isinstance(repeats, int) and 1 <= repeats <= 30
             if isinstance(repeats, int):
                 expected_traces += repeats
             lines += [f"## {name}", "", f"Iterations: {item.get('repeatIterations', '?')}", ""]
@@ -63,7 +63,7 @@ def summarize(source: Path, destination: Path) -> bool:
               "`Kazuar.keyInput` measures synchronous key dispatch and state updates. Suggestions may continue asynchronously.",
               "`Kazuar.createInputView` measures input-view creation when it occurs. Showing a cached keyboard need not create a new view.",
               "Frame metrics measure rendered frames. UI automation and waits are included in scenario durations.",
-              "Memory/gfxinfo snapshots describe final state, not peak memory or leaks."]
+              "Memory/gfxinfo snapshots describe prepared live IME processes before measurements, not peak memory or leaks."]
     text = "\n".join(lines) + "\n"
     (destination / "summary.md").write_text(text)
     if summary := os.environ.get("GITHUB_STEP_SUMMARY"):

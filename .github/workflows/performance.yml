@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       iterations:
-        description: Iterations per scenario (1–10)
+        description: Iterations per scenario (1–30)
         type: number
-        default: 3
+        default: 10
   push:
     branches: ['fix/performance-profiling']
 permissions:
@@ -38,7 +38,7 @@ jobs:
       - name: Measure on disposable emulator
         timeout-minutes: 25
         env:
-          PERFORMANCE_ITERATIONS: ${{ inputs.iterations || 3 }}
+          PERFORMANCE_ITERATIONS: ${{ inputs.iterations || 10 }}
           EPHEMERAL_DEVICE: 'true'
         run: |
           mkdir -p performance-artifacts
