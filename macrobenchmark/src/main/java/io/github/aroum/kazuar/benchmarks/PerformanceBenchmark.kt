@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
+import android.os.ParcelFileDescriptor
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.benchmark.macro.CompilationMode
@@ -58,10 +59,11 @@ class PerformanceBenchmark {
         check(IME in methods) { "Profiling IME was not registered: $methods" }
         device.executeShellCommand("ime enable $IME")
         // Pin the declared en_US subtype, rather than relying on implicit selection.
-        device.executeShellCommand("settings put secure enabled_input_methods '$IME;$ENGLISH_SUBTYPE'")
+        device.executeShellCommand("settings put secure enabled_input_methods $IME;$ENGLISH_SUBTYPE")
         device.executeShellCommand("ime set $IME")
         device.executeShellCommand("settings put secure selected_input_method_subtype $ENGLISH_SUBTYPE")
-        check(device.executeShellCommand("settings get secure default_input_method").trim() == IME)
+        val selected = device.executeShellCommand("settings get secure default_input_method").trim()
+        check(selected == IME) { "Expected $IME, selected $selected" }
         device.executeShellCommand("am wait-for-broadcast-idle")
     }
 
@@ -138,9 +140,21 @@ class PerformanceBenchmark {
         // Capture a live, prepared process outside the measured block. Download survives uninstall.
         val base = "/sdcard/Download/kazuar-performance/$scenario-${snapshotIndex++}"
         device.executeShellCommand("mkdir -p /sdcard/Download/kazuar-performance")
-        device.executeShellCommand("sh -c 'dumpsys meminfo $PACKAGE > $base-memory.txt'")
-        device.executeShellCommand("sh -c 'dumpsys gfxinfo $PACKAGE > $base-frames.txt'")
-        device.executeShellCommand("sh -c 'content query --uri content://$PACKAGE.performance > $base-status.txt'")
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val streams = automation.executeShellCommandRw("sh")
+        ParcelFileDescriptor.AutoCloseOutputStream(streams[1]).use {
+            it.write(("""
+                set -e
+                dumpsys meminfo $PACKAGE > $base-memory.txt
+                dumpsys gfxinfo $PACKAGE > $base-frames.txt
+                content query --uri content://$PACKAGE.performance > $base-status.txt
+                echo snapshots_saved
+            """.trimIndent() + "\n").toByteArray())
+        }
+        val result = ParcelFileDescriptor.AutoCloseInputStream(streams[0]).use {
+            it.readBytes().toString(Charsets.UTF_8)
+        }
+        check("snapshots_saved" in result) { "Failed to save live snapshots: $result" }
     }
 
     @Test fun coldStartup() = benchmark.measureRepeated(
