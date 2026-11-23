@@ -14,6 +14,36 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33, 36])
 class RichInputConnectionTest {
+    @Test fun revertingExpansionAndEditingPreservesPrecedingSpace() {
+        val ime = Robolectric.buildService(TestIme::class.java).get()
+        val editor = EditText(ime).apply {
+            setText("на вторник ")
+            setSelection(length())
+        }
+        ime.editorConnection = object : BaseInputConnection(editor, true) {
+            override fun getEditable() = editor.text
+        }
+        val connection = RichInputConnection(ime)
+        connection.resetCachesUponCursorMoveAndReturnSuccess(11, 11, false)
+        connection.beginBatchEdit()
+        try {
+            connection.deleteTextBeforeCursor(8)
+            connection.setComposingText("вт", 1)
+            assertEquals("на вт", editor.text.toString())
+            connection.setComposingText("в", 1)
+            assertEquals("на в", editor.text.toString())
+            assertEquals(4, connection.expectedSelectionStart)
+            connection.setComposingText("вт", 1)
+            connection.commitText("вт", 1)
+            connection.commitText(" ", 1)
+            assertEquals("на вт ", editor.text.toString())
+            assertEquals(6, connection.expectedSelectionStart)
+            assertEquals("на вт ", connection.getTextBeforeCursor(6, 0).toString())
+        } finally {
+            connection.endBatchEdit()
+        }
+    }
+
     class TestIme : InputMethodService() {
         lateinit var editorConnection: InputConnection
 

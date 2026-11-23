@@ -1374,22 +1374,7 @@ public final class InputLogic {
                             mConnection.getCurrentTextBeforeCursor(
                                     mLastComposedWord.mCommittedWord.length()
                                             + mLastComposedWord.mSeparatorString.length()))) {
-                final String lastComposedWord = mLastComposedWord.mTypedWord;
                 revertCommit(inputTransaction, inputTransaction.getMSettingsValues());
-                // Restart suggestions when backspacing into a reverted word. This is required for
-                // the final corrected word to be learned, as learning only occurs when suggestions
-                // are active.
-                //
-                // Note: restartSuggestionsOnWordTouchedByCursor is already called for normal
-                // (non-revert) backspace handling.
-                if (inputTransaction.getMSettingsValues().isSuggestionsEnabledPerUserSettings()
-                        && inputTransaction.getMSettingsValues().mSpacingAndPunctuations
-                                .mCurrentLanguageHasSpaces
-                        && !mConnection.isCursorFollowedByWordCharacter(
-                                inputTransaction.getMSettingsValues().mSpacingAndPunctuations)) {
-                    restartSuggestionsOnWordTouchedByCursor(inputTransaction.getMSettingsValues(),
-                            false /* forStartInput */, currentKeyboardScriptId);
-                }
                 return;
             }
             // An editor may have changed the corrected text or removed its separator. In that
@@ -2009,10 +1994,8 @@ public final class InputLogic {
         final String committedWordString = committedWord.toString();
         final int cancelLength = committedWord.length();
         final String separatorString = mLastComposedWord.mSeparatorString;
-        // If our separator is a space, we won't actually commit it,
-        // but set the space state to PHANTOM so that a space will be inserted
-        // on the next keypress
-        final boolean usePhantomSpace = separatorString.equals(Constants.STRING_SPACE);
+        // Drop the trailing space so the restored word can be edited immediately.
+        final boolean separatorIsSpace = separatorString.equals(Constants.STRING_SPACE);
         // We want java chars, not codepoints for the following.
         final int separatorLength = separatorString.length();
         // TODO: should we check our saved separator against the actual contents of the text view?
@@ -2035,7 +2018,7 @@ public final class InputLogic {
                     Constants.EVENT_REVERT);
         }
         final String stringToCommit = originallyTypedWord +
-                (usePhantomSpace ? "" : separatorString);
+                (separatorIsSpace ? "" : separatorString);
         final SpannableString textToCommit = new SpannableString(stringToCommit);
         if (committedWord instanceof SpannableString) {
             final SpannableString committedWordWithSuggestionSpans = (SpannableString)committedWord;
@@ -2071,23 +2054,20 @@ public final class InputLogic {
                     0 /* start */, lastCharIndex /* end */, 0 /* flags */);
         }
 
-        if (inputTransaction.getMSettingsValues().mSpacingAndPunctuations.mCurrentLanguageHasSpaces) {
-            mConnection.commitText(textToCommit, 1);
-            if (usePhantomSpace) {
-                mSpaceState = SpaceState.PHANTOM;
-            }
-        } else {
-            // For languages without spaces, we revert the typed string but the cursor is flush
-            // with the typed word, so we need to resume suggestions right away.
+        if (separatorIsSpace
+                || !settingsValues.mSpacingAndPunctuations.mCurrentLanguageHasSpaces) {
+            // Restore the word as a composition at the current cursor. Do not rediscover its
+            // bounds from an editor that may still be processing this batch of replacements.
             final int[] codePoints = StringUtils.toCodePointArray(stringToCommit);
             mWordComposer.setComposingWord(codePoints,
                     mLatinIME.getCoordinatesForCurrentKeyboard(codePoints));
             setComposingTextInternal(textToCommit, 1);
+        } else {
+            mConnection.commitText(textToCommit, 1);
         }
-        // Don't restart suggestion yet. We'll restart if the user deletes the separator.
+        mSpaceState = SpaceState.NONE;
         mLastComposedWord = LastComposedWord.NOT_A_COMPOSED_WORD;
 
-        // We have a separator between the word and the cursor: we should show predictions.
         inputTransaction.setRequiresUpdateSuggestions();
     }
 
@@ -2492,7 +2472,8 @@ public final class InputLogic {
         final String typedWord = mWordComposer.getTypedWord();
         String stringToCommit = (autoCorrectionOrNull != null)
                 ? autoCorrectionOrNull.mWord : typedWord;
-        if (settingsValues.mEnableMacroReplacements && !TextUtils.isEmpty(typedWord)) {
+        if (settingsValues.mEnableMacroReplacements && !mWordComposer.isResumed()
+                && !TextUtils.isEmpty(typedWord)) {
             final String shortcutReplacement = getMacroReplacement(typedWord);
             if (shortcutReplacement != null) {
                 stringToCommit = shortcutReplacement;
@@ -2538,7 +2519,7 @@ public final class InputLogic {
         // TODO: Locale should be determined based on context and the text given.
         final Locale locale = getDictionaryFacilitatorLocale();
         CharSequence chosenWordWithSuggestions = chosenWord;
-        if (settingsValues.mEnableMacroReplacements) {
+        if (settingsValues.mEnableMacroReplacements && !mWordComposer.isResumed()) {
             final String macro = getMacroReplacement(chosenWord);
             if (macro != null) {
                 chosenWordWithSuggestions = macro;
