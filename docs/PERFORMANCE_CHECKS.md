@@ -9,7 +9,9 @@ The opt-in `-PperformanceBenchmarks=true` enables a non-debuggable, profileable
 build and the separate Macrobenchmark module. The measured package is
 `io.github.aroum.kazuar.inputmethod.latin.benchmark`. Its editor activity exists
 only in that variant. The harness requires the disposable-emulator flag and
-checks the selected IME before measuring. The workflow installs and selects
+selects and checks the IME before measuring. The profiling variant disables the
+system broadcast receiver because Macrobenchmark force-stops the IME between
+measurements, causing Android to select a fallback keyboard. The workflow installs and selects
 Kazuar in the disposable emulator.
 
 ## Scenarios
@@ -22,7 +24,8 @@ Kazuar in the disposable emulator.
 - `keyboardDeletion` deletes `testing` from `one testing` through the actual
   Delete key and checks that `one ` remains.
 
-Input scenarios use accessibility key descriptions and real touch input.
+Input scenarios invoke ACTION_CLICK on the keyboard accessibility nodes.
+Kazuar translates these actions into touch events in its keyboard view.
 They require the default English keyboard on the fresh English emulator.
 UI Automator operations and waits contribute to scenario durations.
 This suite measures fixed workloads and does not replace correction regression
