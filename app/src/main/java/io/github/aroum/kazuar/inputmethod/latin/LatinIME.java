@@ -851,7 +851,12 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public View onCreateInputView() {
-        return mKeyboardSwitcher.onCreateInputView(mIsHardwareAcceleratedDrawingEnabled);
+        android.os.Trace.beginSection("Kazuar.createInputView");
+        try {
+            return mKeyboardSwitcher.onCreateInputView(mIsHardwareAcceleratedDrawingEnabled);
+        } finally {
+            android.os.Trace.endSection();
+        }
     }
 
     @Override
@@ -1562,21 +1567,26 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // This method is public for testability of LatinIME, but also in the future it should
     // completely replace #onCodeInput.
     public void onEvent(@Nonnull final Event event) {
-        if (Constants.CODE_SHORTCUT == event.getMKeyCode()) {
-            mRichImm.switchToShortcutIme(this);
+        android.os.Trace.beginSection("Kazuar.keyInput");
+        try {
+            if (Constants.CODE_SHORTCUT == event.getMKeyCode()) {
+                mRichImm.switchToShortcutIme(this);
+            }
+            final InputTransaction completeInputTransaction =
+                    mInputLogic.onCodeInput(mSettings.getCurrent(), event,
+                            mKeyboardSwitcher.getKeyboardShiftMode(),
+                            mKeyboardSwitcher.getCurrentKeyboardScriptId(), mHandler);
+            updateStateAfterInputTransaction(completeInputTransaction);
+            int autoCapsState = getCurrentAutoCapsState();
+            final Event txEvent = completeInputTransaction.getMEvent();
+            final int code = txEvent.isFunctionalKeyEvent() ? txEvent.getMKeyCode() : txEvent.getMCodePoint();
+            if (Character.isLetter(code)) {
+                autoCapsState = Constants.TextUtils.CAP_MODE_OFF;
+            }
+            mKeyboardSwitcher.onEvent(txEvent, autoCapsState, getCurrentRecapitalizeState());
+        } finally {
+            android.os.Trace.endSection();
         }
-        final InputTransaction completeInputTransaction =
-                mInputLogic.onCodeInput(mSettings.getCurrent(), event,
-                        mKeyboardSwitcher.getKeyboardShiftMode(),
-                        mKeyboardSwitcher.getCurrentKeyboardScriptId(), mHandler);
-        updateStateAfterInputTransaction(completeInputTransaction);
-        int autoCapsState = getCurrentAutoCapsState();
-        final Event txEvent = completeInputTransaction.getMEvent();
-        final int code = txEvent.isFunctionalKeyEvent() ? txEvent.getMKeyCode() : txEvent.getMCodePoint();
-        if (Character.isLetter(code)) {
-            autoCapsState = Constants.TextUtils.CAP_MODE_OFF;
-        }
-        mKeyboardSwitcher.onEvent(txEvent, autoCapsState, getCurrentRecapitalizeState());
     }
 
     // A helper method to split the code point and the key code. Ultimately, they should not be

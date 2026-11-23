@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <profileable android:shell="true" />
+        <activity android:name=".performance.BenchmarkEditorActivity"
+            android:exported="true" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
+    </application>
+</manifest>

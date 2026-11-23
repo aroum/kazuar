@@ -69,6 +69,14 @@ android {
         debug {
             versionNameSuffix "-debug"
         }
+        if (providers.gradleProperty('performanceBenchmarks').orNull == 'true') {
+            benchmark {
+                initWith release
+                applicationIdSuffix '.benchmark'
+                signingConfig signingConfigs.debug
+                matchingFallbacks = ['release']
+            }
+        }
         ci {
             minifyEnabled true
             shrinkResources true
@@ -169,5 +177,11 @@ tasks.named('preBuild').configure {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+if (providers.gradleProperty('performanceBenchmarks').orNull == 'true') {
+    dependencies {
+        benchmarkImplementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     }
 }
