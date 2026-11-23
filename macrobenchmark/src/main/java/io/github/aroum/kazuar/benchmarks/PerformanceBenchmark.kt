@@ -36,7 +36,11 @@ class PerformanceBenchmark {
     @Before fun requireDisposableDevice() {
         check(args.getString("ephemeralDevice") == "true")
         check(Build.HARDWARE in listOf("ranchu", "goldfish") || Build.FINGERPRINT.contains("generic"))
+        // Gradle installs the target again before instrumentation, resetting IME selection.
+        device.executeShellCommand("ime enable $IME")
+        device.executeShellCommand("ime set $IME")
         check(device.executeShellCommand("settings get secure default_input_method").trim() == IME)
+        device.executeShellCommand("am wait-for-broadcast-idle")
     }
 
     private fun editorIntent(text: String = "") = Intent().apply {
