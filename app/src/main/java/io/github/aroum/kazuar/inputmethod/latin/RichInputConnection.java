@@ -507,19 +507,13 @@ public final class RichInputConnection {
 
     public void deleteTextBeforeCursor(final int beforeLength) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
-        // TODO: the following is incorrect if the cursor is not immediately after the composition.
-        // Right now we never come here in this case because we reset the composing state before we
-        // come here in this case, but we need to fix this.
-        final int remainingChars = mComposingText.length() - beforeLength;
-        if (remainingChars >= 0) {
-            mComposingText.setLength(remainingChars);
-        } else {
-            mComposingText.setLength(0);
-            // Never cut under 0
-            final int len = Math.max(mCommittedTextBeforeComposingText.length()
-                    + remainingChars, 0);
-            mCommittedTextBeforeComposingText.setLength(len);
-        }
+        // deleteSurroundingText excludes an active editor composition. A retained span would
+        // make it delete before the whole word (including its preceding space), not the cursor.
+        // Composing-word backspace uses setComposingText; this path deletes literal cursor text.
+        finishComposingText();
+        final int remainingChars =
+                Math.max(mCommittedTextBeforeComposingText.length() - beforeLength, 0);
+        mCommittedTextBeforeComposingText.setLength(remainingChars);
         if (mExpectedSelStart > beforeLength) {
             mExpectedSelStart -= beforeLength;
             mExpectedSelEnd -= beforeLength;
