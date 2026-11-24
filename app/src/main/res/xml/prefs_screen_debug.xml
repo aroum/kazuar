@@ -20,6 +20,14 @@
     android:title="@string/prefs_debug_mode"
     android:key="english_ime_debug_settings"
 >
+    <androidx.preference.Preference
+        android:key="pref_build_version"
+        android:title="@string/build_version_title"
+        android:selectable="false" />
+    <androidx.preference.Preference
+        android:key="pref_build_commit"
+        android:title="@string/build_commit_title"
+        android:selectable="false" />
     <androidx.preference.CheckBoxPreference
         android:key="debug_mode"
         android:title="@string/prefs_debug_mode"

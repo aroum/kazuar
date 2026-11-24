@@ -1,6 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+def buildRevision = System.getenv('GITHUB_SHA') ?: 'local'
+def defaultVersionName = buildRevision == 'local' ? 'local' :
+        java.time.LocalDate.now(java.time.ZoneOffset.UTC).format(
+                java.time.format.DateTimeFormatter.ofPattern('yy.MM.dd'))
+def baseVersionName = System.getenv('VERSION_NAME') ?:
+        (project.findProperty('versionName') ?: defaultVersionName)
+
 android {
 
     namespace "io.github.aroum.kazuar.inputmethod.latin"
@@ -15,11 +22,10 @@ android {
             cmake { arguments '-DANDROID_STL=c++_static' }
         }
         resourceConfigurations += ['en', 'ru']
-        resValue 'string', 'build_revision', System.getenv('GITHUB_SHA') ?: 'local'
+        resValue 'string', 'build_revision', buildRevision
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionCode 32
-        def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.18')
-        versionName appVersionName
+        versionName "${baseVersionName}+${buildRevision.take(7)}"
     }
 
     signingConfigs {
