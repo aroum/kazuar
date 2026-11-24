@@ -14,6 +14,36 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33, 36])
 class RichInputConnectionTest {
+    @Test fun deletionAfterEditorRetainsCompositionDoesNotRemovePrecedingSpace() {
+        val ime = Robolectric.buildService(TestIme::class.java).get()
+        val editor = EditText(ime).apply {
+            setText("Привела логика")
+            setSelection(length())
+        }
+        ime.editorConnection = object : BaseInputConnection(editor, true) {
+            override fun getEditable() = editor.text
+        }
+        val connection = RichInputConnection(ime)
+        connection.resetCachesUponCursorMoveAndReturnSuccess(editor.length(), editor.length(), false)
+        // Simulate the editor retaining a composing span after the keyboard has committed
+        // its word. deleteSurroundingText skips that span unless it is finished first.
+        ime.editorConnection.setComposingRegion("Привела ".length, editor.length())
+        connection.beginBatchEdit()
+        try {
+            connection.deleteTextBeforeCursor(1)
+            assertEquals("Привела логик", editor.text.toString())
+            assertEquals(editor.length(), connection.expectedSelectionStart)
+            assertEquals(editor.text.toString(),
+                connection.getTextBeforeCursor(editor.length(), 0).toString())
+            connection.setComposingRegion("Привела ".length, editor.length())
+            connection.setComposingText("логикой", 1)
+            assertEquals("Привела логикой", editor.text.toString())
+            assertEquals(editor.length(), connection.expectedSelectionStart)
+        } finally {
+            connection.endBatchEdit()
+        }
+    }
+
     @Test fun movingWithinCorrectedWordPreservesItsPrefixAndPrecedingSpace() {
         for (prefix in listOf("Привела ", "🙂 Привела ")) {
             val ime = Robolectric.buildService(TestIme::class.java).get()
