@@ -92,6 +92,9 @@ public final class RichInputConnection {
      */
     private static final long SLOW_INPUTCONNECTION_PERSIST_MS = TimeUnit.MINUTES.toMillis(10);
 
+    // Retain the editor's composition start even when the cursor is at its first character.
+    private int mComposingRegionStart = INVALID_CURSOR_POSITION;
+
     /**
      * This variable contains an expected value for the selection start position. This is where the
      * cursor or selection start may end up after all the keyboard-triggered updates have passed. We
@@ -236,8 +239,22 @@ public final class RichInputConnection {
             Log.d(TAG, "Will try to retrieve text later.");
             return false;
         }
-        if (isConnected() && shouldFinishComposition) {
-            mIC.finishComposingText();
+        if (shouldFinishComposition) {
+            mComposingRegionStart = INVALID_CURSOR_POSITION;
+            if (isConnected()) mIC.finishComposingText();
+        } else if (mComposingRegionStart != INVALID_CURSOR_POSITION
+                && newSelStart == newSelEnd && newSelStart >= mComposingRegionStart) {
+            // The editor still has a composition. Preserve its prefix in our cache, rather
+            // than treating that prefix as committed text and counting it twice on the next edit.
+            final int prefixLength = newSelStart - mComposingRegionStart;
+            final int cachedLength = mCommittedTextBeforeComposingText.length();
+            if (prefixLength <= cachedLength) {
+                mComposingText.append(mCommittedTextBeforeComposingText,
+                        cachedLength - prefixLength, cachedLength);
+                mCommittedTextBeforeComposingText.setLength(cachedLength - prefixLength);
+            }
+        } else {
+            mComposingRegionStart = INVALID_CURSOR_POSITION;
         }
         return true;
     }
@@ -293,6 +310,7 @@ public final class RichInputConnection {
         // it works, but it's wrong and should be fixed.
         mCommittedTextBeforeComposingText.append(mComposingText);
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mIC.finishComposingText();
         }
@@ -314,6 +332,7 @@ public final class RichInputConnection {
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mTempObjectForCommitText.clear();
             mTempObjectForCommitText.append(text);
@@ -582,6 +601,7 @@ public final class RichInputConnection {
                 getTextBeforeCursor(Constants.EDITOR_CONTENTS_CACHE_SIZE + (end - start), 0);
         mCommittedTextBeforeComposingText.setLength(0);
         mComposingText.setLength(0);
+        mComposingRegionStart = start;
         if (!TextUtils.isEmpty(textBeforeCursor)) {
             // The cursor is not necessarily at the end of the composing text, but we have its
             // position in mExpectedSelStart and mExpectedSelEnd. In this case we want the start
@@ -602,6 +622,7 @@ public final class RichInputConnection {
     public void setComposingText(final CharSequence text, final int newCursorPosition) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
         if (DEBUG_PREVIOUS_TEXT) checkConsistencyForDebug();
+        mComposingRegionStart = mExpectedSelStart - mComposingText.length();
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
@@ -663,6 +684,7 @@ public final class RichInputConnection {
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mIC.commitCompletion(completionInfo);
         }

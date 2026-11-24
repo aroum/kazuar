@@ -14,6 +14,46 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33, 36])
 class RichInputConnectionTest {
+    @Test fun movingWithinCorrectedWordPreservesItsPrefixAndPrecedingSpace() {
+        for (prefix in listOf("Привела ", "🙂 Привела ")) {
+            val ime = Robolectric.buildService(TestIme::class.java).get()
+            val editor = EditText(ime).apply {
+                setText(prefix + "логика")
+                setSelection(length())
+            }
+            ime.editorConnection = object : BaseInputConnection(editor, true) {
+                override fun getEditable() = editor.text
+            }
+            val connection = RichInputConnection(ime)
+            val end = editor.length()
+            connection.resetCachesUponCursorMoveAndReturnSuccess(end, end, false)
+            connection.beginBatchEdit()
+            try {
+                connection.setComposingRegion(prefix.length, end)
+                // Cursor moves retain the editor's composition. Include its first character,
+                // where the cached prefix is empty, then return to the end before typing.
+                for (cursor in listOf(end - 2, prefix.length, end)) {
+                    editor.setSelection(cursor)
+                    connection.resetCachesUponCursorMoveAndReturnSuccess(cursor, cursor, false)
+                }
+                connection.setComposingText("логи", 1)
+                assertEquals(prefix + "логи", editor.text.toString())
+                assertEquals(prefix.length + 4, connection.expectedSelectionStart)
+                connection.setComposingText("логикой", 1)
+                assertEquals(prefix + "логикой", editor.text.toString())
+                assertEquals(prefix.length + 7, connection.expectedSelectionStart)
+                assertEquals(editor.text.toString(),
+                    connection.getTextBeforeCursor(editor.length(), 0).toString())
+                connection.commitText("логикой", 1)
+                connection.commitText(" ", 1)
+                assertEquals(prefix + "логикой ", editor.text.toString())
+                assertEquals(editor.length(), connection.expectedSelectionStart)
+            } finally {
+                connection.endBatchEdit()
+            }
+        }
+    }
+
     @Test fun revertingExpansionAndEditingPreservesPrecedingSpace() {
         val ime = Robolectric.buildService(TestIme::class.java).get()
         val editor = EditText(ime).apply {
