@@ -738,6 +738,8 @@ public final class RichInputConnection {
         if (!isConnected()) {
             return null;
         }
+        final CharSequence expectedBefore = getTextBeforeCursor(
+                NUM_CHARS_TO_GET_BEFORE_CURSOR, 0);
         final CharSequence before = getTextBeforeCursorAndDetectLaggyConnection(
                 OPERATION_GET_WORD_RANGE_AT_CURSOR,
                 SLOW_INPUT_CONNECTION_ON_PARTIAL_RELOAD_MS,
@@ -749,6 +751,12 @@ public final class RichInputConnection {
                 NUM_CHARS_TO_GET_AFTER_CURSOR,
                 InputConnection.GET_TEXT_WITH_STYLES);
         if (before == null || after == null) {
+            return null;
+        }
+        // Some editors return the text from before a queued deletion. Combining that text
+        // with the newer expected cursor would move the word's composing start onto its space.
+        // Resume suggestions only once the editor agrees with the text we have committed.
+        if (!TextUtils.equals(expectedBefore, before)) {
             return null;
         }
 
