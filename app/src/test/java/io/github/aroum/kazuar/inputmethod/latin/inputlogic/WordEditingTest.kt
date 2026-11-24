@@ -35,11 +35,12 @@ class WordEditingTest {
     }
 
     @Test fun deleteAndInsertAtEitherWordKeepsSeparator() {
-        for (position in listOf("цифрые".length, "цифрые которые".length)) {
+        for (position in listOf("цифрые".length, "цифрые которые".length, -1)) {
+            val prediction = position == -1
             val ime = Robolectric.buildService(TestIme::class.java).get()
             val editor = EditText(ime).apply {
-                setText("цифрые которые")
-                setSelection(position)
+                setText(if (prediction) "цифры" else "цифрые которые")
+                setSelection(if (prediction) length() else position)
             }
             ime.editorConnection = object : BaseInputConnection(editor, true) {
                 override fun getEditable() = editor.text
@@ -49,7 +50,7 @@ class WordEditingTest {
             singleton.javaClass.getDeclaredField("mImm").apply { isAccessible = true }
                 .set(singleton, ime.getSystemService(Context.INPUT_METHOD_SERVICE))
             val locale = Locale.forLanguageTag("ru-RU")
-            val context = RuntimeEnvironment.getApplication<android.app.Application>()
+            val context = RuntimeEnvironment.getApplication()
             val localized = context.createConfigurationContext(Configuration(context.resources.configuration).apply {
                 setLocale(locale)
             })
@@ -74,19 +75,30 @@ class WordEditingTest {
                 }
             } as DictionaryFacilitator
             val logic = InputLogic(ime, dictionaries)
-            logic.mConnection.resetCachesUponCursorMoveAndReturnSuccess(position, position, false)
+            logic.mConnection.resetCachesUponCursorMoveAndReturnSuccess(editor.selectionStart, editor.selectionEnd, false)
             logic.restartSuggestionsOnWordTouchedByCursor(settings, false, ScriptUtils.SCRIPT_CYRILLIC)
+            if (prediction) {
+                for (word in listOf("цифры", "которые")) {
+                    val candidate = SuggestedWords.SuggestedWordInfo(word, "", 100,
+                        SuggestedWords.SuggestedWordInfo.KIND_PREDICTION,
+                        Dictionary.DICTIONARY_USER_TYPED, -1, -1)
+                    logic.onPickSuggestionManually(settings, candidate, 0,
+                        ScriptUtils.SCRIPT_CYRILLIC, ime.mHandler)
+                }
+                assertEquals("цифры которые", editor.text.toString())
+                // The UI callback is deliberately deferred while the next keys arrive.
+            }
             logic.onCodeInput(settings,
                 Event.createSoftwareKeypressEvent(Event.NOT_A_CODE_POINT, Constants.CODE_DELETE,
                     Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false),
                 0, ScriptUtils.SCRIPT_CYRILLIC, ime.mHandler)
-            val afterDelete = if (position == "цифрые".length) "цифры которые" else "цифрые которы"
+            val afterDelete = if (prediction) "цифры которы" else if (position == "цифрые".length) "цифры которые" else "цифрые которы"
             assertEquals(afterDelete, editor.text.toString())
             logic.onCodeInput(settings,
                 Event.createSoftwareKeypressEvent('а'.code, 'а'.code,
                     Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false),
                 0, ScriptUtils.SCRIPT_CYRILLIC, ime.mHandler)
-            val expected = if (position == "цифрые".length) "цифрыа которые" else "цифрые которыа"
+            val expected = if (prediction) "цифры которыа" else if (position == "цифрые".length) "цифрыа которые" else "цифрые которыа"
             assertEquals(expected, editor.text.toString())
             assertEquals(editor.selectionStart, logic.mConnection.expectedSelectionStart)
             ime.mHandler.removeCallbacksAndMessages(null)
