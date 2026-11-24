@@ -35,15 +35,27 @@ class WordEditingTest {
     }
 
     @Test fun deleteAndInsertAtEitherWordKeepsSeparator() {
-        for (position in listOf("цифрые".length, "цифрые которые".length, -1)) {
-            val prediction = position == -1
+        for (position in listOf("цифрые".length, "цифрые которые".length, -1, -2)) {
+            val prediction = position < 0
             val ime = Robolectric.buildService(TestIme::class.java).get()
             val editor = EditText(ime).apply {
                 setText(if (prediction) "цифры" else "цифрые которые")
                 setSelection(if (prediction) length() else position)
             }
             ime.editorConnection = object : BaseInputConnection(editor, true) {
+                private var delayedBefore: CharSequence? = null
                 override fun getEditable() = editor.text
+                override fun getTextBeforeCursor(length: Int, flags: Int): CharSequence? {
+                    val delayed = delayedBefore
+                    return if (delayed == null) super.getTextBeforeCursor(length, flags)
+                    else delayed.takeLast(length)
+                }
+                override fun deleteSurroundingText(before: Int, after: Int): Boolean {
+                    val previous = super.getTextBeforeCursor(40, 0)?.toString()
+                    val result = super.deleteSurroundingText(before, after)
+                    if (position == -2) delayedBefore = previous
+                    return result
+                }
             }
             val singleton = RichInputMethodManager::class.java.getDeclaredField("sInstance")
                 .apply { isAccessible = true }.get(null) as RichInputMethodManager
