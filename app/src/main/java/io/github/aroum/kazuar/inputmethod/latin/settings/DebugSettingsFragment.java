@@ -67,7 +67,8 @@ public final class DebugSettingsFragment extends SubScreenFragment
         });
         mServiceNeedsRestart = false;
         mDebugMode = (TwoStatePreference) findPreference(DebugSettings.PREF_DEBUG_MODE);
-        updateDebugMode();
+        findPreference("pref_build_version").setSummary(ApplicationUtils.getVersionName(getActivity()));
+        findPreference("pref_build_commit").setSummary(getString(R.string.build_revision));
     }
 
     private static class DictDumpPreference extends Preference {
@@ -108,26 +109,12 @@ public final class DebugSettingsFragment extends SubScreenFragment
     public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
         if (key.equals(DebugSettings.PREF_DEBUG_MODE) && mDebugMode != null) {
             mDebugMode.setChecked(prefs.getBoolean(DebugSettings.PREF_DEBUG_MODE, false));
-            updateDebugMode();
             mServiceNeedsRestart = true;
             return;
         }
         if (key.equals(DebugSettings.PREF_FORCE_NON_DISTINCT_MULTITOUCH)) {
             mServiceNeedsRestart = true;
             return;
-        }
-    }
-
-    private void updateDebugMode() {
-        boolean isDebugMode = mDebugMode.isChecked();
-        final String version = getString(
-                R.string.version_text, ApplicationUtils.getVersionName(getActivity()));
-        if (!isDebugMode) {
-            mDebugMode.setTitle(version);
-            mDebugMode.setSummary(null);
-        } else {
-            mDebugMode.setTitle(getString(R.string.prefs_debug_mode));
-            mDebugMode.setSummary(version);
         }
     }
 

@@ -355,6 +355,7 @@
         <item>Пользовательская раскладка 0</item>
         <item>Пользовательская раскладка 1</item>
         <item>Пользовательская раскладка 2</item>
+        <item>Пробел</item>
     </string-array>
 
     <string name="prefs_debug_settings_title">Режим отладки</string>

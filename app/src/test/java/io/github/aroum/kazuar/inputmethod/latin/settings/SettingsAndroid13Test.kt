@@ -4,6 +4,7 @@ package io.github.aroum.kazuar.inputmethod.latin.settings
 import android.content.Intent
 import androidx.preference.ListPreference
 import androidx.preference.Preference
+import io.github.aroum.kazuar.inputmethod.latin.R
 import io.github.aroum.kazuar.inputmethod.latin.utils.DeviceProtectedUtils
 import org.junit.Assert.*
 import org.junit.Test
@@ -140,6 +141,13 @@ class SettingsAndroid13Test {
         Robolectric.buildActivity(SettingsActivity::class.java, debugIntent).setup().use { controller ->
             controller.get().supportFragmentManager.executePendingTransactions()
             val screen = controller.get().supportFragmentManager.fragments.single() as DebugSettingsFragment
+            assertEquals(screen.getString(R.string.prefs_debug_mode),
+                screen.findPreference<Preference>(DebugSettings.PREF_DEBUG_MODE)!!.title)
+            assertEquals(io.github.aroum.kazuar.inputmethod.latin.utils.ApplicationUtils
+                .getVersionName(controller.get()),
+                screen.findPreference<Preference>("pref_build_version")!!.summary)
+            assertEquals(screen.getString(R.string.build_revision),
+                screen.findPreference<Preference>("pref_build_commit")!!.summary)
             assertNotNull(screen.findPreference<Preference>("pref_crash_report"))
             assertNull(screen.findPreference<Preference>(DebugSettings.PREF_RESIZE_KEYBOARD))
             assertNull(screen.findPreference<Preference>(DebugSettings.PREF_KEY_PREVIEW_SHOW_UP_START_X_SCALE))

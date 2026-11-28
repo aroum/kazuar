@@ -31,6 +31,7 @@ import io.github.aroum.kazuar.inputmethod.keyboard.internal.GestureEnabler;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.GestureStrokeDrawingParams;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.GestureStrokeDrawingPoints;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.GestureStrokeRecognitionParams;
+import io.github.aroum.kazuar.inputmethod.keyboard.internal.MoreKeySpec;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.PointerTrackerQueue;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.TimerHandler;
 import io.github.aroum.kazuar.inputmethod.keyboard.internal.TypingTimeRecorder;
@@ -1004,7 +1005,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private void onUpEventInternal(final int x, final int y, final long eventTime) {
         sTimerProxy.cancelKeyTimersOf(this);
         final Keyboard keyboard = mKeyDetector.getKeyboard();
-        if (keyboard != null) {
+        if (keyboard != null && !isShowingMoreKeysPanel()) {
             final SettingsValues settingsValues = Settings.getInstance().getCurrent();
             final int keyboardWidth = keyboard.mOccupiedWidth;
             final int keyboardHeight = keyboard.mOccupiedHeight;
@@ -1156,7 +1157,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         }
         if (key.hasNoPanelAutoMoreKey()) {
             cancelKeyTracking();
-            final int moreKeyCode = key.getMoreKeys()[0].mCode;
+            final MoreKeySpec moreKey = key.getMoreKeys()[0];
+            final int moreKeyCode = moreKey.mCode;
+            if (moreKeyCode == Constants.CODE_OUTPUT_TEXT) {
+                sListener.onTextInput(moreKey.mOutputText);
+                return;
+            }
             sListener.onPressKey(moreKeyCode, 0 /* repeatCont */, true /* isSinglePointer */);
             sListener.onCodeInput(moreKeyCode, Constants.NOT_A_COORDINATE,
                     Constants.NOT_A_COORDINATE, false /* isKeyRepeat */);

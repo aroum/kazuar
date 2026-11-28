@@ -151,7 +151,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
         setupClipKey(params)
         setupClearKey(params)
 
-        val customColors = io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomThemeHelper.getCustomThemeColors(context)
+        val customColors = io.github.aroum.kazuar.inputmethod.keyboard.internal.CustomThemeHelper.getActiveThemeColors(context)
         if (customColors != null) {
             setBackgroundColor(customColors.keyboardBackground)
             clipboardRecyclerView.setBackgroundColor(customColors.keyboardBackground)

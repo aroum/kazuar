@@ -11,4 +11,6 @@
     <string name="app_override_gemini_host_title">Настроить редактор Gemini (Google)</string>
     <string name="app_override_gemini_host_summary">Gemini может открывать поле ввода внутри приложения Google (com.google.android.googlequicksearchbox). Для такого поля настройте Google; его правила действуют также в поиске Google.</string>
     <string name="settings_category_key_animations">Анимации клавиш</string>
+    <string name="build_version_title">Версия</string>
+    <string name="build_commit_title">Коммит</string>
 </resources>

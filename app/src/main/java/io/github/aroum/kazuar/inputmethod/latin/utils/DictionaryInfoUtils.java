@@ -51,7 +51,9 @@ import javax.annotation.Nullable;
  */
 public class DictionaryInfoUtils {
     private static final String TAG = DictionaryInfoUtils.class.getSimpleName();
-    public static final String RESOURCE_PACKAGE_NAME = "io.github.aroum.kazuar.inputmethod.latin";
+    public static String getResourcePackageName(final Resources resources) {
+        return resources.getResourcePackageName(R.raw.main);
+    }
     private static final String DEFAULT_MAIN_DICT = "main";
     private static final String MAIN_DICT_PREFIX = "main_";
     private static final String DECODER_DICT_SUFFIX = DecoderSpecificConstants.DECODER_DICT_SUFFIX;
@@ -272,14 +274,14 @@ public class DictionaryInfoUtils {
             final String dictLanguageCountry = MAIN_DICT_PREFIX
                     + locale.toString().toLowerCase(Locale.ROOT) + DECODER_DICT_SUFFIX;
             if ((resId = res.getIdentifier(
-                    dictLanguageCountry, "raw", RESOURCE_PACKAGE_NAME)) != 0) {
+                    dictLanguageCountry, "raw", getResourcePackageName(res))) != 0) {
                 return resId;
             }
         }
 
         // Try to find main_language dictionary.
         final String dictLanguage = MAIN_DICT_PREFIX + locale.getLanguage() + DECODER_DICT_SUFFIX;
-        if ((resId = res.getIdentifier(dictLanguage, "raw", RESOURCE_PACKAGE_NAME)) != 0) {
+        if ((resId = res.getIdentifier(dictLanguage, "raw", getResourcePackageName(res))) != 0) {
             return resId;
         }
 
@@ -299,7 +301,7 @@ public class DictionaryInfoUtils {
             return resourceId;
         }
         return res.getIdentifier(DEFAULT_MAIN_DICT + DecoderSpecificConstants.DECODER_DICT_SUFFIX,
-                "raw", RESOURCE_PACKAGE_NAME);
+                "raw", getResourcePackageName(res));
     }
 
     /**

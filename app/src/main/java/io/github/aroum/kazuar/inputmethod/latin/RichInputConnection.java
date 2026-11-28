@@ -92,6 +92,9 @@ public final class RichInputConnection {
      */
     private static final long SLOW_INPUTCONNECTION_PERSIST_MS = TimeUnit.MINUTES.toMillis(10);
 
+    // Retain the editor's composition start even when the cursor is at its first character.
+    private int mComposingRegionStart = INVALID_CURSOR_POSITION;
+
     /**
      * This variable contains an expected value for the selection start position. This is where the
      * cursor or selection start may end up after all the keyboard-triggered updates have passed. We
@@ -236,8 +239,22 @@ public final class RichInputConnection {
             Log.d(TAG, "Will try to retrieve text later.");
             return false;
         }
-        if (isConnected() && shouldFinishComposition) {
-            mIC.finishComposingText();
+        if (shouldFinishComposition) {
+            mComposingRegionStart = INVALID_CURSOR_POSITION;
+            if (isConnected()) mIC.finishComposingText();
+        } else if (mComposingRegionStart != INVALID_CURSOR_POSITION
+                && newSelStart == newSelEnd && newSelStart >= mComposingRegionStart) {
+            // The editor still has a composition. Preserve its prefix in our cache, rather
+            // than treating that prefix as committed text and counting it twice on the next edit.
+            final int prefixLength = newSelStart - mComposingRegionStart;
+            final int cachedLength = mCommittedTextBeforeComposingText.length();
+            if (prefixLength <= cachedLength) {
+                mComposingText.append(mCommittedTextBeforeComposingText,
+                        cachedLength - prefixLength, cachedLength);
+                mCommittedTextBeforeComposingText.setLength(cachedLength - prefixLength);
+            }
+        } else {
+            mComposingRegionStart = INVALID_CURSOR_POSITION;
         }
         return true;
     }
@@ -293,6 +310,7 @@ public final class RichInputConnection {
         // it works, but it's wrong and should be fixed.
         mCommittedTextBeforeComposingText.append(mComposingText);
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mIC.finishComposingText();
         }
@@ -314,6 +332,7 @@ public final class RichInputConnection {
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mTempObjectForCommitText.clear();
             mTempObjectForCommitText.append(text);
@@ -441,6 +460,11 @@ public final class RichInputConnection {
                 n, flags);
     }
 
+    public CharSequence getCurrentTextBeforeCursor(final int n) {
+        mIC = mParent.getCurrentInputConnection();
+        return isConnected() ? mIC.getTextBeforeCursor(n, 0) : null;
+    }
+
     private CharSequence getTextBeforeCursorAndDetectLaggyConnection(
             final int operation, final long timeout, final int n, final int flags) {
         mIC = mParent.getCurrentInputConnection();
@@ -483,19 +507,13 @@ public final class RichInputConnection {
 
     public void deleteTextBeforeCursor(final int beforeLength) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
-        // TODO: the following is incorrect if the cursor is not immediately after the composition.
-        // Right now we never come here in this case because we reset the composing state before we
-        // come here in this case, but we need to fix this.
-        final int remainingChars = mComposingText.length() - beforeLength;
-        if (remainingChars >= 0) {
-            mComposingText.setLength(remainingChars);
-        } else {
-            mComposingText.setLength(0);
-            // Never cut under 0
-            final int len = Math.max(mCommittedTextBeforeComposingText.length()
-                    + remainingChars, 0);
-            mCommittedTextBeforeComposingText.setLength(len);
-        }
+        // deleteSurroundingText excludes an active editor composition. A retained span would
+        // make it delete before the whole word (including its preceding space), not the cursor.
+        // Composing-word backspace uses setComposingText; this path deletes literal cursor text.
+        finishComposingText();
+        final int remainingChars =
+                Math.max(mCommittedTextBeforeComposingText.length() - beforeLength, 0);
+        mCommittedTextBeforeComposingText.setLength(remainingChars);
         if (mExpectedSelStart > beforeLength) {
             mExpectedSelStart -= beforeLength;
             mExpectedSelEnd -= beforeLength;
@@ -576,6 +594,8 @@ public final class RichInputConnection {
         final CharSequence textBeforeCursor =
                 getTextBeforeCursor(Constants.EDITOR_CONTENTS_CACHE_SIZE + (end - start), 0);
         mCommittedTextBeforeComposingText.setLength(0);
+        mComposingText.setLength(0);
+        mComposingRegionStart = start;
         if (!TextUtils.isEmpty(textBeforeCursor)) {
             // The cursor is not necessarily at the end of the composing text, but we have its
             // position in mExpectedSelStart and mExpectedSelEnd. In this case we want the start
@@ -596,6 +616,7 @@ public final class RichInputConnection {
     public void setComposingText(final CharSequence text, final int newCursorPosition) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
         if (DEBUG_PREVIOUS_TEXT) checkConsistencyForDebug();
+        mComposingRegionStart = mExpectedSelStart - mComposingText.length();
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
@@ -657,6 +678,7 @@ public final class RichInputConnection {
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);
+        mComposingRegionStart = INVALID_CURSOR_POSITION;
         if (isConnected()) {
             mIC.commitCompletion(completionInfo);
         }
@@ -716,6 +738,8 @@ public final class RichInputConnection {
         if (!isConnected()) {
             return null;
         }
+        final CharSequence expectedBefore = getTextBeforeCursor(
+                NUM_CHARS_TO_GET_BEFORE_CURSOR, 0);
         final CharSequence before = getTextBeforeCursorAndDetectLaggyConnection(
                 OPERATION_GET_WORD_RANGE_AT_CURSOR,
                 SLOW_INPUT_CONNECTION_ON_PARTIAL_RELOAD_MS,
@@ -727,6 +751,12 @@ public final class RichInputConnection {
                 NUM_CHARS_TO_GET_AFTER_CURSOR,
                 InputConnection.GET_TEXT_WITH_STYLES);
         if (before == null || after == null) {
+            return null;
+        }
+        // Some editors return the text from before a queued deletion. Combining that text
+        // with the newer expected cursor would move the word's composing start onto its space.
+        // Resume suggestions only once the editor agrees with the text we have committed.
+        if (!TextUtils.equals(expectedBefore, before)) {
             return null;
         }
 

@@ -115,10 +115,11 @@ public final class SystemBroadcastReceiver extends BroadcastReceiver {
         final String iconStyle = prefs.getString("pref_icon_style", "aroum");
 
         PackageManager pm = context.getPackageManager();
-        String packageName = context.getPackageName();
-        ComponentName aroumAlias = new ComponentName(context, packageName + ".LauncherAliasDefault");
-        ComponentName vrifmusAlias = new ComponentName(context, packageName + ".LauncherAliasOld");
-        ComponentName pavelAlias = new ComponentName(context, packageName + ".LauncherAliasPavel");
+        // Manifest class names use the namespace even when the application id has a suffix.
+        String namespace = SystemBroadcastReceiver.class.getPackage().getName();
+        ComponentName aroumAlias = new ComponentName(context, namespace + ".LauncherAliasDefault");
+        ComponentName vrifmusAlias = new ComponentName(context, namespace + ".LauncherAliasOld");
+        ComponentName pavelAlias = new ComponentName(context, namespace + ".LauncherAliasPavel");
 
         // SetupActivity itself must always be disabled
         pm.setComponentEnabledSetting(

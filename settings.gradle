@@ -1,3 +1,7 @@
 include ':app'
 include ':tools:make-keyboard-text'
 include ':tools:make-emoji-keys'
+
+if (providers.gradleProperty('performanceBenchmarks').orNull == 'true') {
+    include ':macrobenchmark'
+}

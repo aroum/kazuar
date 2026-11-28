@@ -674,6 +674,7 @@ disposition rather than other common dispositions for Latin languages. [CHAR LIM
         <item>User Layout 0</item>
         <item>User Layout 1</item>
         <item>User Layout 2</item>
+        <item>Space</item>
     </string-array>
 
     <!-- New settings screen titles and categories -->

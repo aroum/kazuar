@@ -158,7 +158,7 @@ jobs:
       - name: Run packaged resource and keyboard smoke tests
         timeout-minutes: 12
         run: |
-          "$ANDROID_HOME/emulator/emulator" -avd kazuar16k -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
+          "$ANDROID_HOME/emulator/emulator" -avd kazuar16k -memory 4096 -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
           trap 'adb logcat -d > logcat.txt; adb emu kill || true' EXIT
           timeout 240 adb wait-for-device
           for attempt in {1..120}; do

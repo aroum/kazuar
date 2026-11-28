@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries><package android:name="io.github.aroum.kazuar.inputmethod.latin.benchmark" /></queries>
+    <application android:label="Kazuar performance checks" />
+</manifest>

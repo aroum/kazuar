@@ -1,6 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+def buildRevision = System.getenv('GITHUB_SHA') ?: 'local'
+def defaultVersionName = buildRevision == 'local' ? 'local' :
+        java.time.LocalDate.now(java.time.ZoneOffset.UTC).format(
+                java.time.format.DateTimeFormatter.ofPattern('yy.MM.dd'))
+def baseVersionName = System.getenv('VERSION_NAME') ?:
+        (project.findProperty('versionName') ?: defaultVersionName)
+
 android {
 
     namespace "io.github.aroum.kazuar.inputmethod.latin"
@@ -14,12 +21,14 @@ android {
         externalNativeBuild {
             cmake { arguments '-DANDROID_STL=c++_static' }
         }
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
         resourceConfigurations += ['en', 'ru']
-        resValue 'string', 'build_revision', System.getenv('GITHUB_SHA') ?: 'local'
+        resValue 'string', 'build_revision', buildRevision
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionCode 32
-        def appVersionName = System.getenv("VERSION_NAME") ?: (project.findProperty("versionName") ?: '26.10.18')
-        versionName appVersionName
+        versionName "${baseVersionName}+${buildRevision.take(7)}"
     }
 
     signingConfigs {
@@ -48,15 +57,6 @@ android {
         }
     }
 
-    splits {
-        abi {
-            enable true
-            reset()
-            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-            universalApk true
-        }
-    }
-
     buildTypes {
         release {
             minifyEnabled true
@@ -68,6 +68,14 @@ android {
         }
         debug {
             versionNameSuffix "-debug"
+        }
+        if (providers.gradleProperty('performanceBenchmarks').orNull == 'true') {
+            benchmark {
+                initWith release
+                applicationIdSuffix '.benchmark'
+                signingConfig signingConfigs.debug
+                matchingFallbacks = ['release']
+            }
         }
         ci {
             minifyEnabled true
@@ -169,5 +177,11 @@ tasks.named('preBuild').configure {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+if (providers.gradleProperty('performanceBenchmarks').orNull == 'true') {
+    dependencies {
+        benchmarkImplementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     }
 }
